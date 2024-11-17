@@ -1,31 +1,56 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Bookkeeping App{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100">
-    <!-- Navbar -->
-    <div class="navbar bg-blue-600 text-white">
-        <div class="flex-1">
-            <a class="btn btn-ghost normal-case text-xl">Bookkeeping App</a>
-        </div>
-        <div class="flex-none">
-            <ul class="menu menu-horizontal px-1">
-                <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                <li><a href="{% url 'properties' %}">Properties</a></li>
-                <li><a href="{% url 'tenants' %}">Tenants</a></li>
-                <li><a href="{% url 'expenses' %}">Expenses</a></li>
-            </ul>
-        </div>
-    </div>
+    <title>
+        {% block head_title %}
+            Bookkeeping App
+        {% endblock %}
+    </title>
 
-    <!-- Main Content -->
-    <div class="container mx-auto mt-5">
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/output.css' %}">
+
+    {% block extra_head %}
+    {% endblock %}
+</head>
+<body class="{% if user.is_authenticated and user.dark_mode %}dark{% endif %}">
+
+    {% include 'bookkeeping/partials/navbar.html' %}
+    
+    {% if messages %}
+        <div id="alert-container">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="max-w-screen-lg mx-auto p-4">
         {% block content %}
         {% endblock %}
     </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            setTimeout(function() {
+                $('#alert-container .alert').fadeOut('slow', function() {
+                    $(this).remove();
+                });
+            }, 2000);
+        });
+    </script>
+
+    {% block extra_scripts %}
+    {% endblock %}
 </body>
 </html>

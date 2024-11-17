@@ -34,15 +34,16 @@ class ParsedTransaction(models.Model):
     tenant = models.ForeignKey(Tenant, null=True, blank=True, on_delete=models.SET_NULL)
     expense_profile = models.ForeignKey(ExpenseProfile, null=True, blank=True, on_delete=models.SET_NULL)
 
-    def __str__(self):
+    def __str__(self):  
         return f"{self.date} | {self.amount} | {'Income' if self.is_income else 'Expense'}"
 
 # Model to represent transactions that are not yet categorized
 class EarmarkedTransaction(models.Model):
     date = models.CharField(max_length=10)  # Keep DD.MM.YYYY format as a string
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    amount = models.FloatField()    
     description = models.TextField()
     is_income = models.BooleanField()
+    account_name = models.CharField(max_length=255, null=True, blank=True)  # New field for account name
 
     def __str__(self):
         return f"Earmarked {self.amount} on {self.date}"

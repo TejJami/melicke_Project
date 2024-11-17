@@ -1,0 +1,33 @@
+<!-- Navbar -->
+<div class="navbar bg-base-100 shadow-md">
+    <div class="navbar-start">
+        <a class="btn btn-ghost normal-case text-xl">Bookkeeping App</a>
+    </div>
+    <div class="navbar-center">
+        <ul class="menu menu-horizontal px-1">
+            <li>
+                <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    Bookkeeping
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'properties' %}" class="{% if request.resolver_match.url_name == 'properties' %}active{% endif %}">
+                    Properties
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'tenants' %}" class="{% if request.resolver_match.url_name == 'tenants' %}active{% endif %}">
+                    Tenants
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'expenses' %}" class="{% if request.resolver_match.url_name == 'expenses' %}active{% endif %}">
+                    Expenses
+                </a>
+            </li>
+        </ul>
+    </div>
+    <div class="navbar-end">
+        <a class="btn">Logout</a>
+    </div>
+</div>
