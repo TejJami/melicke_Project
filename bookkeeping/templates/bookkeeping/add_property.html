@@ -1,0 +1,7 @@
+<h1>Add Property</h1>
+<form method="post">
+    {% csrf_token %}
+    <input type="text" name="name" placeholder="Property Name">
+    <textarea name="address" placeholder="Address"></textarea>
+    <button type="submit">Add</button>
+</form>

@@ -1,0 +1,20 @@
+{% extends 'bookkeeping/base.html' %}
+
+{% block title %}Tenants{% endblock %}
+
+{% block content %}
+<div class="card bg-white shadow-md p-5">
+    <h1 class="text-2xl font-bold mb-5">Tenants</h1>
+
+    <a href="{% url 'add_tenant' %}" class="btn btn-primary mb-5">Add Tenant</a>
+
+    <ul class="list-disc pl-5">
+        {% for tenant in tenants %}
+        <li class="mb-2">
+            <span class="font-semibold">{{ tenant.name }}</span> - {{ tenant.property.name }} | 
+            IBAN: {{ tenant.iban }}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

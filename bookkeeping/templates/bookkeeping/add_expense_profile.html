@@ -1,0 +1,7 @@
+<h1>Add Expense Profile</h1>
+<form method="post">
+    {% csrf_token %}
+    <input type="text" name="tag" placeholder="Expense Tag">
+    <input type="text" name="iban" placeholder="Expense IBAN">
+    <button type="submit">Add</button>
+</form>

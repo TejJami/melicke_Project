@@ -1,0 +1,7 @@
+<h1>Upload Bank Statement</h1>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <label for="statement">Upload PDF:</label>
+    <input type="file" name="statement" id="statement">
+    <button type="submit">Upload</button>
+</form>

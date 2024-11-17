@@ -1,0 +1,19 @@
+{% extends 'bookkeeping/base.html' %}
+
+{% block title %}Properties{% endblock %}
+
+{% block content %}
+<div class="card bg-white shadow-md p-5">
+    <h1 class="text-2xl font-bold mb-5">Properties</h1>
+
+    <a href="{% url 'add_property' %}" class="btn btn-primary mb-5">Add Property</a>
+
+    <ul class="list-disc pl-5">
+        {% for property in properties %}
+        <li class="mb-2">
+            <span class="font-semibold">{{ property.name }}</span> - {{ property.address }}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
