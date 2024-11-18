@@ -5,6 +5,8 @@ from .models import (
 )
 import pdfplumber
 import re
+from datetime import datetime
+
 # Dashboard: Displays Earmarked and Parsed Transactions
 def dashboard(request):
     earmarked = EarmarkedTransaction.objects.all()
@@ -26,77 +28,90 @@ def upload_bank_statement(request):
                 text = page.extract_text()
                 if not text:
                     continue
-                
+
+                # Parse transactions
                 lines = text.split('\n')
-                date_pattern = r"\d{2}\.\d{2}"  # Matches "30.01"
-                amount_pattern = r"-?\d{1,3}(?:\.\d{3})*,\d{2}"  # Matches "1.794,48"
                 current_transaction = {}
                 multiline_description = []
 
-                for i, line in enumerate(lines):
-                    date_match = re.search(date_pattern, line)
+                for line in lines:
+                    # Check for a date in the `dd.mm` format
+                    date_match = re.search(r"\d{2}\.\d{2}", line)
                     if date_match:
                         if current_transaction and 'amount' in current_transaction:
+                            # Save the previous transaction
                             current_transaction['description'] = " ".join(multiline_description).strip()
-                            txn = EarmarkedTransaction(
-                                date=current_transaction['date'],
-                                amount=current_transaction['amount'],
-                                description=current_transaction['description'],
-                                is_income=current_transaction['is_income'],
-                                account_name=current_transaction.get('account_name', ''),
-                            )
-                            earmarked_transactions.append(txn)
+                            try:
+                                txn = EarmarkedTransaction(
+                                    date=current_transaction['date'],
+                                    account_name=current_transaction['account_name'],
+                                    amount=current_transaction['amount'],
+                                    is_income=current_transaction['is_income'],
+                                    description=current_transaction['description'],
+                                )
+                                earmarked_transactions.append(txn)
+                            except Exception as e:
+                                print(f"Error saving transaction: {e}")
 
-                        current_transaction = {'date': date_match.group(0)}
+                        # Start a new transaction
+                        current_transaction = {}
                         multiline_description = []
 
-                        if i > 0:
-                            current_transaction['account_name'] = lines[i - 1].strip()
+                        # Parse the date (assuming `2023` as the default year)
+                        date_str = date_match.group(0) + ".2023"
+                        try:
+                            current_transaction['date'] = datetime.strptime(date_str, "%d.%m.%Y").date()
+                        except ValueError as ve:
+                            print(f"Error parsing date: {ve}")
+                            continue
 
-                        columns = re.split(r'\s{2,}', line)
-                        if len(columns) > 1:
-                            left_match = re.search(amount_pattern, columns[0])
-                            right_match = re.search(amount_pattern, columns[-1])
-                            if left_match:
-                                amount_str = left_match.group(0).replace('.', '').replace(',', '.')
+                        # Extract account name (text before the date)
+                        account_name = line.split(date_match.group(0))[0].strip()
+                        current_transaction['account_name'] = account_name
+
+                        # Parse the amount and determine if it's income or expense
+                        columns = re.split(r'\s{2,}', line)  # Splitting by whitespace columns
+                        for col in columns:
+                            amount_match = re.search(r"-?\d{1,3}(?:\.\d{3})*,\d{2}", col)
+                            if amount_match:
+                                amount_str = amount_match.group(0).replace('.', '').replace(',', '.')
                                 current_transaction['amount'] = abs(float(amount_str))
-                                current_transaction['is_income'] = False
-                            elif right_match:
-                                amount_str = right_match.group(0).replace('.', '').replace(',', '.')
-                                current_transaction['amount'] = abs(float(amount_str))
-                                current_transaction['is_income'] = True
+                                # Determine if it's income or expense
+                                if "zu Ihren Lasten" in text:
+                                    current_transaction['is_income'] = False
+                                elif "zu Ihren Gunsten" in text:
+                                    current_transaction['is_income'] = True
+                                break
 
                     elif current_transaction:
+                        # Append additional description text
                         multiline_description.append(line.strip())
 
+                # Save the last transaction
                 if current_transaction and 'amount' in current_transaction:
                     current_transaction['description'] = " ".join(multiline_description).strip()
-                    txn = EarmarkedTransaction(
-                        date=current_transaction['date'],
-                        amount=current_transaction['amount'],
-                        description=current_transaction['description'],
-                        is_income=current_transaction['is_income'],
-                        account_name=current_transaction.get('account_name', ''),
-                    )
-                    earmarked_transactions.append(txn)
+                    try:
+                        txn = EarmarkedTransaction(
+                            date=current_transaction['date'],
+                            account_name=current_transaction['account_name'],
+                            amount=current_transaction['amount'],
+                            is_income=current_transaction['is_income'],
+                            description=current_transaction['description'],
+                        )
+                        earmarked_transactions.append(txn)
+                    except Exception as e:
+                        print(f"Error saving last transaction: {e}")
 
-        print("Transactions to be saved:")
-        for txn in earmarked_transactions:
-            print(txn.date, txn.amount, txn.description, txn.is_income, txn.account_name)
-
+        # Save all transactions to the database
         try:
             EarmarkedTransaction.objects.bulk_create(earmarked_transactions)
-            print(f"Saved {len(earmarked_transactions)} transactions.")
         except Exception as e:
             print(f"Error during bulk_create: {e}")
 
         return redirect('dashboard')
 
     return render(request, 'bookkeeping/upload_statement.html')
-
-
-
-
+    
 # Add Property
 def add_property(request):
     if request.method == 'POST':
