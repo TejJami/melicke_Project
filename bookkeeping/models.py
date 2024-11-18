@@ -19,23 +19,37 @@ class Tenant(models.Model):
 
 # Model to represent expense categories
 class ExpenseProfile(models.Model):
-    tag = models.CharField(max_length=255)
-    iban = models.CharField(max_length=34)
+    UST_CHOICES = [(0, '0%'),(7, '7%'), (19, '19%')]
+    UST_SCH_CHOICES = [('Nicht', 'Nicht'), ('Voll', 'Voll'), ('Teilw', 'Teilw')]
+
+    profile_name = models.CharField(max_length=255, unique=True)  # Profile Name for categorization
+    account_name = models.CharField(max_length=255, unique=True)  # Account Name for matching with ParsedTransaction
+    ust = models.IntegerField(choices=UST_CHOICES, default=19)  # UST Dropdown
+    ust_sch = models.CharField(max_length=10, choices=UST_SCH_CHOICES, default='Voll')  # UST-Sch Dropdown
+    transactions = models.ManyToManyField('ParsedTransaction', related_name='expense_profiles', blank=True)
 
     def __str__(self):
-        return self.tag
+        return self.name
 
 # Model to represent parsed transactions after categorization
 class ParsedTransaction(models.Model):
     date = models.DateField()
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    description = models.TextField()
-    is_income = models.BooleanField()
-    tenant = models.ForeignKey(Tenant, null=True, blank=True, on_delete=models.SET_NULL)
-    expense_profile = models.ForeignKey(ExpenseProfile, null=True, blank=True, on_delete=models.SET_NULL)
+    account_name = models.CharField(max_length=255,null=True, blank=True)  # New field for account name
+    gggkto = models.ForeignKey(ExpenseProfile, null=True, blank=True, on_delete=models.SET_NULL)
+    ust = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Calculated
+    betrag_netto = models.FloatField(null=True, blank=True)  # Calculated
+    betrag_brutto = models.FloatField(null=True, blank=True)  # Original amount
 
-    def __str__(self):  
-        return f"{self.date} | {self.amount} | {'Income' if self.is_income else 'Expense'}"
+    def __str__(self):
+        return f"{self.date} | {self.account_name} | {self.betrag_brutto} | {self.gggkto}"
+
+    def save(self, *args, **kwargs):
+        # Automatically calculate UST and Betrag Netto based on linked ExpenseProfile
+        if self.gggkto:
+            ust_rate = self.gggkto.ust / 100
+            self.ust = round(self.betrag_brutto * ust_rate, 2)
+            self.betrag_netto = round(self.betrag_brutto - self.ust, 2)
+        super().save(*args, **kwargs)
 
 # Model to represent transactions that are not yet categorized
 class EarmarkedTransaction(models.Model):

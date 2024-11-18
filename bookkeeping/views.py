@@ -197,12 +197,23 @@ def add_tenant(request):
 # Add Expense Profile
 def add_expense_profile(request):
     if request.method == 'POST':
-        tag = request.POST['tag']
-        iban = request.POST['iban']
-        ExpenseProfile.objects.create(tag=tag, iban=iban)
-        return redirect('dashboard')
-    return render(request, 'bookkeeping/add_expense_profile.html')
+        profile_name = request.POST.get('profile_name')
+        account_name = request.POST.get('account_name')
+        ust = request.POST.get('ust')
+        ust_sch = request.POST.get('ust_sch')
 
+        # Create the new ExpenseProfile object
+        ExpenseProfile.objects.create(
+            profile_name=profile_name,
+            account_name=account_name,
+            ust=ust,
+            ust_sch=ust_sch
+        )
+
+        # Redirect to the dashboard or expenses page after saving
+        return redirect('expenses')
+
+    return redirect('expenses')  # Fallback for GET requests (redirect to the expenses page)
 
 # Properties
 def properties(request):

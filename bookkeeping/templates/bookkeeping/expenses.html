@@ -3,17 +3,85 @@
 {% block title %}Expenses{% endblock %}
 
 {% block content %}
-<div class="card bg-white shadow-md p-5">
-    <h1 class="text-2xl font-bold mb-5">Expenses</h1>
+<div class="card bg-white shadow-md p-5 h-screen">
 
-    <a href="{% url 'add_expense_profile' %}" class="btn btn-primary mb-5">Add Expense Profile</a>
+    <!-- Trigger Button -->
+    <button class="btn btn-primary mb-5" onclick="add_expense_modal.showModal()">Add Expense Profile</button>
 
-    <ul class="list-disc pl-5">
-        {% for expense in expenses %}
-        <li class="mb-2">
-            <span class="font-semibold">{{ expense.tag }}</span> - IBAN: {{ expense.iban }}
-        </li>
-        {% endfor %}
-    </ul>
+    <!-- Modal -->
+    <dialog id="add_expense_modal" class="modal">
+        <div class="modal-box">
+            <form method="post" action="{% url 'add_expense_profile' %}">
+                {% csrf_token %}
+                <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_expense_modal.close()">✕</button>
+                <h1 class="text-lg font-bold mb-4">Add Expense Profile</h1>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Profile Name</span>
+                    </label>
+                    <input type="text" name="profile_name" class="input input-bordered w-full" required>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Account Name</span>
+                    </label>
+                    <input type="text" name="account_name" class="input input-bordered w-full" required>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">UST</span>
+                    </label>
+                    <select name="ust" class="select select-bordered w-full" required>
+                        <option value="0">0%</option>
+                        <option value="7">7%</option>
+                        <option value="19">19%</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">UST-Schlüssel</span>
+                    </label>
+                    <select name="ust_sch" class="select select-bordered w-full" required>
+                        <option value="Nicht">Nicht</option>
+                        <option value="Voll">Voll</option>
+                        <option value="Teilw">Teilw</option>
+                    </select>
+                </div>
+                <div class="modal-action">
+                    <button type="submit" class="btn btn-primary">Add</button>
+                    <button type="button" class="btn btn-secondary" onclick="add_expense_modal.close()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
+    <!-- Expense Profiles List -->
+    <div class="h-full overflow-y-auto">
+        <h2 class="text-xl font-semibold mb-3">Expense Profiles</h2>
+        <table class="table w-full text-left">
+            <thead>
+                <tr>
+                    <th>Profile Name</th>
+                    <th>Account Name</th>
+                    <th>UST</th>
+                    <th>UST-Schlüssel</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for expense in expenses %}
+                <tr>
+                    <td>{{ expense.profile_name }}</td>
+                    <td>{{ expense.account_name }}</td>
+                    <td>{{ expense.get_ust_display }}</td>
+                    <td>{{ expense.get_ust_sch_display }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4">No expense profiles available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}
