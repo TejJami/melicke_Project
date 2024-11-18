@@ -1,11 +1,12 @@
 import pdfplumber
+import fitz  # PyMuPDF
+import re
 from django.shortcuts import render, redirect
 from .models import (
     EarmarkedTransaction, ParsedTransaction, Property, Tenant, ExpenseProfile
 )
-import pdfplumber
-import re
 from datetime import datetime
+
 
 # Dashboard: Displays Earmarked and Parsed Transactions
 def dashboard(request):
@@ -17,24 +18,57 @@ def dashboard(request):
     })
 
 
-
+# Upload Bank Statement
 def upload_bank_statement(request):
     if request.method == 'POST' and request.FILES.get('statement'):
         statement = request.FILES['statement']
         earmarked_transactions = []
 
+        def extract_text_with_fallback(page, statement):
+            # Try pdfplumber first
+            text = page.extract_text()
+            if not text:
+                print("Trying fallback extraction with PyMuPDF...")
+                # Reset file pointer for PyMuPDF
+                statement.seek(0)
+                with fitz.open(stream=statement.read(), filetype="pdf") as pdf:
+                    page_num = page.page_number - 1
+                    text = pdf[page_num].get_text("text")
+            return text
+
         with pdfplumber.open(statement) as pdf:
-            for page_number, page in enumerate(pdf.pages):
-                text = page.extract_text()
-                if not text:
+            # Simulate adding 3 empty pages at the start
+            dummy_pages = [""] * 3
+
+            # Create a combined list of empty pages and actual pages
+            all_pages = dummy_pages + pdf.pages
+
+            for page_number, page in enumerate(all_pages):
+                # Check if it's a dummy page
+                if page_number < 3:
+                    print(f"Processing dummy page {page_number + 1} (empty content).")
                     continue
 
+                # Extract text from actual PDF pages
+                text = extract_text_with_fallback(page, statement)
+                if not text:
+                    print(f"No text found on page {page_number + 1} after fallback.")
+                    continue
+
+                print(f"Processing page {page_number + 1}...")
                 # Split text into lines
                 lines = text.split('\n')
                 current_transaction = {}
                 multiline_description = []
 
-                for line in lines:
+                for line_number, line in enumerate(lines):
+                    line = line.strip()
+                    if not line:
+                        continue  # Skip empty lines
+                    
+                    # Debugging: Log each line
+                    print(f"Page {page_number + 1}, Line {line_number + 1}: {line}")
+
                     # Check for a date in `dd.mm` format
                     date_match = re.search(r"\d{2}\.\d{2}", line)
                     if date_match:
@@ -67,22 +101,19 @@ def upload_bank_statement(request):
                         # Parse the amount and determine if it's income or expense
                         columns = re.split(r'\s{2,}', line)  # Splitting by whitespace columns
                         for col in columns:
-                            amount_match = re.search(r"-?\d{1,3}(?:\.\d{3})*,\d{2}", col)
+                            amount_match = re.search(r"-?\d{1,3}(?:\.\d{3})*,\d{2}-?", col)
                             if amount_match:
                                 amount_str = amount_match.group(0).replace('.', '').replace(',', '.')
-                                current_transaction['amount'] = abs(float(amount_str))
-                                # Determine if it's income or expense
-                                if "zu Ihren Lasten" in line or "Lasten" in text:
-                                    current_transaction['is_income'] = False
-                                elif "zu Ihren Gunsten" in line or "Gunsten" in text:
-                                    current_transaction['is_income'] = True
+                                current_transaction['amount'] = abs(float(amount_str.strip('-')))
+                                # Determine if it's income or expense based on the `-` at the end
+                                current_transaction['is_income'] = not col.strip().endswith('-')
                                 break
 
                     elif current_transaction:
                         # Append additional description lines
-                        multiline_description.append(line.strip())
+                        multiline_description.append(line)
 
-                # Save the last transaction
+                # Save the last transaction on the page
                 if current_transaction and 'amount' in current_transaction:
                     current_transaction['description'] = " ".join(multiline_description).strip()
                     try:
@@ -95,7 +126,7 @@ def upload_bank_statement(request):
                         )
                         earmarked_transactions.append(txn)
                     except Exception as e:
-                        print(f"Error saving last transaction: {e}")
+                        print(f"Error saving last transaction on page {page_number + 1}: {e}")
 
         # Save all transactions to the database
         try:
@@ -107,7 +138,8 @@ def upload_bank_statement(request):
         return redirect('dashboard')
 
     return render(request, 'bookkeeping/upload_statement.html')
-    
+
+
 # Add Property
 def add_property(request):
     if request.method == 'POST':
@@ -116,6 +148,7 @@ def add_property(request):
         Property.objects.create(name=name, address=address)
         return redirect('dashboard')
     return render(request, 'bookkeeping/add_property.html')
+
 
 # Add Tenant
 def add_tenant(request):
@@ -129,6 +162,7 @@ def add_tenant(request):
     properties = Property.objects.all()
     return render(request, 'bookkeeping/add_tenant.html', {'properties': properties})
 
+
 # Add Expense Profile
 def add_expense_profile(request):
     if request.method == 'POST':
@@ -138,15 +172,18 @@ def add_expense_profile(request):
         return redirect('dashboard')
     return render(request, 'bookkeeping/add_expense_profile.html')
 
+
 # Properties
 def properties(request):
     properties = Property.objects.all()
     return render(request, 'bookkeeping/properties.html', {'properties': properties})
 
+
 # Tenants
 def tenants(request):
     tenants = Tenant.objects.all()
     return render(request, 'bookkeeping/tenants.html', {'tenants': tenants})
+
 
 # Expenses
 def expenses(request):
