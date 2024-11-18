@@ -37,18 +37,7 @@ def upload_bank_statement(request):
             return text
 
         with pdfplumber.open(statement) as pdf:
-            # Simulate adding 3 empty pages at the start
-            dummy_pages = [""] * 3
-
-            # Create a combined list of empty pages and actual pages
-            all_pages = dummy_pages + pdf.pages
-
-            for page_number, page in enumerate(all_pages):
-                # Check if it's a dummy page
-                if page_number < 3:
-                    print(f"Processing dummy page {page_number + 1} (empty content).")
-                    continue
-
+            for page_number, page in enumerate(pdf.pages):
                 # Extract text from actual PDF pages
                 text = extract_text_with_fallback(page, statement)
                 if not text:
@@ -65,7 +54,12 @@ def upload_bank_statement(request):
                     line = line.strip()
                     if not line:
                         continue  # Skip empty lines
-                    
+
+                    # Skip lines that are not valid transactions
+                    if "Alter Kontostand vom" in line:
+                        print(f"Skipping invalid transaction line: {line}")
+                        continue
+
                     # Debugging: Log each line
                     print(f"Page {page_number + 1}, Line {line_number + 1}: {line}")
 
@@ -138,7 +132,6 @@ def upload_bank_statement(request):
         return redirect('dashboard')
 
     return render(request, 'bookkeeping/upload_statement.html')
-
 
 # Add Property
 def add_property(request):
