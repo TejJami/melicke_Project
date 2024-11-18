@@ -29,17 +29,17 @@ def upload_bank_statement(request):
                 if not text:
                     continue
 
-                # Parse transactions
+                # Split text into lines
                 lines = text.split('\n')
                 current_transaction = {}
                 multiline_description = []
 
                 for line in lines:
-                    # Check for a date in the `dd.mm` format
+                    # Check for a date in `dd.mm` format
                     date_match = re.search(r"\d{2}\.\d{2}", line)
                     if date_match:
+                        # Save the previous transaction if it exists
                         if current_transaction and 'amount' in current_transaction:
-                            # Save the previous transaction
                             current_transaction['description'] = " ".join(multiline_description).strip()
                             try:
                                 txn = EarmarkedTransaction(
@@ -57,13 +57,8 @@ def upload_bank_statement(request):
                         current_transaction = {}
                         multiline_description = []
 
-                        # Parse the date (assuming `2023` as the default year)
-                        date_str = date_match.group(0) + ".2023"
-                        try:
-                            current_transaction['date'] = datetime.strptime(date_str, "%d.%m.%Y").date()
-                        except ValueError as ve:
-                            print(f"Error parsing date: {ve}")
-                            continue
+                        # Parse the date
+                        current_transaction['date'] = date_match.group(0)
 
                         # Extract account name (text before the date)
                         account_name = line.split(date_match.group(0))[0].strip()
@@ -77,14 +72,14 @@ def upload_bank_statement(request):
                                 amount_str = amount_match.group(0).replace('.', '').replace(',', '.')
                                 current_transaction['amount'] = abs(float(amount_str))
                                 # Determine if it's income or expense
-                                if "zu Ihren Lasten" in text:
+                                if "zu Ihren Lasten" in line or "Lasten" in text:
                                     current_transaction['is_income'] = False
-                                elif "zu Ihren Gunsten" in text:
+                                elif "zu Ihren Gunsten" in line or "Gunsten" in text:
                                     current_transaction['is_income'] = True
                                 break
 
                     elif current_transaction:
-                        # Append additional description text
+                        # Append additional description lines
                         multiline_description.append(line.strip())
 
                 # Save the last transaction
@@ -105,6 +100,7 @@ def upload_bank_statement(request):
         # Save all transactions to the database
         try:
             EarmarkedTransaction.objects.bulk_create(earmarked_transactions)
+            print(f"Saved {len(earmarked_transactions)} transactions to the database.")
         except Exception as e:
             print(f"Error during bulk_create: {e}")
 
