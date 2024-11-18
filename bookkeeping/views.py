@@ -177,10 +177,13 @@ def upload_bank_statement(request):
                     print(f"Error saving last transaction on page {page_number + 1}: {e}")
 
         # Save all transactions to the database
-        try:
-            EarmarkedTransaction.objects.bulk_create(earmarked_transactions)
-        except Exception as e:
-            print(f"Error during bulk_create: {e}")
+        # try:
+        #     EarmarkedTransaction.objects.bulk_create(earmarked_transactions)
+        # except Exception as e:
+        #     print(f"Error during bulk_create: {e}")
+        for txn in earmarked_transactions:
+            txn.save()  # This will trigger the `post_save` signal
+
 
         return redirect('dashboard')
 
