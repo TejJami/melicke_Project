@@ -6,7 +6,8 @@ from .models import (
     EarmarkedTransaction, ParsedTransaction, Property, Tenant, ExpenseProfile
 )
 from datetime import datetime
-
+import PyPDF2
+from io import BytesIO
 
 # Dashboard: Displays Earmarked and Parsed Transactions
 def dashboard(request):
@@ -23,52 +24,88 @@ def upload_bank_statement(request):
     if request.method == 'POST' and request.FILES.get('statement'):
         statement = request.FILES['statement']
         earmarked_transactions = []
+        current_buchungsdatum = None  # To store the current `Buchungsdatum`
 
-        def extract_text_with_fallback(page, statement):
-            # Try pdfplumber first
-            text = page.extract_text()
+        def split_pdf_into_pages(pdf_file):
+            pdf_reader = PyPDF2.PdfReader(pdf_file)
+            pages = []
+
+            for page_num in range(len(pdf_reader.pages)):
+                pdf_writer = PyPDF2.PdfWriter()
+                pdf_writer.add_page(pdf_reader.pages[page_num])
+                
+                # Save each page to a BytesIO object
+                page_stream = BytesIO()
+                pdf_writer.write(page_stream)
+                page_stream.seek(0)
+                pages.append(page_stream)
+
+            return pages
+
+        def extract_text_with_fallback(page_stream):
+            text = None
+            # Attempt pdfplumber first
+            try:
+                with pdfplumber.open(page_stream) as pdf:
+                    text = pdf.pages[0].extract_text()
+            except Exception as e:
+                print(f"pdfplumber failed: {e}")
+
             if not text:
                 print("Trying fallback extraction with PyMuPDF...")
-                # Reset file pointer for PyMuPDF
-                statement.seek(0)
-                with fitz.open(stream=statement.read(), filetype="pdf") as pdf:
-                    page_num = page.page_number - 1
-                    text = pdf[page_num].get_text("text")
+                # Use PyMuPDF (fitz) for fallback
+                page_stream.seek(0)  # Reset the stream
+                with fitz.open(stream=page_stream.read(), filetype="pdf") as pdf:
+                    text = pdf[0].get_text("text")
             return text
 
-        with pdfplumber.open(statement) as pdf:
-            for page_number, page in enumerate(pdf.pages):
-                # Extract text from actual PDF pages
-                text = extract_text_with_fallback(page, statement)
-                if not text:
-                    print(f"No text found on page {page_number + 1} after fallback.")
+        # Split the PDF into individual pages
+        pages = split_pdf_into_pages(statement)
+
+        for page_number, page_stream in enumerate(pages):
+            text = extract_text_with_fallback(page_stream)
+            if not text:
+                print(f"No text found on page {page_number + 1} after fallback.")
+                continue
+
+            print(f"Processing page {page_number + 1}...")
+            # Process the text for this page as you did before
+            lines = text.split('\n')
+            current_transaction = {}
+            multiline_description = []
+
+            for line_number, line in enumerate(lines):
+                line = line.strip()
+                if not line:
+                    continue  # Skip empty lines
+
+                # Check for `Buchungsdatum` to update the current date
+                if "Buchungsdatum:" in line:
+                    date_match = re.search(r"\d{2}\.\d{2}\.\d{4}", line)
+                    if date_match:
+                        current_buchungsdatum = date_match.group(0)
+                        print(f"Found Buchungsdatum: {current_buchungsdatum}")
+                    continue  # Skip to the next line
+
+                # Skip invalid lines
+                if (
+                    "Alter Kontostand vom" in line or
+                    "Neuer Kontostand vom" in line or
+                    re.search(r"Kontostand", line, re.IGNORECASE)
+                ):
+                    print(f"Skipping invalid transaction line: {line}")
                     continue
 
-                print(f"Processing page {page_number + 1}...")
-                # Split text into lines
-                lines = text.split('\n')
-                current_transaction = {}
-                multiline_description = []
-
-                for line_number, line in enumerate(lines):
-                    line = line.strip()
-                    if not line:
-                        continue  # Skip empty lines
-
-                    # Skip lines that are not valid transactions
-                    if "Alter Kontostand vom" in line:
-                        print(f"Skipping invalid transaction line: {line}")
-                        continue
-
-                    # Debugging: Log each line
-                    print(f"Page {page_number + 1}, Line {line_number + 1}: {line}")
-
-                    # Check for a date in `dd.mm` format
+                # Check for valid transactions only if `current_buchungsdatum` is set
+                if current_buchungsdatum:
+                    # Check for a date in `dd.mm` format (e.g., `03.01`)
                     date_match = re.search(r"\d{2}\.\d{2}", line)
                     if date_match:
                         # Save the previous transaction if it exists
                         if current_transaction and 'amount' in current_transaction:
                             current_transaction['description'] = " ".join(multiline_description).strip()
+                            current_transaction['date'] = current_buchungsdatum
+                            print(f"Saving transaction: {current_transaction}")
                             try:
                                 txn = EarmarkedTransaction(
                                     date=current_transaction['date'],
@@ -85,8 +122,8 @@ def upload_bank_statement(request):
                         current_transaction = {}
                         multiline_description = []
 
-                        # Parse the date
-                        current_transaction['date'] = date_match.group(0)
+                        # Use the current `Buchungsdatum` as the transaction date
+                        current_transaction['date'] = current_buchungsdatum
 
                         # Extract account name (text before the date)
                         account_name = line.split(date_match.group(0))[0].strip()
@@ -107,23 +144,26 @@ def upload_bank_statement(request):
                         # Append additional description lines
                         multiline_description.append(line)
 
-                # Save the last transaction on the page
-                if current_transaction and 'amount' in current_transaction:
-                    current_transaction['description'] = " ".join(multiline_description).strip()
-                    try:
-                        txn = EarmarkedTransaction(
-                            date=current_transaction['date'],
-                            account_name=current_transaction['account_name'],
-                            amount=current_transaction['amount'],
-                            is_income=current_transaction['is_income'],
-                            description=current_transaction['description'],
-                        )
-                        earmarked_transactions.append(txn)
-                    except Exception as e:
-                        print(f"Error saving last transaction on page {page_number + 1}: {e}")
+            # Save the last transaction on the page
+            if current_transaction and 'amount' in current_transaction:
+                current_transaction['description'] = " ".join(multiline_description).strip()
+                current_transaction['date'] = current_buchungsdatum
+                print(f"Saving transaction: {current_transaction}")
+                try:
+                    txn = EarmarkedTransaction(
+                        date=current_transaction['date'],
+                        account_name=current_transaction['account_name'],
+                        amount=current_transaction['amount'],
+                        is_income=current_transaction['is_income'],
+                        description=current_transaction['description'],
+                    )
+                    earmarked_transactions.append(txn)
+                except Exception as e:
+                    print(f"Error saving last transaction on page {page_number + 1}: {e}")
 
         # Save all transactions to the database
         try:
+            print(f"Number of transactions to save: {len(earmarked_transactions)}")
             EarmarkedTransaction.objects.bulk_create(earmarked_transactions)
             print(f"Saved {len(earmarked_transactions)} transactions to the database.")
         except Exception as e:
@@ -132,6 +172,7 @@ def upload_bank_statement(request):
         return redirect('dashboard')
 
     return render(request, 'bookkeeping/upload_statement.html')
+
 
 # Add Property
 def add_property(request):
