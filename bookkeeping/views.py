@@ -33,7 +33,7 @@ def upload_bank_statement(request):
             for page_num in range(len(pdf_reader.pages)):
                 pdf_writer = PyPDF2.PdfWriter()
                 pdf_writer.add_page(pdf_reader.pages[page_num])
-                
+
                 # Save each page to a BytesIO object
                 page_stream = BytesIO()
                 pdf_writer.write(page_stream)
@@ -69,7 +69,7 @@ def upload_bank_statement(request):
                 continue
 
             print(f"Processing page {page_number + 1}...")
-            # Process the text for this page as you did before
+            # Process the text for this page
             lines = text.split('\n')
             current_transaction = {}
             multiline_description = []
@@ -79,7 +79,7 @@ def upload_bank_statement(request):
                 if not line:
                     continue  # Skip empty lines
 
-                # Check for `Buchungsdatum` to update the current date
+                # Check for `Buchungsdatum` to update the current reference date
                 if "Buchungsdatum:" in line:
                     date_match = re.search(r"\d{2}\.\d{2}\.\d{4}", line)
                     if date_match:
@@ -101,10 +101,15 @@ def upload_bank_statement(request):
                     # Check for a date in `dd.mm` format (e.g., `03.01`)
                     date_match = re.search(r"\d{2}\.\d{2}", line)
                     if date_match:
+                        parsed_date = date_match.group(0)
+                        # Validate the transaction date against the `Buchungsdatum`
+                        if parsed_date not in current_buchungsdatum:
+                            print(f"Invalid transaction date: {parsed_date} (does not match Buchungsdatum: {current_buchungsdatum})")
+                            continue
+
                         # Save the previous transaction if it exists
                         if current_transaction and 'amount' in current_transaction:
                             current_transaction['description'] = " ".join(multiline_description).strip()
-                            current_transaction['date'] = current_buchungsdatum
                             print(f"Saving transaction: {current_transaction}")
                             try:
                                 txn = EarmarkedTransaction(
@@ -122,11 +127,11 @@ def upload_bank_statement(request):
                         current_transaction = {}
                         multiline_description = []
 
-                        # Use the current `Buchungsdatum` as the transaction date
-                        current_transaction['date'] = current_buchungsdatum
+                        # Use the parsed date for the transaction
+                        current_transaction['date'] = parsed_date
 
                         # Extract account name (text before the date)
-                        account_name = line.split(date_match.group(0))[0].strip()
+                        account_name = line.split(parsed_date)[0].strip()
                         current_transaction['account_name'] = account_name
 
                         # Parse the amount and determine if it's income or expense
@@ -147,7 +152,6 @@ def upload_bank_statement(request):
             # Save the last transaction on the page
             if current_transaction and 'amount' in current_transaction:
                 current_transaction['description'] = " ".join(multiline_description).strip()
-                current_transaction['date'] = current_buchungsdatum
                 print(f"Saving transaction: {current_transaction}")
                 try:
                     txn = EarmarkedTransaction(
