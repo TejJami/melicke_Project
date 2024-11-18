@@ -35,7 +35,7 @@
     </dialog>
 
     <!-- Properties Table -->
-    <div class="h-full overflow-y-auto">
+    <div class="overflow-x-auto">
         <h2 class="text-xl font-semibold mb-3">Property List</h2>
         <table class="table w-full text-left">
             <thead>
@@ -71,8 +71,39 @@
 </div>
 
 <script>
-
+    function openEditModal(id, name, address) {
+        document.getElementById('edit_property_id').value = id;
+        document.getElementById('edit_property_name').value = name;
+        document.getElementById('edit_property_address').value = address;
+        document.getElementById('edit_property_modal').showModal();
+    }
 </script>
 
-
+<!-- Edit Modal -->
+<dialog id="edit_property_modal" class="modal">
+    <div class="modal-box">
+        <form method="post" action="{% url 'edit_property' %}">
+            {% csrf_token %}
+            <input type="hidden" name="property_id" id="edit_property_id">
+            <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="edit_property_modal.close()">✕</button>
+            <h1 class="text-lg font-bold mb-4">Edit Property</h1>
+            <div class="mb-4">
+                <label class="label">
+                    <span class="label-text">Property Name</span>
+                </label>
+                <input type="text" name="name" id="edit_property_name" class="input input-bordered w-full" required>
+            </div>
+            <div class="mb-4">
+                <label class="label">
+                    <span class="label-text">Address</span>
+                </label>
+                <textarea name="address" id="edit_property_address" class="textarea textarea-bordered w-full" required></textarea>
+            </div>
+            <div class="modal-action">
+                <button type="submit" class="btn btn-outline">Save</button>
+                <button type="button" class="btn btn-outline btn-error" onclick="edit_property_modal.close()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</dialog>
 {% endblock %}

@@ -12,5 +12,6 @@ urlpatterns = [
     path('add_expense_profile/', views.add_expense_profile, name='add_expense_profile'),
     path('edit-expense-profile/', views.edit_expense_profile, name='edit_expense_profile'),
     path('delete-expense-profile/<int:pk>/', views.delete_expense_profile, name='delete_expense_profile'),
-
+    path('edit_property/', views.edit_property, name='edit_property'),
+    path('delete_property/<int:pk>/', views.delete_property, name='delete_property'),
 ]

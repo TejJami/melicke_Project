@@ -195,7 +195,7 @@ def add_property(request):
         name = request.POST['name']
         address = request.POST['address']
         Property.objects.create(name=name, address=address)
-        return redirect('dashboard')
+        return redirect('properties')
     return render(request, 'bookkeeping/add_property.html')
 
 
@@ -207,7 +207,7 @@ def add_tenant(request):
         iban = request.POST['iban']
         property = Property.objects.get(id=property_id)
         Tenant.objects.create(name=name, property=property, iban=iban)
-        return redirect('dashboard')
+        return redirect('tenants')
     properties = Property.objects.all()
     return render(request, 'bookkeeping/add_tenant.html', {'properties': properties})
 
@@ -275,3 +275,31 @@ def delete_expense_profile(request, pk):
         expense = get_object_or_404(ExpenseProfile, pk=pk)
         expense.delete()
         return redirect('expenses')  # Redirect back to the expenses page
+
+# Edit Property
+def edit_property(request):
+    if request.method == 'POST':
+        property_id = request.POST.get('property_id')  # Get property ID from the form
+        name = request.POST.get('name')  # Get updated property name
+        address = request.POST.get('address')  # Get updated address
+
+        # Retrieve the property and update its details
+        property_obj = get_object_or_404(Property, id=property_id)
+        property_obj.name = name
+        property_obj.address = address
+        property_obj.save()  # Save the changes to the database
+
+        return redirect('properties')  # Redirect to the properties page
+
+    return redirect('properties')  # Fallback for non-POST requests
+
+# Delete Property
+def delete_property(request, pk):
+    if request.method == 'POST':
+        # Retrieve the property and delete it
+        property_obj = get_object_or_404(Property, pk=pk)
+        property_obj.delete()
+
+        return redirect('properties')  # Redirect to the properties page
+
+    return redirect('properties')  # Fallback for non-POST requests

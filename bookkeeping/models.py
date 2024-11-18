@@ -35,7 +35,8 @@ class ExpenseProfile(models.Model):
 class ParsedTransaction(models.Model):
     date = models.DateField()
     account_name = models.CharField(max_length=255, null=True, blank=True)  # New field for account name
-    gggkto = models.ForeignKey('ExpenseProfile', null=True, blank=True, on_delete=models.SET_NULL)
+    #on deletetion of the linked ExpenseProfile delete the ParsedTransaction
+    gggkto = models.ForeignKey('ExpenseProfile', null=True, blank=True, on_delete=models.CASCADE)
     betrag_brutto = models.FloatField(null=True, blank=True)  # Original amount
 
     def __str__(self):
