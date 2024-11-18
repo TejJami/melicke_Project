@@ -10,4 +10,7 @@ urlpatterns = [
     path('add_property/', views.add_property, name='add_property'),
     path('add_tenant/', views.add_tenant, name='add_tenant'),
     path('add_expense_profile/', views.add_expense_profile, name='add_expense_profile'),
+    path('edit-expense-profile/', views.edit_expense_profile, name='edit_expense_profile'),
+    path('delete-expense-profile/<int:pk>/', views.delete_expense_profile, name='delete_expense_profile'),
+
 ]

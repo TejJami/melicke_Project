@@ -6,7 +6,7 @@
 <div class="card bg-white shadow-md p-5 h-screen">
 
     <!-- Trigger Button -->
-    <button class="btn btn-primary mb-5" onclick="add_expense_modal.showModal()">Add Expense Profile</button>
+    <button class="btn btn-outline mb-5" onclick="add_expense_modal.showModal()">Add Expense Profile</button>
 
     <!-- Modal -->
     <dialog id="add_expense_modal" class="modal">
@@ -48,12 +48,61 @@
                     </select>
                 </div>
                 <div class="modal-action">
-                    <button type="submit" class="btn btn-primary">Add</button>
-                    <button type="button" class="btn btn-secondary" onclick="add_expense_modal.close()">Cancel</button>
+                    <button type="submit" class="btn btn-outline">Add</button>
+                    <button type="button" class="btn btn-outline btn-error" onclick="add_expense_modal.close()">Cancel</button>
                 </div>
             </form>
         </div>
     </dialog>
+
+    <!-- Edit Modal -->
+    <dialog id="edit_expense_modal" class="modal">
+        <div class="modal-box">
+            <form method="post" action="{% url 'edit_expense_profile' %}">
+                {% csrf_token %}
+                <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="edit_expense_modal.close()">✕</button>
+                <h1 class="text-lg font-bold mb-4">Edit Expense Profile</h1>
+                <input type="hidden" name="expense_id" id="expense_id">
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Profile Name</span>
+                    </label>
+                    <input type="text" name="profile_name" id="edit_profile_name" class="input input-bordered w-full" required>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Account Name</span>
+                    </label>
+                    <input type="text" name="account_name" id="edit_account_name" class="input input-bordered w-full" required>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">UST</span>
+                    </label>
+                    <select name="ust" id="edit_ust" class="select select-bordered w-full" required>
+                        <option value="0">0%</option>
+                        <option value="7">7%</option>
+                        <option value="19">19%</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">UST-Schlüssel</span>
+                    </label>
+                    <select name="ust_sch" id="edit_ust_sch" class="select select-bordered w-full" required>
+                        <option value="Nicht">Nicht</option>
+                        <option value="Voll">Voll</option>
+                        <option value="Teilw">Teilw</option>
+                    </select>
+                </div>
+                <div class="modal-action">
+                    <button type="submit" class="btn btn-outline">Save</button>
+                    <button type="button" class="btn btn-outline btn-error" onclick="edit_expense_modal.close()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+    
 
     <!-- Expense Profiles List -->
     <div class="h-full overflow-y-auto">
@@ -70,18 +119,40 @@
             <tbody>
                 {% for expense in expenses %}
                 <tr>
-                    <td>{{ expense.profile_name }}</td>
+                    <td>
+                        <a href="javascript:void(0)" onclick="openEditModal({{ expense.id }}, '{{ expense.profile_name }}', '{{ expense.account_name }}', '{{ expense.ust }}', '{{ expense.ust_sch }}')">
+                            {{ expense.profile_name }}
+                        </a>
+                    </td>
                     <td>{{ expense.account_name }}</td>
                     <td>{{ expense.get_ust_display }}</td>
                     <td>{{ expense.get_ust_sch_display }}</td>
+                    <td>
+                        <!-- Delete Button -->
+                        <form method="post" action="{% url 'delete_expense_profile' expense.id %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline btn-error btn-sm">Delete</button>
+                        </form>
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="4">No expense profiles available.</td>
+                    <td colspan="5">No expense profiles available.</td>
                 </tr>
                 {% endfor %}
-            </tbody>
+            </tbody>           
         </table>
     </div>
 </div>
+
+<script>
+    function openEditModal(id, profileName, accountName, ust, ustSch) {
+        document.getElementById('expense_id').value = id;
+        document.getElementById('edit_profile_name').value = profileName;
+        document.getElementById('edit_account_name').value = accountName;
+        document.getElementById('edit_ust').value = ust;
+        document.getElementById('edit_ust_sch').value = ustSch;
+        document.getElementById('edit_expense_modal').showModal();
+    }
+</script>
 {% endblock %}

@@ -5,6 +5,7 @@ from django.shortcuts import render, redirect
 from .models import (
     EarmarkedTransaction, ParsedTransaction, Property, Tenant, ExpenseProfile
 )
+from django.shortcuts import get_object_or_404
 from datetime import datetime
 import PyPDF2
 from io import BytesIO
@@ -240,3 +241,29 @@ def tenants(request):
 def expenses(request):
     expenses = ExpenseProfile.objects.all()
     return render(request, 'bookkeeping/expenses.html', {'expenses': expenses})
+
+# Edit Expense Profile
+def edit_expense_profile(request):
+    if request.method == 'POST':
+        expense_id = request.POST.get('expense_id')
+        profile_name = request.POST.get('profile_name')
+        account_name = request.POST.get('account_name')
+        ust = request.POST.get('ust')
+        ust_sch = request.POST.get('ust_sch')
+
+        # Update the expense profile
+        expense = get_object_or_404(ExpenseProfile, id=expense_id)
+        expense.profile_name = profile_name
+        expense.account_name = account_name
+        expense.ust = ust
+        expense.ust_sch = ust_sch
+        expense.save()
+
+        return redirect('expenses')  # Redirect back to the expenses page
+
+# Delete Expense Profile
+def delete_expense_profile(request, pk):
+    if request.method == 'POST':
+        expense = get_object_or_404(ExpenseProfile, pk=pk)
+        expense.delete()
+        return redirect('expenses')  # Redirect back to the expenses page
