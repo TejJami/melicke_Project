@@ -111,9 +111,14 @@ def upload_bank_statement(request):
                             formatted_parsed_date = datetime.strptime(parsed_date, "%d.%m").date()
                             if formatted_buchungsdatum:
                                 formatted_parsed_date = formatted_parsed_date.replace(year=formatted_buchungsdatum.year)
+
+                            # Validate the parsed date matches or is within the logical range of `Buchungsdatum`
+                            if formatted_parsed_date != formatted_buchungsdatum:
+                                print(f"Invalid transaction date {formatted_parsed_date} for Buchungsdatum {formatted_buchungsdatum}. Skipping.")
+                                continue  # Skip invalid transaction
                         except ValueError as e:
                             print(f"Error parsing transaction date {parsed_date}: {e}")
-                            formatted_parsed_date = formatted_buchungsdatum  # Fallback to Buchungsdatum
+                            continue  # Skip invalid transaction
 
                         # Save the previous transaction if it exists
                         if current_transaction and 'amount' in current_transaction:
