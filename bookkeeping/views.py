@@ -82,6 +82,12 @@ def upload_bank_statement(request):
                     date_match = re.search(r"\d{2}\.\d{2}\.\d{4}", line)
                     if date_match:
                         current_buchungsdatum = date_match.group(0)
+                        try:
+                            # Convert `current_buchungsdatum` (DD.MM.YYYY) to Django date format (YYYY-MM-DD)
+                            formatted_buchungsdatum = datetime.strptime(current_buchungsdatum, "%d.%m.%Y").date()
+                        except ValueError as e:
+                            print(f"Error parsing Buchungsdatum: {e}")
+                            formatted_buchungsdatum = None  # Handle the error if needed
                     continue  # Skip to the next line
 
                 # Skip invalid lines
@@ -99,10 +105,14 @@ def upload_bank_statement(request):
                     date_match = re.search(r"\d{2}\.\d{2}", line)
                     if date_match:
                         parsed_date = date_match.group(0)
-                        # Validate the transaction date against the `Buchungsdatum`
-                        if parsed_date not in current_buchungsdatum:
-                            print(f"Invalid transaction date: {parsed_date} (does not match Buchungsdatum: {current_buchungsdatum})")
-                            continue
+                        try:
+                            # Combine parsed date with the year from `formatted_buchungsdatum`
+                            formatted_parsed_date = datetime.strptime(parsed_date, "%d.%m").date()
+                            if formatted_buchungsdatum:
+                                formatted_parsed_date = formatted_parsed_date.replace(year=formatted_buchungsdatum.year)
+                        except ValueError as e:
+                            print(f"Error parsing transaction date {parsed_date}: {e}")
+                            formatted_parsed_date = formatted_buchungsdatum  # Fallback to Buchungsdatum
 
                         # Save the previous transaction if it exists
                         if current_transaction and 'amount' in current_transaction:
@@ -124,7 +134,7 @@ def upload_bank_statement(request):
                         multiline_description = []
 
                         # Use the parsed date for the transaction
-                        current_transaction['date'] = parsed_date
+                        current_transaction['date'] = formatted_parsed_date
 
                         # Extract account name (text before the date)
                         account_name = line.split(parsed_date)[0].strip()
@@ -169,7 +179,6 @@ def upload_bank_statement(request):
         return redirect('dashboard')
 
     return render(request, 'bookkeeping/upload_statement.html')
-
 
 # Add Property
 def add_property(request):

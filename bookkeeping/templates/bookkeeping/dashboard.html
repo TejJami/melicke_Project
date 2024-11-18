@@ -63,21 +63,28 @@
         <table class="table w-full text-left">
             <thead>
                 <tr>
-                    <th>Account Name</th>
                     <th>Date</th>
-                    <th>Amount</th>
-                    <th>Description</th>
+                    <th>Account Name</th>
+                    <th>Gggkto</th>
+                    <th>Betrag Brutto</th>
+                    <th>Ust%</th>
+                    <th>Betrag Netto</th>
+
                 </tr>
             </thead>
             <tbody>
                 {% for transaction in parsed|dictsort:"date" %}
                 <tr>
-                    <td>{{ transaction.account_name }}</td>
                     <td>{{ transaction.date }}</td>
+                    <td>{{ transaction.account_name }}</td>
+                    <td>{{ transaction.gggkto }}</td>
                     <td class="{% if transaction.is_income %}text-blue-500{% else %}text-red-500{% endif %}">
-                        {{ transaction.amount }}
+                        {{ transaction.betrag_brutto }}
                     </td>
-                    <td>{{ transaction.description }}</td>
+                    <td>{{ transaction.ust }}</td>
+                    <td class="{% if transaction.is_income %}text-blue-500{% else %}text-red-500{% endif %}">
+                        {{ transaction.betrag_netto }}
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>

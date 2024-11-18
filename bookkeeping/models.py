@@ -29,7 +29,7 @@ class ExpenseProfile(models.Model):
     transactions = models.ManyToManyField('ParsedTransaction', related_name='expense_profiles', blank=True)
 
     def __str__(self):
-        return self.name
+        return self.profile_name
 
 # Model to represent parsed transactions after categorization
 class ParsedTransaction(models.Model):
@@ -46,7 +46,7 @@ class ParsedTransaction(models.Model):
     def save(self, *args, **kwargs):
         # Automatically calculate UST and Betrag Netto based on linked ExpenseProfile
         if self.gggkto:
-            ust_rate = self.gggkto.ust / 100
+            ust_rate = float(self.gggkto.ust) / 100
             self.ust = round(self.betrag_brutto * ust_rate, 2)
             self.betrag_netto = round(self.betrag_brutto - self.ust, 2)
         super().save(*args, **kwargs)
