@@ -52,7 +52,6 @@ def upload_bank_statement(request):
                 print(f"pdfplumber failed: {e}")
 
             if not text:
-                print("Trying fallback extraction with PyMuPDF...")
                 # Use PyMuPDF (fitz) for fallback
                 page_stream.seek(0)  # Reset the stream
                 with fitz.open(stream=page_stream.read(), filetype="pdf") as pdf:
@@ -68,7 +67,6 @@ def upload_bank_statement(request):
                 print(f"No text found on page {page_number + 1} after fallback.")
                 continue
 
-            print(f"Processing page {page_number + 1}...")
             # Process the text for this page
             lines = text.split('\n')
             current_transaction = {}
@@ -84,16 +82,15 @@ def upload_bank_statement(request):
                     date_match = re.search(r"\d{2}\.\d{2}\.\d{4}", line)
                     if date_match:
                         current_buchungsdatum = date_match.group(0)
-                        print(f"Found Buchungsdatum: {current_buchungsdatum}")
                     continue  # Skip to the next line
 
                 # Skip invalid lines
                 if (
                     "Alter Kontostand vom" in line or
                     "Neuer Kontostand vom" in line or
-                    re.search(r"Kontostand", line, re.IGNORECASE)
+                    re.search(r"Kontostand", line, re.IGNORECASE) or
+                    "Änderung Freistellungsauftrag" in line
                 ):
-                    print(f"Skipping invalid transaction line: {line}")
                     continue
 
                 # Check for valid transactions only if `current_buchungsdatum` is set
@@ -110,7 +107,6 @@ def upload_bank_statement(request):
                         # Save the previous transaction if it exists
                         if current_transaction and 'amount' in current_transaction:
                             current_transaction['description'] = " ".join(multiline_description).strip()
-                            print(f"Saving transaction: {current_transaction}")
                             try:
                                 txn = EarmarkedTransaction(
                                     date=current_transaction['date'],
@@ -152,7 +148,6 @@ def upload_bank_statement(request):
             # Save the last transaction on the page
             if current_transaction and 'amount' in current_transaction:
                 current_transaction['description'] = " ".join(multiline_description).strip()
-                print(f"Saving transaction: {current_transaction}")
                 try:
                     txn = EarmarkedTransaction(
                         date=current_transaction['date'],
@@ -167,9 +162,7 @@ def upload_bank_statement(request):
 
         # Save all transactions to the database
         try:
-            print(f"Number of transactions to save: {len(earmarked_transactions)}")
             EarmarkedTransaction.objects.bulk_create(earmarked_transactions)
-            print(f"Saved {len(earmarked_transactions)} transactions to the database.")
         except Exception as e:
             print(f"Error during bulk_create: {e}")
 
