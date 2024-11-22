@@ -14,4 +14,5 @@ urlpatterns = [
     path('delete-expense-profile/<int:pk>/', views.delete_expense_profile, name='delete_expense_profile'),
     path('edit_property/', views.edit_property, name='edit_property'),
     path('delete_property/<int:pk>/', views.delete_property, name='delete_property'),
+    path('export_parsed_transactions/', views.export_parsed_transactions, name='export_parsed_transactions'),
 ]

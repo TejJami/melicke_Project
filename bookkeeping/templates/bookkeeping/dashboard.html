@@ -93,6 +93,11 @@
                 {% endfor %}
             </tbody>
         </table>
+        <div class="flex justify-end mb-3">
+            <a href="{% url 'export_parsed_transactions' %}" class="btn btn-outline">
+                Download as Excel
+            </a>
+        </div>        
     </div>
 </div>
 {% endblock %}

@@ -9,6 +9,8 @@ from django.shortcuts import get_object_or_404
 from datetime import datetime
 import PyPDF2
 from io import BytesIO
+import openpyxl
+from django.http import HttpResponse
 
 # Dashboard: Displays Earmarked and Parsed Transactions
 def dashboard(request):
@@ -303,3 +305,35 @@ def delete_property(request, pk):
         return redirect('properties')  # Redirect to the properties page
 
     return redirect('properties')  # Fallback for non-POST requests
+
+def export_parsed_transactions(request):
+    # Create a workbook and a sheet
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Parsed Transactions"
+
+    # Add header row
+    headers = ["Date", "Account Name", "Gggkto", "Betrag Brutto", "Ust.", "Betrag Netto"]
+    ws.append(headers)
+
+    # Retrieve parsed transactions
+    parsed_transactions = ParsedTransaction.objects.all()
+
+    # Add data rows
+    for transaction in parsed_transactions:
+        ws.append([
+            transaction.date,
+            transaction.account_name,
+            str(transaction.gggkto) if transaction.gggkto else "N/A",
+            transaction.betrag_brutto,
+            transaction.ust,
+            transaction.betrag_netto,
+        ])
+
+    # Prepare the HTTP response
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response['Content-Disposition'] = 'attachment; filename=parsed_transactions.xlsx'
+
+    # Save workbook to the response
+    wb.save(response)
+    return response
