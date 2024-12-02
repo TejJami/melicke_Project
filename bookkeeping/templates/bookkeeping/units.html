@@ -1,0 +1,181 @@
+{% extends 'bookkeeping/base.html' %}
+
+{% block title %}Units{% endblock %}
+
+{% block content %}
+<div class="card bg-white shadow-md p-5 h-screen">
+
+    <!-- Trigger Button -->
+    <button class="btn btn-outline mb-5" onclick="add_unit_modal.showModal()">Add Unit</button>
+
+    <!-- Add Unit Modal -->
+    <dialog id="add_unit_modal" class="modal">
+        <div class="modal-box">
+            <form method="post" action="{% url 'add_unit' %}">
+                {% csrf_token %}
+                <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_unit_modal.close()">✕</button>
+                <h1 class="text-lg font-bold mb-4">Add Unit</h1>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Property</span>
+                    </label>
+                    <select name="property" class="select select-bordered w-full" required>
+                        {% for property in properties %}
+                        <option value="{{ property.id }}">{{ property.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Unit Name</span>
+                    </label>
+                    <input type="text" name="unit_name" class="input input-bordered w-full" required>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Lease Status</span>
+                    </label>
+                    <select name="lease_status" class="select select-bordered w-full" required>
+                        <option value="empty">Empty</option>
+                        <option value="renovation">Renovation</option>
+                        <option value="filled">Filled</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Rent</span>
+                    </label>
+                    <input type="number" name="rent" class="input input-bordered w-full" required>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Maintenance</span>
+                    </label>
+                    <input type="number" name="maintenance" class="input input-bordered w-full" required>
+                </div>
+                <div class="modal-action">
+                    <button type="submit" class="btn btn-outline">Add</button>
+                    <button type="button" class="btn btn-outline btn-error" onclick="add_unit_modal.close()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
+    <!-- Edit Unit Modal -->
+    <dialog id="edit_unit_modal" class="modal">
+        <div class="modal-box">
+            <form method="post" id="edit_unit_form">
+                {% csrf_token %}
+                <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="edit_unit_modal.close()">✕</button>
+                <h1 class="text-lg font-bold mb-4">Edit Unit</h1>
+                <input type="hidden" name="unit_id" id="unit_id">
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Property</span>
+                    </label>
+                    <select name="property" id="edit_property" class="select select-bordered w-full" required>
+                        {% for property in properties %}
+                        <option value="{{ property.id }}">{{ property.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Unit Name</span>
+                    </label>
+                    <input type="text" name="unit_name" id="edit_unit_name" class="input input-bordered w-full" required>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Lease Status</span>
+                    </label>
+                    <select name="lease_status" id="edit_lease_status" class="select select-bordered w-full" required>
+                        <option value="empty">Empty</option>
+                        <option value="renovation">Renovation</option>
+                        <option value="filled">Filled</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Rent</span>
+                    </label>
+                    <input type="number" name="rent" id="edit_rent" class="input input-bordered w-full" required>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Maintenance</span>
+                    </label>
+                    <input type="number" name="maintenance" id="edit_maintenance" class="input input-bordered w-full" required>
+                </div>
+                <div class="modal-action">
+                    <button type="submit" class="btn btn-outline">Save</button>
+                    <button type="button" class="btn btn-outline btn-error" onclick="edit_unit_modal.close()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
+    <!-- Unit List -->
+    <div class="h-full overflow-y-auto">
+        <h2 class="text-xl font-semibold mb-3">Units</h2>
+        <table class="table w-full text-left">
+            <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Unit Name</th>
+                    <th>Lease Status</th>
+                    <th>Rent</th>
+                    <th>Maintenance</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for unit in units %}
+                <tr>
+                    <td>{{ unit.property.name }}</td>
+                    <td>
+                        <a href="javascript:void(0)" onclick="openEditModal({{ unit.id }}, {{ unit.property.id }}, '{{ unit.unit_name }}', '{{ unit.lease_status }}', {{ unit.rent }}, {{ unit.maintenance }})">
+                            {{ unit.unit_name }}
+                        </a>
+                    </td>
+                    <td>{{ unit.lease_status }}</td>
+                    <td>{{ unit.rent }}</td>
+                    <td>{{ unit.maintenance }}</td>
+                    <td>
+                        <!-- Delete Button -->
+                        <form method="post" action="{% url 'delete_unit' unit.id %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline btn-error btn-sm">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">No units available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function openEditModal(id, propertyId, unitName, leaseStatus, rent, maintenance) {
+        // Set form action URL dynamically
+        document.getElementById('edit_unit_form').action = `{% url 'edit_unit' %}`.replace('0', id);
+
+        
+        // Populate form fields
+        document.getElementById('unit_id').value = id;
+        document.getElementById('edit_property').value = propertyId;
+        document.getElementById('edit_unit_name').value = unitName;
+        document.getElementById('edit_lease_status').value = leaseStatus;
+        document.getElementById('edit_rent').value = rent;
+        document.getElementById('edit_maintenance').value = maintenance;
+        
+        // Open the modal
+        document.getElementById('edit_unit_modal').showModal();
+    }
+
+</script>
+{% endblock %}

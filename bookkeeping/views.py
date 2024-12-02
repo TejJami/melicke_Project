@@ -3,7 +3,7 @@ import fitz  # PyMuPDF
 import re
 from django.shortcuts import render, redirect
 from .models import (
-    EarmarkedTransaction, ParsedTransaction, Property, Tenant, ExpenseProfile
+    EarmarkedTransaction, ParsedTransaction, Property, Tenant, ExpenseProfile, Unit, Landlord
 )
 from django.shortcuts import get_object_or_404
 from datetime import datetime
@@ -20,7 +20,6 @@ def dashboard(request):
         'earmarked': earmarked,
         'parsed': parsed
     })
-
 
 # Upload Bank Statement
 def upload_bank_statement(request):
@@ -191,15 +190,77 @@ def upload_bank_statement(request):
 
     return render(request, 'bookkeeping/upload_statement.html')
 
+#################################################################
+
+# Properties
+def properties(request):
+    properties = Property.objects.all()
+    return render(request, 'bookkeeping/properties.html', {'properties': properties})
+
 # Add Property
 def add_property(request):
     if request.method == 'POST':
-        name = request.POST['name']
-        address = request.POST['address']
-        Property.objects.create(name=name, address=address)
-        return redirect('properties')
-    return render(request, 'bookkeeping/add_property.html')
+        name = request.POST.get('name')
+        address = request.POST.get('address')
+        landlord_id = request.POST.get('landlord')
+        potential_rent = request.POST.get('potential_rent')
 
+        landlord = get_object_or_404(Landlord, id=landlord_id)
+        
+        # Create the property
+        Property.objects.create(
+            name=name,
+            address=address,
+            landlord=landlord,
+            potential_rent=potential_rent,
+        )
+        return redirect('properties')
+
+    landlords = Landlord.objects.all()
+    return render(request, 'bookkeeping/add_property.html', {'landlords': landlords})
+
+# Edit Property
+def edit_property(request, pk):
+    property_obj = get_object_or_404(Property, id=pk)
+
+    if request.method == 'POST':
+        property_obj.name = request.POST.get('name')
+        property_obj.address = request.POST.get('address')
+        landlord_id = request.POST.get('landlord')
+        potential_rent = request.POST.get('potential_rent')
+
+        # Update landlord if provided
+        if landlord_id:
+            landlord = get_object_or_404(Landlord, id=landlord_id)
+            property_obj.landlord = landlord
+
+        property_obj.potential_rent = potential_rent
+        property_obj.save()
+
+        return redirect('properties')
+
+    landlords = Landlord.objects.all()
+    return render(request, 'bookkeeping/edit_property.html', {
+        'property': property_obj,
+        'landlords': landlords,
+    })
+
+# Delete Property
+def delete_property(request, pk):
+    property_obj = get_object_or_404(Property, pk=pk)
+
+    if request.method == 'POST':
+        property_obj.delete()
+        return redirect('properties')
+
+    return render(request, 'bookkeeping/delete_property.html', {'property': property_obj})
+
+#################################################################
+
+# Tenants
+def tenants(request):
+    tenants = Tenant.objects.all()
+    return render(request, 'bookkeeping/tenants.html', {'tenants': tenants})
 
 # Add Tenant
 def add_tenant(request):
@@ -214,6 +275,19 @@ def add_tenant(request):
     return render(request, 'bookkeeping/add_tenant.html', {'properties': properties})
 
 
+#################################################################
+
+# Expenses
+def expenses(request):
+    expenses = ExpenseProfile.objects.all()
+    properties = Property.objects.all()
+    units = Unit.objects.all()
+    return render(request, 'bookkeeping/expenses.html', {
+        'expenses': expenses,
+        'properties': properties,
+        'units': units,
+    })
+
 # Add Expense Profile
 def add_expense_profile(request):
     if request.method == 'POST':
@@ -221,36 +295,28 @@ def add_expense_profile(request):
         account_name = request.POST.get('account_name')
         ust = request.POST.get('ust')
         ust_sch = request.POST.get('ust_sch')
+        property_id = request.POST.get('property')
+        unit_id = request.POST.get('unit')
 
-        # Create the new ExpenseProfile object
+        property_obj = Property.objects.filter(id=property_id).first()
+        unit_obj = Unit.objects.filter(id=unit_id).first()
+
         ExpenseProfile.objects.create(
             profile_name=profile_name,
             account_name=account_name,
             ust=ust,
-            ust_sch=ust_sch
+            ust_sch=ust_sch,
+            property=property_obj,
+            unit=unit_obj,
         )
-
-        # Redirect to the dashboard or expenses page after saving
         return redirect('expenses')
 
-    return redirect('expenses')  # Fallback for GET requests (redirect to the expenses page)
-
-# Properties
-def properties(request):
     properties = Property.objects.all()
-    return render(request, 'bookkeeping/properties.html', {'properties': properties})
-
-
-# Tenants
-def tenants(request):
-    tenants = Tenant.objects.all()
-    return render(request, 'bookkeeping/tenants.html', {'tenants': tenants})
-
-
-# Expenses
-def expenses(request):
-    expenses = ExpenseProfile.objects.all()
-    return render(request, 'bookkeeping/expenses.html', {'expenses': expenses})
+    units = Unit.objects.all()
+    return render(request, 'bookkeeping/add_expense_profile.html', {
+        'properties': properties,
+        'units': units,
+    })
 
 # Edit Expense Profile
 def edit_expense_profile(request):
@@ -278,34 +344,118 @@ def delete_expense_profile(request, pk):
         expense.delete()
         return redirect('expenses')  # Redirect back to the expenses page
 
-# Edit Property
-def edit_property(request):
+# Units
+def units(request):
+    units = Unit.objects.select_related('property').all()
+    return render(request, 'bookkeeping/units.html', {'units': units})
+# Add units
+def add_unit(request):
     if request.method == 'POST':
-        property_id = request.POST.get('property_id')  # Get property ID from the form
-        name = request.POST.get('name')  # Get updated property name
-        address = request.POST.get('address')  # Get updated address
+        property_id = request.POST.get('property')
+        unit_name = request.POST.get('unit_name')
+        lease_status = request.POST.get('lease_status')
+        rent = request.POST.get('rent')
+        maintenance = request.POST.get('maintenance')
+        expense_profile_id = request.POST.get('expense_profile')
 
-        # Retrieve the property and update its details
         property_obj = get_object_or_404(Property, id=property_id)
-        property_obj.name = name
-        property_obj.address = address
-        property_obj.save()  # Save the changes to the database
+        expense_profile = ExpenseProfile.objects.filter(id=expense_profile_id).first()
 
-        return redirect('properties')  # Redirect to the properties page
+        Unit.objects.create(
+            property=property_obj,
+            unit_name=unit_name,
+            lease_status=lease_status,
+            rent=rent,
+            maintenance=maintenance,
+            expense_profile=expense_profile,
+        )
+        return redirect('units')
 
-    return redirect('properties')  # Fallback for non-POST requests
+    properties = Property.objects.all()
+    expense_profiles = ExpenseProfile.objects.all()
+    return render(request, 'bookkeeping/add_unit.html', {
+        'properties': properties,
+        'expense_profiles': expense_profiles,
+    })
 
-# Delete Property
-def delete_property(request, pk):
+# Edit units
+def edit_unit(request, pk):
+    unit = get_object_or_404(Unit, id=pk)
+
     if request.method == 'POST':
-        # Retrieve the property and delete it
-        property_obj = get_object_or_404(Property, pk=pk)
-        property_obj.delete()
+        unit.property_id = request.POST.get('property')
+        unit.unit_name = request.POST.get('unit_name')
+        unit.lease_status = request.POST.get('lease_status')
+        unit.rent = request.POST.get('rent')
+        unit.maintenance = request.POST.get('maintenance')
+        expense_profile_id = request.POST.get('expense_profile')
 
-        return redirect('properties')  # Redirect to the properties page
+        unit.expense_profile = ExpenseProfile.objects.filter(id=expense_profile_id).first()
+        unit.save()
 
-    return redirect('properties')  # Fallback for non-POST requests
+        return redirect('units')
 
+    properties = Property.objects.all()
+    expense_profiles = ExpenseProfile.objects.all()
+    return render(request, 'bookkeeping/edit_unit.html', {
+        'unit': unit,
+        'properties': properties,
+        'expense_profiles': expense_profiles,
+    })
+
+# Delete units
+def delete_unit(request, pk):
+    unit = get_object_or_404(Unit, id=pk)
+
+    if request.method == 'POST':
+        unit.delete()
+        return redirect('units')
+
+    return render(request, 'bookkeeping/delete_unit.html', {'unit': unit})
+
+# Landlords
+def landlords(request):
+    landlords = Landlord.objects.all()
+    return render(request, 'bookkeeping/landlords.html', {'landlords': landlords})
+
+# Add Landlord
+def add_landlord(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        contact_info = request.POST.get('contact_info')
+        iban = request.POST.get('iban')
+
+        Landlord.objects.create(name=name, contact_info=contact_info, iban=iban)
+        return redirect('landlords')
+
+    return render(request, 'bookkeeping/add_landlord.html')
+
+# Edit Landlord
+def edit_landlord(request, pk):
+    landlord = get_object_or_404(Landlord, id=pk)
+
+    if request.method == 'POST':
+        landlord.name = request.POST.get('name')
+        landlord.contact_info = request.POST.get('contact_info')
+        landlord.iban = request.POST.get('iban')
+        landlord.save()
+
+        return redirect('landlords')
+
+    return render(request, 'bookkeeping/edit_landlord.html', {'landlord': landlord})
+
+# Delete Landlord
+def delete_landlord(request, pk):
+    landlord = get_object_or_404(Landlord, id=pk)
+
+    if request.method == 'POST':
+        landlord.delete()
+        return redirect('landlords')
+
+    return render(request, 'bookkeeping/delete_landlord.html', {'landlord': landlord})
+
+
+# Export Parsed Transactions
 def export_parsed_transactions(request):
     # Create a workbook and a sheet
     wb = openpyxl.Workbook()

@@ -47,6 +47,28 @@
                         <option value="Teilw">Teilw</option>
                     </select>
                 </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Property (Optional)</span>
+                    </label>
+                    <select name="property" class="select select-bordered w-full">
+                        <option value="">-- None --</option>
+                        {% for property in properties %}
+                            <option value="{{ property.id }}">{{ property.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Unit (Optional)</span>
+                    </label>
+                    <select name="unit" class="select select-bordered w-full">
+                        <option value="">-- None --</option>
+                        {% for unit in units %}
+                            <option value="{{ unit.id }}">{{ unit.unit_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>                
                 <div class="modal-action">
                     <button type="submit" class="btn btn-outline">Add</button>
                     <button type="button" class="btn btn-outline btn-error" onclick="add_expense_modal.close()">Cancel</button>
@@ -110,6 +132,8 @@
         <table class="table w-full text-left">
             <thead>
                 <tr>
+                    <th>Proprty</th>
+                    <th>Unit</th>
                     <th>Profile Name</th>
                     <th>Account Name</th>
                     <th>UST</th>
@@ -119,8 +143,10 @@
             <tbody>
                 {% for expense in expenses %}
                 <tr>
+                    <td>{{ expense.property.name  }}</td>
+                    <td>{{ expense.unit.unit_name }}</td>
                     <td>
-                        <a href="javascript:void(0)" onclick="openEditModal({{ expense.id }}, '{{ expense.profile_name }}', '{{ expense.account_name }}', '{{ expense.ust }}', '{{ expense.ust_sch }}')">
+                        <a href="javascript:void(0)" onclick="openEditModal({{ expense.id }}, '{{ expense.profile_name }}', '{{ expense.account_name }}', '{{ expense.ust }}', '{{ expense.ust_sch }}', {{ expense.property.id|default:"null" }}, {{ expense.unit.id|default:"null" }})">
                             {{ expense.profile_name }}
                         </a>
                     </td>
@@ -128,13 +154,13 @@
                     <td>{{ expense.get_ust_display }}</td>
                     <td>{{ expense.get_ust_sch_display }}</td>
                     <td>
-                        <!-- Delete Button -->
                         <form method="post" action="{% url 'delete_expense_profile' expense.id %}" class="inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-outline btn-error btn-sm">Delete</button>
                         </form>
                     </td>
                 </tr>
+                
                 {% empty %}
                 <tr>
                     <td colspan="5">No expense profiles available.</td>
@@ -146,13 +172,16 @@
 </div>
 
 <script>
-    function openEditModal(id, profileName, accountName, ust, ustSch) {
+    function openEditModal(id, profileName, accountName, ust, ustSch, propertyId, unitId) {
         document.getElementById('expense_id').value = id;
         document.getElementById('edit_profile_name').value = profileName;
         document.getElementById('edit_account_name').value = accountName;
         document.getElementById('edit_ust').value = ust;
         document.getElementById('edit_ust_sch').value = ustSch;
+        document.querySelector(`select[name="property"]`).value = propertyId || "";
+        document.querySelector(`select[name="unit"]`).value = unitId || "";
         document.getElementById('edit_expense_modal').showModal();
     }
+
 </script>
 {% endblock %}
