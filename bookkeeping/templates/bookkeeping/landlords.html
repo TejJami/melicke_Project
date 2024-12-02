@@ -1,0 +1,112 @@
+{% extends 'bookkeeping/base.html' %}
+
+{% block title %}Landlords{% endblock %}
+
+{% block content %}
+<div class="card bg-white shadow-md p-5">
+    <h1 class="text-2xl font-bold mb-5">Landlords</h1>
+
+    <!-- Add Landlord Button -->
+    <button class="btn btn-outline mb-5" onclick="add_landlord_modal.showModal()">Add Landlord</button>
+
+    <!-- Add Landlord Modal -->
+    <dialog id="add_landlord_modal" class="modal">
+        <div class="modal-box">
+            <form method="post" action="{% url 'add_landlord' %}">
+                {% csrf_token %}
+                <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_landlord_modal.close()">✕</button>
+                <h1 class="text-lg font-bold mb-4">Add Landlord</h1>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Name</span>
+                    </label>
+                    <input type="text" name="name" class="input input-bordered w-full" placeholder="Name" required>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Contact Info</span>
+                    </label>
+                    <textarea name="contact_info" class="textarea textarea-bordered w-full" placeholder="Contact Info" required></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">IBAN</span>
+                    </label>
+                    <input type="text" name="iban" class="input input-bordered w-full" placeholder="IBAN">
+                </div>
+                <div class="modal-action">
+                    <button type="submit" class="btn btn-outline">Add</button>
+                    <button type="button" class="btn btn-outline btn-error" onclick="add_landlord_modal.close()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
+    <!-- Landlords List -->
+    <ul class="list-disc pl-5">
+        {% for landlord in landlords %}
+        <li class="mb-2 flex justify-between items-center">
+            <span>
+                <span class="font-semibold">{{ landlord.name }}</span> - {{ landlord.contact_info }} | 
+                IBAN: {{ landlord.iban }}
+            </span>
+            <div>
+                <!-- Edit Button -->
+                <button class="btn btn-sm btn-outline mr-2" onclick="openEditLandlordModal('{{ landlord.id }}', '{{ landlord.name }}', '{{ landlord.contact_info }}', '{{ landlord.iban }}')">Edit</button>
+                <!-- Delete Form -->
+                <form method="post" action="{% url 'delete_landlord' landlord.id %}" class="inline" onsubmit="return confirm('Are you sure you want to delete this landlord?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline btn-error">Delete</button>
+                </form>
+            </div>
+        </li>
+        {% empty %}
+        <p class="text-gray-500">No landlords available.</p>
+        {% endfor %}
+    </ul>
+</div>
+
+<!-- Edit Landlord Modal -->
+<dialog id="edit_landlord_modal" class="modal">
+    <div class="modal-box">
+        <form method="post" action="{% url 'edit_landlord' %}">
+            {% csrf_token %}
+            <input type="hidden" name="landlord_id" id="edit_landlord_id">
+            <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="edit_landlord_modal.close()">✕</button>
+            <h1 class="text-lg font-bold mb-4">Edit Landlord</h1>
+            <div class="mb-4">
+                <label class="label">
+                    <span class="label-text">Name</span>
+                </label>
+                <input type="text" name="name" id="edit_landlord_name" class="input input-bordered w-full" required>
+            </div>
+            <div class="mb-4">
+                <label class="label">
+                    <span class="label-text">Contact Info</span>
+                </label>
+                <textarea name="contact_info" id="edit_landlord_contact_info" class="textarea textarea-bordered w-full" required></textarea>
+            </div>
+            <div class="mb-4">
+                <label class="label">
+                    <span class="label-text">IBAN</span>
+                </label>
+                <input type="text" name="iban" id="edit_landlord_iban" class="input input-bordered w-full">
+            </div>
+            <div class="modal-action">
+                <button type="submit" class="btn btn-outline">Save</button>
+                <button type="button" class="btn btn-outline btn-error" onclick="edit_landlord_modal.close()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<script>
+    function openEditLandlordModal(id, name, contactInfo, iban) {
+        document.getElementById('edit_landlord_id').value = id;
+        document.getElementById('edit_landlord_name').value = name;
+        document.getElementById('edit_landlord_contact_info').value = contactInfo;
+        document.getElementById('edit_landlord_iban').value = iban;
+        document.getElementById('edit_landlord_modal').showModal();
+    }
+</script>
+{% endblock %}

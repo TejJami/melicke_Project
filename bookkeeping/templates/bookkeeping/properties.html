@@ -7,7 +7,7 @@
     <!-- Trigger Button -->
     <button class="btn btn-outline mb-5" onclick="add_property_modal.showModal()">Add Property</button>
 
-    <!-- Modal -->
+    <!-- Add Property Modal -->
     <dialog id="add_property_modal" class="modal">
         <div class="modal-box">
             <form method="post" action="{% url 'add_property' %}">
@@ -26,6 +26,22 @@
                     </label>
                     <textarea name="address" class="textarea textarea-bordered w-full" placeholder="Address" required></textarea>
                 </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Landlord</span>
+                    </label>
+                    <select name="landlord" class="select select-bordered w-full">
+                        {% for landlord in landlords %}
+                        <option value="{{ landlord.id }}">{{ landlord.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Potential Rent</span>
+                    </label>
+                    <input type="number" name="potential_rent" class="input input-bordered w-full" placeholder="Potential Rent">
+                </div>
                 <div class="modal-action">
                     <button type="submit" class="btn btn-outline">Add</button>
                     <button type="button" class="btn btn-outline btn-error" onclick="add_property_modal.close()">Cancel</button>
@@ -42,6 +58,8 @@
                 <tr>
                     <th>Property Name</th>
                     <th>Address</th>
+                    <th>Landlord</th>
+                    <th>Potential Rent</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -51,9 +69,22 @@
                     <td>{{ property.name }}</td>
                     <td>{{ property.address }}</td>
                     <td>
+                        {% if property.landlord %}
+                            {{ property.landlord.name }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>{{ property.potential_rent }}</td>
+                    <td>
                         <!-- Edit Button -->
-                        <button class="btn btn-sm btn-outline" onclick="openEditModal('{{ property.id }}', '{{ property.name }}', '{{ property.address }}')">Edit</button>
-                        <!-- Delete Form -->
+                        <button class="btn btn-sm btn-outline" onclick="openEditModal(
+                            '{{ property.id }}',
+                            '{{ property.name }}',
+                            '{{ property.address }}',
+                            '{% if property.landlord %}{{ property.landlord.id }}{% else %}""{% endif %}',
+                            '{{ property.potential_rent }}')">Edit</button>
+                                                <!-- Delete Form -->
                         <form method="post" action="{% url 'delete_property' property.id %}" class="inline" onsubmit="return confirm('Are you sure you want to delete this property?');">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-sm btn-outline btn-error">Delete</button>
@@ -62,7 +93,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="3" class="text-center text-gray-500">No properties available.</td>
+                    <td colspan="5" class="text-center text-gray-500">No properties available.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -71,15 +102,17 @@
 </div>
 
 <script>
-    function openEditModal(id, name, address) {
+    function openEditModal(id, name, address, landlordId, potentialRent) {
         document.getElementById('edit_property_id').value = id;
         document.getElementById('edit_property_name').value = name;
         document.getElementById('edit_property_address').value = address;
+        document.getElementById('edit_property_landlord').value = landlordId;
+        document.getElementById('edit_property_potential_rent').value = potentialRent;
         document.getElementById('edit_property_modal').showModal();
     }
 </script>
 
-<!-- Edit Modal -->
+<!-- Edit Property Modal -->
 <dialog id="edit_property_modal" class="modal">
     <div class="modal-box">
         <form method="post" action="{% url 'edit_property' %}">
@@ -98,6 +131,22 @@
                     <span class="label-text">Address</span>
                 </label>
                 <textarea name="address" id="edit_property_address" class="textarea textarea-bordered w-full" required></textarea>
+            </div>
+            <div class="mb-4">
+                <label class="label">
+                    <span class="label-text">Landlord</span>
+                </label>
+                <select name="landlord" id="edit_property_landlord" class="select select-bordered w-full">
+                    {% for landlord in landlords %}
+                    <option value="{{ landlord.id }}">{{ landlord.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="label">
+                    <span class="label-text">Potential Rent</span>
+                </label>
+                <input type="number" name="potential_rent" id="edit_property_potential_rent" class="input input-bordered w-full">
             </div>
             <div class="modal-action">
                 <button type="submit" class="btn btn-outline">Save</button>

@@ -265,14 +265,50 @@ def tenants(request):
 # Add Tenant
 def add_tenant(request):
     if request.method == 'POST':
-        name = request.POST['name']
-        property_id = request.POST['property']
-        iban = request.POST['iban']
-        property = Property.objects.get(id=property_id)
-        Tenant.objects.create(name=name, property=property, iban=iban)
+        name = request.POST.get('name')
+        property_id = request.POST.get('property')
+        iban = request.POST.get('iban')
+
+        # Get the related property
+        property_obj = get_object_or_404(Property, id=property_id)
+
+        # Create the tenant
+        Tenant.objects.create(name=name, property=property_obj, iban=iban)
         return redirect('tenants')
+
+    # Retrieve all properties for the dropdown
     properties = Property.objects.all()
     return render(request, 'bookkeeping/add_tenant.html', {'properties': properties})
+
+# Edit Tenant
+def edit_tenant(request, pk):
+    tenant = get_object_or_404(Tenant, id=pk)
+
+    if request.method == 'POST':
+        tenant.name = request.POST.get('name')
+        property_id = request.POST.get('property')
+        tenant.iban = request.POST.get('iban')
+
+        # Update the related property
+        tenant.property = get_object_or_404(Property, id=property_id)
+
+        # Save the updated tenant
+        tenant.save()
+        return redirect('tenants')
+
+    # Retrieve all properties for the dropdown
+    properties = Property.objects.all()
+    return render(request, 'bookkeeping/edit_tenant.html', {'tenant': tenant, 'properties': properties})
+
+# Delete Tenant
+def delete_tenant(request, pk):
+    tenant = get_object_or_404(Tenant, id=pk)
+
+    if request.method == 'POST':
+        tenant.delete()
+        return redirect('tenants')
+
+    return render(request, 'bookkeeping/delete_tenant.html', {'tenant': tenant})
 
 
 #################################################################

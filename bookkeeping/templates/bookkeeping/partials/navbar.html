@@ -25,6 +25,11 @@
                 </a>
             </li>
             <li>
+                <a href="{% url 'landlords' %}" class="{% if request.resolver_match.url_name == 'landlords' %}active{% endif %}">
+                    Landlords
+                </a>
+            </li>
+            <li>
                 <a href="{% url 'expenses' %}" class="{% if request.resolver_match.url_name == 'expenses' %}active{% endif %}">
                     Expenses
                 </a>
