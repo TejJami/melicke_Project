@@ -195,7 +195,11 @@ def upload_bank_statement(request):
 # Properties
 def properties(request):
     properties = Property.objects.all()
-    return render(request, 'bookkeeping/properties.html', {'properties': properties})
+    landlords = Landlord.objects.all()  # Fetch all landlords for the dropdown
+    return render(request, 'bookkeeping/properties.html', {
+        'properties': properties,
+        'landlords': landlords,
+    })
 
 # Add Property
 def add_property(request):
@@ -205,6 +209,7 @@ def add_property(request):
         landlord_id = request.POST.get('landlord')
         potential_rent = request.POST.get('potential_rent')
 
+        # Ensure landlord exists
         landlord = get_object_or_404(Landlord, id=landlord_id)
         
         # Create the property
@@ -216,8 +221,9 @@ def add_property(request):
         )
         return redirect('properties')
 
+    # Pass landlords for the dropdown
     landlords = Landlord.objects.all()
-    return render(request, 'bookkeeping/add_property.html', {'landlords': landlords})
+    return render(request, 'bookkeeping/properties.html', {'landlords': landlords})
 
 # Edit Property
 def edit_property(request, pk):
@@ -239,8 +245,9 @@ def edit_property(request, pk):
 
         return redirect('properties')
 
+    # Pass landlords for the dropdown
     landlords = Landlord.objects.all()
-    return render(request, 'bookkeeping/edit_property.html', {
+    return render(request, 'bookkeeping/properties.html', {
         'property': property_obj,
         'landlords': landlords,
     })
@@ -260,7 +267,13 @@ def delete_property(request, pk):
 # Tenants
 def tenants(request):
     tenants = Tenant.objects.all()
-    return render(request, 'bookkeeping/tenants.html', {'tenants': tenants})
+    properties = Property.objects.all() 
+
+    return render(request, 'bookkeeping/tenants.html', 
+    {'tenants': tenants,
+    'properties': properties
+    }
+    )
 
 # Add Tenant
 def add_tenant(request):
@@ -383,7 +396,13 @@ def delete_expense_profile(request, pk):
 # Units
 def units(request):
     units = Unit.objects.select_related('property').all()
-    return render(request, 'bookkeeping/units.html', {'units': units})
+    properties = Property.objects.all()
+
+    return render(request, 'bookkeeping/units.html',
+     {'units': units,
+        'properties': properties
+     })
+
 # Add units
 def add_unit(request):
     if request.method == 'POST':
@@ -392,26 +411,24 @@ def add_unit(request):
         lease_status = request.POST.get('lease_status')
         rent = request.POST.get('rent')
         maintenance = request.POST.get('maintenance')
-        expense_profile_id = request.POST.get('expense_profile')
 
+        # Ensure the property exists
         property_obj = get_object_or_404(Property, id=property_id)
-        expense_profile = ExpenseProfile.objects.filter(id=expense_profile_id).first()
 
+        # Create the unit
         Unit.objects.create(
             property=property_obj,
             unit_name=unit_name,
             lease_status=lease_status,
             rent=rent,
             maintenance=maintenance,
-            expense_profile=expense_profile,
         )
         return redirect('units')
 
+    # Fetch properties for the dropdown
     properties = Property.objects.all()
-    expense_profiles = ExpenseProfile.objects.all()
     return render(request, 'bookkeeping/add_unit.html', {
         'properties': properties,
-        'expense_profiles': expense_profiles,
     })
 
 # Edit units

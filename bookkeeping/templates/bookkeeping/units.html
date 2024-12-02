@@ -37,8 +37,8 @@
                     </label>
                     <select name="lease_status" class="select select-bordered w-full" required>
                         <option value="empty">Empty</option>
-                        <option value="renovation">Renovation</option>
-                        <option value="filled">Filled</option>
+                        <option value="renovation">Under Renovation</option>
+                        <option value="filled">Leased</option>
                     </select>
                 </div>
                 <div class="mb-4">
@@ -91,8 +91,8 @@
                     </label>
                     <select name="lease_status" id="edit_lease_status" class="select select-bordered w-full" required>
                         <option value="empty">Empty</option>
-                        <option value="renovation">Renovation</option>
-                        <option value="filled">Filled</option>
+                        <option value="renovation">Under Renovation</option>
+                        <option value="filled">Leased</option>
                     </select>
                 </div>
                 <div class="mb-4">
@@ -151,7 +151,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6">No units available.</td>
+                    <td colspan="6" class="text-center text-gray-500">No units available.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -162,9 +162,8 @@
 <script>
     function openEditModal(id, propertyId, unitName, leaseStatus, rent, maintenance) {
         // Set form action URL dynamically
-        document.getElementById('edit_unit_form').action = `{% url 'edit_unit' %}`.replace('0', id);
+        document.getElementById('edit_unit_form').action = `/units/edit_unit/${id}/`;
 
-        
         // Populate form fields
         document.getElementById('unit_id').value = id;
         document.getElementById('edit_property').value = propertyId;
@@ -172,10 +171,9 @@
         document.getElementById('edit_lease_status').value = leaseStatus;
         document.getElementById('edit_rent').value = rent;
         document.getElementById('edit_maintenance').value = maintenance;
-        
+
         // Open the modal
         document.getElementById('edit_unit_modal').showModal();
     }
-
 </script>
 {% endblock %}
