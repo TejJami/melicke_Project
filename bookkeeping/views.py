@@ -203,54 +203,95 @@ def properties(request):
 
 # Add Property
 def add_property(request):
+    # Create a formset for multiple units
+    UnitFormSet = modelformset_factory(Unit, fields=('unit_name', 'floor_area', 'rooms', 'baths', 'market_rent'), extra=1, can_delete=True)
+
     if request.method == 'POST':
+        # Property fields
+        property_type = request.POST.get('property_type')
         name = request.POST.get('name')
-        address = request.POST.get('address')
-        landlord_id = request.POST.get('landlord')
+        street = request.POST.get('street')
+        building_no = request.POST.get('building_no')
+        city = request.POST.get('city')
+        zip_code = request.POST.get('zip')
+        country = request.POST.get('country')
+        landlord_ids = request.POST.getlist('landlords')
         potential_rent = request.POST.get('potential_rent')
 
-        # Ensure landlord exists
-        landlord = get_object_or_404(Landlord, id=landlord_id)
-        
         # Create the property
-        Property.objects.create(
+        property_obj = Property.objects.create(
+            property_type=property_type,
             name=name,
-            address=address,
-            landlord=landlord,
+            street=street,
+            building_no=building_no,
+            city=city,
+            zip=zip_code,
+            country=country,
             potential_rent=potential_rent,
         )
+        property_obj.landlords.set(landlord_ids)  # Set many-to-many landlords
+
+        # Save units associated with the property
+        unit_formset = UnitFormSet(request.POST, queryset=Unit.objects.none(), prefix='units')
+        if unit_formset.is_valid():
+            units = unit_formset.save(commit=False)
+            for unit in units:
+                unit.property = property_obj
+                unit.save()
+
         return redirect('properties')
 
-    # Pass landlords for the dropdown
     landlords = Landlord.objects.all()
-    return render(request, 'bookkeeping/properties.html', {'landlords': landlords})
+    unit_formset = UnitFormSet(queryset=Unit.objects.none(), prefix='units')
+
+    return render(request, 'bookkeeping/add_property.html', {
+        'landlords': landlords,
+        'unit_formset': unit_formset,
+    })
 
 # Edit Property
 def edit_property(request, pk):
     property_obj = get_object_or_404(Property, id=pk)
+    UnitFormSet = modelformset_factory(Unit, fields=('unit_name', 'floor_area', 'rooms', 'baths', 'market_rent'), extra=0, can_delete=True)
 
     if request.method == 'POST':
+        property_obj.property_type = request.POST.get('property_type')
         property_obj.name = request.POST.get('name')
-        property_obj.address = request.POST.get('address')
-        landlord_id = request.POST.get('landlord')
-        potential_rent = request.POST.get('potential_rent')
+        property_obj.street = request.POST.get('street')
+        property_obj.building_no = request.POST.get('building_no')
+        property_obj.city = request.POST.get('city')
+        property_obj.zip = request.POST.get('zip')
+        property_obj.country = request.POST.get('country')
+        property_obj.potential_rent = request.POST.get('potential_rent')
 
-        # Update landlord if provided
-        if landlord_id:
-            landlord = get_object_or_404(Landlord, id=landlord_id)
-            property_obj.landlord = landlord
+        landlord_ids = request.POST.getlist('landlords')
+        property_obj.landlords.set(landlord_ids)  # Update landlords
 
-        property_obj.potential_rent = potential_rent
+        # Save the property
         property_obj.save()
+
+        # Update linked units
+        unit_formset = UnitFormSet(request.POST, queryset=property_obj.units.all(), prefix='units')
+        if unit_formset.is_valid():
+            units = unit_formset.save(commit=False)
+            for unit in units:
+                unit.property = property_obj
+                unit.save()
+            # Delete any units marked for deletion
+            for deleted_unit in unit_formset.deleted_objects:
+                deleted_unit.delete()
 
         return redirect('properties')
 
-    # Pass landlords for the dropdown
     landlords = Landlord.objects.all()
-    return render(request, 'bookkeeping/properties.html', {
+    unit_formset = UnitFormSet(queryset=property_obj.units.all(), prefix='units')
+
+    return render(request, 'bookkeeping/edit_property.html', {
         'property': property_obj,
         'landlords': landlords,
+        'unit_formset': unit_formset,
     })
+
 
 # Delete Property
 def delete_property(request, pk):
@@ -408,9 +449,10 @@ def add_unit(request):
     if request.method == 'POST':
         property_id = request.POST.get('property')
         unit_name = request.POST.get('unit_name')
-        lease_status = request.POST.get('lease_status')
-        rent = request.POST.get('rent')
-        maintenance = request.POST.get('maintenance')
+        floor_area = request.POST.get('floor_area')
+        rooms = request.POST.get('rooms')
+        baths = request.POST.get('baths')
+        market_rent = request.POST.get('market_rent')
 
         # Ensure the property exists
         property_obj = get_object_or_404(Property, id=property_id)
@@ -419,17 +461,17 @@ def add_unit(request):
         Unit.objects.create(
             property=property_obj,
             unit_name=unit_name,
-            lease_status=lease_status,
-            rent=rent,
-            maintenance=maintenance,
+            floor_area=floor_area,
+            rooms=rooms,
+            baths=baths,
+            market_rent=market_rent,
         )
         return redirect('units')
 
     # Fetch properties for the dropdown
     properties = Property.objects.all()
-    return render(request, 'bookkeeping/add_unit.html', {
-        'properties': properties,
-    })
+    return render(request, 'bookkeeping/add_unit.html', {'properties': properties})
+
 
 # Edit units
 def edit_unit(request, pk):
@@ -438,23 +480,17 @@ def edit_unit(request, pk):
     if request.method == 'POST':
         unit.property_id = request.POST.get('property')
         unit.unit_name = request.POST.get('unit_name')
-        unit.lease_status = request.POST.get('lease_status')
-        unit.rent = request.POST.get('rent')
-        unit.maintenance = request.POST.get('maintenance')
-        expense_profile_id = request.POST.get('expense_profile')
-
-        unit.expense_profile = ExpenseProfile.objects.filter(id=expense_profile_id).first()
+        unit.floor_area = request.POST.get('floor_area')
+        unit.rooms = request.POST.get('rooms')
+        unit.baths = request.POST.get('baths')
+        unit.market_rent = request.POST.get('market_rent')
         unit.save()
 
         return redirect('units')
 
     properties = Property.objects.all()
-    expense_profiles = ExpenseProfile.objects.all()
-    return render(request, 'bookkeeping/edit_unit.html', {
-        'unit': unit,
-        'properties': properties,
-        'expense_profiles': expense_profiles,
-    })
+    return render(request, 'bookkeeping/edit_unit.html', {'unit': unit, 'properties': properties})
+
 
 # Delete units
 def delete_unit(request, pk):
