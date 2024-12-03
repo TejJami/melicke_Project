@@ -3,13 +3,13 @@
 {% block title %}Tenants{% endblock %}
 
 {% block content %}
-<div class="card bg-white shadow-md p-5 h-screen">
+<div class="card bg-base-100 shadow-md p-5 h-screen">
     <!-- Add Tenant Button -->
     <button class="btn btn-outline mb-5" onclick="add_tenant_modal.showModal()">Add Tenant</button>
 
     <!-- Add Tenant Modal -->
     <dialog id="add_tenant_modal" class="modal">
-        <div class="modal-box">
+        <div class="modal-box bg-base-100 text-base-content">
             <form method="post" action="{% url 'add_tenant' %}">
                 {% csrf_token %}
                 <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_tenant_modal.close()">✕</button>
@@ -47,12 +47,13 @@
     <!-- Tenants Table -->
     <div class="overflow-x-auto">
         <h2 class="text-xl font-semibold mb-3">All Tenants</h2>
-        <table class="table w-full text-left">
+        <table class="table w-full text-left bg-base-100 text-base-content">
             <thead>
-                <tr>
+                <tr class="border-b border-base-200">
                     <th>Name</th>
                     <th>Property</th>
                     <th>IBAN</th>
+                    <th>Tags</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -62,6 +63,7 @@
                     <td>{{ tenant.name }}</td>
                     <td>{{ tenant.property.name }}</td>
                     <td>{{ tenant.iban }}</td>
+                    <td></td>  
                     <td>
                         <!-- Edit Button -->
                         <button class="btn btn-sm btn-outline mr-2" onclick="openEditTenantModal('{{ tenant.id }}', '{{ tenant.name }}', '{{ tenant.property.id }}', '{{ tenant.iban }}')">Edit</button>
@@ -74,7 +76,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="4" class="text-center text-gray-500">No tenants available.</td>
+                    <td colspan="5" class="text-center text-base-content/50">No tenants available.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -84,7 +86,7 @@
 
 <!-- Edit Tenant Modal -->
 <dialog id="edit_tenant_modal" class="modal">
-    <div class="modal-box">
+    <div class="modal-box bg-base-100 text-base-content">
         <form method="post" action="{% url 'edit_tenant' %}">
             {% csrf_token %}
             <input type="hidden" name="tenant_id" id="edit_tenant_id">

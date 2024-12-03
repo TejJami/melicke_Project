@@ -3,13 +3,13 @@
 {% block title %}Landlords{% endblock %}
 
 {% block content %}
-<div class="card bg-white shadow-md p-5 h-screen">
+<div class="card bg-base-100 shadow-md p-5 h-screen">
     <!-- Add Landlord Button -->
     <button class="btn btn-outline mb-5" onclick="add_landlord_modal.showModal()">Add Landlord</button>
 
     <!-- Add Landlord Modal -->
     <dialog id="add_landlord_modal" class="modal">
-        <div class="modal-box">
+        <div class="modal-box bg-base-100 text-base-content">
             <form method="post" action="{% url 'add_landlord' %}">
                 {% csrf_token %}
                 <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_landlord_modal.close()">✕</button>
@@ -43,9 +43,9 @@
     <!-- Landlords Table -->
     <div class="overflow-x-auto">
         <h2 class="text-xl font-semibold mb-3">All Landlords</h2>
-        <table class="table w-full text-left">
+        <table class="table w-full text-left bg-base-100 text-base-content">
             <thead>
-                <tr>
+                <tr class="border-b border-base-200">
                     <th>Name</th>
                     <th>Contact Info</th>
                     <th>IBAN</th>
@@ -70,7 +70,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="4" class="text-center text-gray-500">No landlords available.</td>
+                    <td colspan="4" class="text-center text-base-content/50">No landlords available.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -80,7 +80,7 @@
 
 <!-- Edit Landlord Modal -->
 <dialog id="edit_landlord_modal" class="modal">
-    <div class="modal-box">
+    <div class="modal-box bg-base-100 text-base-content">
         <form method="post" action="{% url 'edit_landlord' %}">
             {% csrf_token %}
             <input type="hidden" name="landlord_id" id="edit_landlord_id">

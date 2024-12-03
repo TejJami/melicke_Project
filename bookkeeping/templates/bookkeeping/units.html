@@ -3,14 +3,14 @@
 {% block title %}Units{% endblock %}
 
 {% block content %}
-<div class="card bg-white shadow-md p-5 h-screen">
+<div class="card bg-base-100 shadow-md p-5 h-screen">
 
     <!-- Trigger Button -->
-    <button class="btn btn-outline mb-5 " onclick="add_unit_modal.showModal()">Add Unit</button>
+    <button class="btn btn-outline mb-5" onclick="add_unit_modal.showModal()">Add Unit</button>
 
     <!-- Add Unit Modal -->
     <dialog id="add_unit_modal" class="modal">
-        <div class="modal-box">
+        <div class="modal-box bg-base-100 text-base-content">
             <form method="post" action="{% url 'add_unit' %}">
                 {% csrf_token %}
                 <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_unit_modal.close()">✕</button>
@@ -63,7 +63,7 @@
 
     <!-- Edit Unit Modal -->
     <dialog id="edit_unit_modal" class="modal">
-        <div class="modal-box">
+        <div class="modal-box bg-base-100 text-base-content">
             <form method="post" id="edit_unit_form">
                 {% csrf_token %}
                 <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="edit_unit_modal.close()">✕</button>
@@ -118,9 +118,9 @@
     <!-- Unit List -->
     <div class="overflow-x-auto">
         <h2 class="text-xl font-semibold mb-3">All Units</h2>
-        <table class="table w-full text-left">
+        <table class="table w-full text-left bg-base-100 text-base-content">
             <thead>
-                <tr>
+                <tr class="border-b border-base-200">
                     <th>Property</th>
                     <th>Unit Name</th>
                     <th>Lease Status</th>
@@ -151,7 +151,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center text-gray-500">No units available.</td>
+                    <td colspan="6" class="text-center text-base-content/50">No units available.</td>
                 </tr>
                 {% endfor %}
             </tbody>

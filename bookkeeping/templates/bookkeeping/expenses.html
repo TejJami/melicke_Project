@@ -3,14 +3,14 @@
 {% block title %}Expenses{% endblock %}
 
 {% block content %}
-<div class="card bg-white shadow-md p-5 h-screen">
+<div class="card bg-base-100 shadow-md p-5 h-screen">
 
     <!-- Trigger Button -->
     <button class="btn btn-outline mb-5" onclick="add_expense_modal.showModal()">Add Expense Profile</button>
 
-    <!-- Modal -->
+    <!-- Add Expense Modal -->
     <dialog id="add_expense_modal" class="modal">
-        <div class="modal-box">
+        <div class="modal-box bg-base-100 text-base-content">
             <form method="post" action="{% url 'add_expense_profile' %}">
                 {% csrf_token %}
                 <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_expense_modal.close()">✕</button>
@@ -77,9 +77,9 @@
         </div>
     </dialog>
 
-    <!-- Edit Modal -->
+    <!-- Edit Expense Modal -->
     <dialog id="edit_expense_modal" class="modal">
-        <div class="modal-box">
+        <div class="modal-box bg-base-100 text-base-content">
             <form method="post" action="{% url 'edit_expense_profile' %}">
                 {% csrf_token %}
                 <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="edit_expense_modal.close()">✕</button>
@@ -124,26 +124,26 @@
             </form>
         </div>
     </dialog>
-    
 
     <!-- Expense Profiles List -->
     <div class="overflow-x-auto">
         <h2 class="text-xl font-semibold mb-3">Expense Profiles</h2>
-        <table class="table w-full text-left">
+        <table class="table w-full text-left bg-base-100 text-base-content">
             <thead>
-                <tr>
-                    <th>Proprty</th>
+                <tr class="border-b border-base-200">
+                    <th>Property</th>
                     <th>Unit</th>
                     <th>Profile Name</th>
                     <th>Account Name</th>
                     <th>UST</th>
                     <th>UST-Schlüssel</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for expense in expenses %}
                 <tr>
-                    <td>{{ expense.property.name  }}</td>
+                    <td>{{ expense.property.name }}</td>
                     <td>{{ expense.unit.unit_name }}</td>
                     <td>
                         <a href="javascript:void(0)" onclick="openEditModal({{ expense.id }}, '{{ expense.profile_name }}', '{{ expense.account_name }}', '{{ expense.ust }}', '{{ expense.ust_sch }}', {{ expense.property.id|default:"null" }}, {{ expense.unit.id|default:"null" }})">
@@ -160,10 +160,9 @@
                         </form>
                     </td>
                 </tr>
-                
                 {% empty %}
                 <tr>
-                    <td colspan="5">No expense profiles available.</td>
+                    <td colspan="7" class="text-center text-base-content/50">No expense profiles available.</td>
                 </tr>
                 {% endfor %}
             </tbody>           
@@ -182,6 +181,5 @@
         document.querySelector(`select[name="unit"]`).value = unitId || "";
         document.getElementById('edit_expense_modal').showModal();
     }
-
 </script>
 {% endblock %}

@@ -3,20 +3,20 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="card bg-white shadow-md p-5 h-screen">
+<div class="card bg-base-100 shadow-md p-5 h-screen">
     
     <!-- Trigger Button -->
     <button class="btn btn-outline mb-5" onclick="upload_modal.showModal()">Upload Bank Statement</button>
 
     <!-- Modal -->
     <dialog id="upload_modal" class="modal">
-        <div class="modal-box">
+        <div class="modal-box bg-base-100 text-base-content">
             <form method="post" enctype="multipart/form-data" action="{% url 'upload_statement' %}">
                 {% csrf_token %}
                 <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="upload_modal.close()">✕</button>
                 <h1 class="text-lg mb-4">Upload Bank Statement</h1>
                 <div class="mb-4">
-                    <input type="file" name="statement" id="statement" class="file-input file-input-bordered file-input-sm w-full max-w-xs" >
+                    <input type="file" name="statement" id="statement" class="file-input file-input-bordered file-input-sm w-full max-w-xs">
                 </div>
                 <div class="flex justify-end">
                     <button type="button" class="btn btn-outline btn-error mr-2" onclick="upload_modal.close()">Cancel</button>
@@ -27,11 +27,11 @@
     </dialog>
 
     <!-- Earmarked Transactions -->
-    <div class="max-h-48 overflow-y-auto border-b pb-4 mb-4">
+    <div class="h-1/2 overflow-y-auto border-b border-base-200 pb-4 mb-4">
         <h2 class="text-xl font-semibold mb-3">Earmarked Transactions</h2>
-        <table class="table w-full text-left">
+        <table class="table w-full text-left bg-base-100 text-base-content">
             <thead>
-                <tr>
+                <tr class="border-b border-base-200">
                     <th>Account Name</th>
                     <th>Date</th>
                     <th>Amount</th>
@@ -43,7 +43,7 @@
                 <tr>
                     <td>{{ transaction.account_name }}</td>
                     <td>{{ transaction.date }}</td>
-                    <td class="{% if transaction.is_income %}text-green-500{% else %}text-red-500{% endif %}">
+                    <td class="{% if transaction.is_income %}text-success{% else %}text-error{% endif %}">
                         {{ transaction.amount }}
                     </td>
                     <td>{{ transaction.description }}</td>
@@ -60,16 +60,15 @@
     <!-- Parsed Transactions -->
     <div class="h-1/2 overflow-y-auto">
         <h2 class="text-xl font-semibold mb-3">Parsed Transactions</h2>
-        <table class="table w-full text-left">
+        <table class="table w-full text-left bg-base-100 text-base-content">
             <thead>
-                <tr>
+                <tr class="border-b border-base-200">
                     <th>Date</th>
                     <th>Account Name</th>
                     <th>Gggkto</th>
                     <th>Betrag Brutto</th>
                     <th>Ust.</th>
                     <th>Betrag Netto</th>
-
                 </tr>
             </thead>
             <tbody>
@@ -78,17 +77,17 @@
                     <td>{{ transaction.date }}</td>
                     <td>{{ transaction.account_name }}</td>
                     <td>{{ transaction.gggkto }}</td>
-                    <td class="{% if transaction.is_income %}text-blue-500{% else %}text-red-500{% endif %}">
+                    <td class="{% if transaction.is_income %}text-primary{% else %}text-error{% endif %}">
                         {{ transaction.betrag_brutto }}
                     </td>
                     <td>{{ transaction.ust }}</td>
-                    <td class="{% if transaction.is_income %}text-blue-500{% else %}text-red-500{% endif %}">
+                    <td class="{% if transaction.is_income %}text-primary{% else %}text-error{% endif %}">
                         {{ transaction.betrag_netto }}
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="4">No parsed transactions available.</td>
+                    <td colspan="6">No parsed transactions available.</td>
                 </tr>
                 {% endfor %}
             </tbody>
