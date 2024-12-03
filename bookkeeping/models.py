@@ -10,20 +10,26 @@ class Landlord(models.Model):
         return self.name
 
 # Property Model (Building)
+
 class Property(models.Model):
-    name = models.CharField(max_length=255)  # Property name
-    address = models.TextField()  # Full address
-    landlord = models.ForeignKey(Landlord, related_name='properties' , null=True, blank=True,on_delete=models.SET_NULL)     # Link to the landlord
-    potential_rent = models.FloatField(default=0.0)  # Total potential rent
-    actual_rent = models.FloatField(default=0.0)  # Automatically calculated from unit rents
+    PROPERTY_TYPE_CHOICES = [
+        ('residential', 'Residential'),
+        ('commercial', 'Commercial'),
+    ]
+
+    # Property Details
+    property_type = models.CharField(max_length=20, choices=PROPERTY_TYPE_CHOICES, default='residential')
+    name = models.CharField(max_length=255)
+    street = models.CharField(max_length=255)
+    building_no = models.CharField(max_length=50)
+    city = models.CharField(max_length=100)
+    zip = models.CharField(max_length=10)
+    country = models.CharField(max_length=100)
+    landlords = models.ManyToManyField(Landlord, related_name='owned_properties')  # Multiple landlords can own a property
+    potential_rent = models.FloatField(default=0.0)
+
     def __str__(self):
         return self.name
-
-    def calculate_actual_rent(self):
-        """Calculate actual rent from the units that are leased (filled)."""
-        self.actual_rent = sum(unit.rent for unit in self.units.filter(lease_status='filled'))
-        self.save()
-        return self.actual_rent
 
 # Model to represent tenants within a property
 class Tenant(models.Model):
@@ -36,25 +42,15 @@ class Tenant(models.Model):
 
 # Unit Model (Part of the Property)
 class Unit(models.Model):
-    LEASE_STATUS_CHOICES = [
-        ('empty', 'Empty'),
-        ('renovation', 'Under Renovation'),
-        ('filled', 'Leased'),
-    ]
-
-    property = models.ForeignKey(Property, related_name='units', on_delete=models.CASCADE)
+    property = models.ForeignKey(Property, related_name='units', on_delete=models.CASCADE)  # Links unit to a property
     unit_name = models.CharField(max_length=255)  # E.g., "Unit A", "Flat 1B"
-    lease_status = models.CharField(max_length=15, choices=LEASE_STATUS_CHOICES, default='empty')
-    rent = models.FloatField(default=0.0)  # Rent for this unit
-    maintenance = models.FloatField(default=0.0)  # Maintenance cost
+    floor_area = models.FloatField(help_text="Floor area in square meters")  # Floor area in sq.m.
+    rooms = models.IntegerField(help_text="Number of rooms in the unit")  # Number of rooms
+    baths = models.IntegerField(help_text="Number of bathrooms in the unit")  # Number of bathrooms
+    market_rent = models.DecimalField(max_digits=10, decimal_places=2, help_text="Market rent for the unit")  # Rent in currency
 
     def __str__(self):
         return f"{self.unit_name} - {self.property.name}"
-
-    def save(self, *args, **kwargs):
-        """Update property's actual rent when unit details change."""
-        super().save(*args, **kwargs)
-        self.property.calculate_actual_rent()
 
 
 # Model to represent expense categories
