@@ -96,6 +96,25 @@
         </div>
     </dialog>
 
+    <!-- Edit Property Modal -->
+    <dialog id="edit_property_modal" class="modal">
+        <div class="modal-box bg-base-100 text-base-content">
+            <form id="edit_property_form" method="post">
+                {% csrf_token %}
+                <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="edit_property_modal.close()">✕</button>
+                <h1 class="text-lg font-bold mb-4">Edit Property</h1>
+
+                <!-- Dynamic content will be loaded via JavaScript -->
+                <div id="edit_property_content"></div>
+
+                <div class="modal-action">
+                    <button type="submit" class="btn btn-outline">Save Changes</button>
+                    <button type="button" class="btn btn-outline btn-error" onclick="edit_property_modal.close()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
     <!-- Properties Table -->
     <div class="overflow-x-auto">
         <h2 class="text-xl font-semibold mb-3">All Properties</h2>
@@ -105,7 +124,6 @@
                     <th>Property Name</th>
                     <th>Address</th>
                     <th>Landlord(s)</th>
-                    <th>Potential Rent</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -119,10 +137,12 @@
                         {{ landlord.name }}{% if not forloop.last %}, {% endif %}
                         {% endfor %}
                     </td>
-                    <td>{{ property.potential_rent }}</td>
                     <td>
                         <!-- Edit Button -->
-                        <button class="btn btn-sm btn-outline" onclick="openEditModal({{ property.id }})">Edit</button>
+                        <button 
+                            class="btn btn-sm btn-outline" 
+                            onclick="openEditModal({{ property.id }})">Edit</button>
+
                         <!-- Delete Form -->
                         <form method="post" action="{% url 'delete_property' property.id %}" class="inline" onsubmit="return confirm('Are you sure you want to delete this property?');">
                             {% csrf_token %}
@@ -132,7 +152,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="text-center text-base-content/50">No properties available.</td>
+                    <td colspan="4" class="text-center text-base-content/50">No properties available.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -163,5 +183,25 @@
         const row = button.parentElement;
         row.remove();
     }
+
+    function openEditModal(propertyId) {
+        const modal = document.getElementById('edit_property_modal');
+        const form = document.getElementById('edit_property_form');
+        const content = document.getElementById('edit_property_content');
+
+        // Fetch the property data and populate the form dynamically
+        fetch(`/edit_property/${propertyId}/`)
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to load edit property form.');
+                return response.text();
+            })
+            .then(html => {
+                content.innerHTML = html; // Load the fetched HTML content
+                form.action = `/edit_property/${propertyId}/`; // Update the form action
+                modal.showModal(); // Show the modal
+            })
+            .catch(error => console.error(error));
+    }
+
 </script>
 {% endblock %}

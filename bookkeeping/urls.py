@@ -8,13 +8,13 @@ urlpatterns = [
     # Properties
     path('properties/', views.properties, name='properties'),
     path('add_property/', views.add_property, name='add_property'),
-    path('edit_property/', views.edit_property, name='edit_property'),
+    path('edit_property/<int:pk>/', views.edit_property, name='edit_property'),
     path('delete_property/<int:pk>/', views.delete_property, name='delete_property'),
 
     # Units
     path('units/', views.units, name='units'),
     path('add_unit/', views.add_unit, name='add_unit'),
-    path('edit_unit/', views.edit_unit, name='edit_unit'),
+    path('edit_unit/<int:pk>/', views.edit_unit, name='edit_unit'),
     path('delete_unit/<int:pk>/', views.delete_unit, name='delete_unit'),
 
     # Landlords
