@@ -204,9 +204,6 @@ def properties(request):
     })
 
 # Add Property
-from django.forms import model_to_dict
-
-# Add Property
 def add_property(request):
     if request.method == 'POST':
         # Get property fields
@@ -264,13 +261,13 @@ def add_property(request):
         'landlords': landlords,
     })
 
-
 # Edit Property
 def edit_property(request, pk):
     property_obj = get_object_or_404(Property, id=pk)
     UnitFormSet = modelformset_factory(Unit, fields=('unit_name', 'floor_area', 'rooms', 'baths', 'market_rent'), extra=0, can_delete=True)
 
     if request.method == 'POST':
+        # Update the main property fields
         property_obj.property_type = request.POST.get('property_type')
         property_obj.name = request.POST.get('name')
         property_obj.street = request.POST.get('street')
@@ -279,25 +276,62 @@ def edit_property(request, pk):
         property_obj.zip = request.POST.get('zip')
         property_obj.country = request.POST.get('country')
 
+        # Update landlords
         landlord_ids = request.POST.getlist('landlords')
-        property_obj.landlords.set(landlord_ids)  # Update landlords
+        property_obj.landlords.set(landlord_ids)
 
         # Save the property
         property_obj.save()
 
-        # Update linked units
+        # Process the formset for existing units
         unit_formset = UnitFormSet(request.POST, queryset=property_obj.units.all(), prefix='units')
         if unit_formset.is_valid():
             units = unit_formset.save(commit=False)
+            # Save updated and existing units
             for unit in units:
                 unit.property = property_obj
                 unit.save()
+
             # Delete any units marked for deletion
             for deleted_unit in unit_formset.deleted_objects:
                 deleted_unit.delete()
+        else:
+            print(unit_formset.errors)  # Debugging: print errors if formset validation fails
 
-        return redirect('properties')
+        # Process dynamically added units
+        unit_data_keys = [key for key in request.POST.keys() if key.startswith('units-')]
+        print("unit_data_keys",unit_data_keys)
+        new_unit_data = {}
 
+        for key in unit_data_keys:
+            match = re.match(r'units-(\d+)-(.+)', key)
+            if match:
+                unit_index, field_name = match.groups()
+                if unit_index not in new_unit_data:
+                    new_unit_data[unit_index] = {}
+                new_unit_data[unit_index][field_name] = request.POST.get(key)
+
+        for unit_index, unit_fields in new_unit_data.items():
+            # Ensure all required fields are present and create new units
+            unit_name = unit_fields.get('unit_name')
+            floor_area = unit_fields.get('floor_area', '0')  # Default to '0' if missing
+            rooms = unit_fields.get('rooms', '0')  # Default to '0' if missing
+            baths = unit_fields.get('baths', '0')  # Default to '0' if missing
+            market_rent = unit_fields.get('market_rent', '0.0')  # Default to '0.0' if missing
+
+            if unit_name:  # Only create units with a valid name
+                Unit.objects.create(
+                    property=property_obj,
+                    unit_name=unit_name,
+                    floor_area=floor_area,
+                    rooms=rooms,
+                    baths=baths,
+                    market_rent=market_rent,
+                )
+
+        return redirect('properties')  # Redirect to properties list after saving
+
+    # Prepopulate the formsets for existing units
     landlords = Landlord.objects.all()
     unit_formset = UnitFormSet(queryset=property_obj.units.all(), prefix='units')
 
@@ -306,7 +340,6 @@ def edit_property(request, pk):
         'landlords': landlords,
         'unit_formset': unit_formset,
     })
-
 
 # Delete Property
 def delete_property(request, pk):
@@ -379,7 +412,6 @@ def delete_tenant(request, pk):
 
     return render(request, 'bookkeeping/delete_tenant.html', {'tenant': tenant})
 
-
 #################################################################
 
 # Expenses
@@ -449,6 +481,8 @@ def delete_expense_profile(request, pk):
         expense.delete()
         return redirect('expenses')  # Redirect back to the expenses page
 
+#################################################################
+
 # Units
 def units(request):
     units = Unit.objects.select_related('property').all()
@@ -513,7 +547,6 @@ def edit_unit(request, pk):
         'properties': properties,
     })
 
-
 # Delete Unit
 def delete_unit(request, pk):
     unit = get_object_or_404(Unit, id=pk)
@@ -523,6 +556,8 @@ def delete_unit(request, pk):
         return redirect('units')
 
     return render(request, 'bookkeeping/delete_unit.html', {'unit': unit})
+
+#################################################################
 
 # Landlords
 def landlords(request):
@@ -565,6 +600,7 @@ def delete_landlord(request, pk):
 
     return render(request, 'bookkeeping/delete_landlord.html', {'landlord': landlord})
 
+#################################################################
 
 # Export Parsed Transactions
 def export_parsed_transactions(request):

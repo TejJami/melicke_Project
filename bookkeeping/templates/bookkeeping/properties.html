@@ -75,14 +75,14 @@
                 <!-- Units Section -->
                 <div class="mb-4">
                     <h2 class="text-lg font-bold">Units</h2>
-                    <div id="units-container" class="space-y-4">
+                    <div id="units-container-add" class="space-y-4">
                         <div class="unit-row flex space-x-4">
                             <input type="text" name="units-0-unit_name" class="input input-bordered w-full" placeholder="Unit Name" required>
                             <input type="number" name="units-0-rooms" class="input input-bordered w-full" placeholder="Beds" required>
                             <input type="number" name="units-0-baths" class="input input-bordered w-full" placeholder="Baths" required>
                             <input type="number" step="0.1" name="units-0-floor_area" class="input input-bordered w-full" placeholder="Size (sq. ft.)" required>
                             <input type="number" step="0.01" name="units-0-market_rent" class="input input-bordered w-full" placeholder="Market Rent" required>
-                            <button type="button" class="btn btn-error" onclick="removeUnit(this)">✕</button>
+                            <button type="button" class="btn btn-xs btn-outline btn-circle btn-error text-sm" onclick="removeUnit(this)">✕</button>
                         </div>
                     </div>
                     <button type="button" class="btn btn-outline mt-3" onclick="addUnit()">+ Add Another Unit</button>
@@ -164,20 +164,22 @@
     let unitCount = 1;
 
     function addUnit() {
-        const container = document.getElementById('units-container');
+        const container = document.getElementById('units-container-add'); // Use unique ID for add modal
         const unitRow = document.createElement('div');
         unitRow.className = 'unit-row flex space-x-4';
+
         unitRow.innerHTML = `
             <input type="text" name="units-${unitCount}-unit_name" class="input input-bordered w-full" placeholder="Unit Name" required>
             <input type="number" name="units-${unitCount}-rooms" class="input input-bordered w-full" placeholder="Beds" required>
             <input type="number" name="units-${unitCount}-baths" class="input input-bordered w-full" placeholder="Baths" required>
             <input type="number" step="0.1" name="units-${unitCount}-floor_area" class="input input-bordered w-full" placeholder="Size (sq. ft.)" required>
             <input type="number" step="0.01" name="units-${unitCount}-market_rent" class="input input-bordered w-full" placeholder="Market Rent" required>
-            <button type="button" class="btn btn-error" onclick="removeUnit(this)">✕</button>
+            <button type="button" class="btn btn-xs btn-outline btn-circle btn-error text-sm" onclick="removeUnit(this)">✕</button>
         `;
         container.appendChild(unitRow);
         unitCount++;
     }
+
 
     function removeUnit(button) {
         const row = button.parentElement;
@@ -198,9 +200,29 @@
             .then(html => {
                 content.innerHTML = html; // Load the fetched HTML content
                 form.action = `/edit_property/${propertyId}/`; // Update the form action
+                console.log('Opening edit modal for property:', propertyId);
+                console.log('Form action:', form.action);
                 modal.showModal(); // Show the modal
             })
             .catch(error => console.error(error));
+    }
+
+
+    function addUnit_edit() {
+        const container = document.getElementById('units-container-edit'); // Use unique ID for edit modal
+        const unitRow = document.createElement('div');
+        unitRow.className = 'unit-row flex space-x-4';
+
+        unitRow.innerHTML = `
+            <input type="text" name="units-${unitCount}-unit_name" class="input input-bordered w-full" placeholder="Unit Name" required>
+            <input type="number" name="units-${unitCount}-rooms" class="input input-bordered w-full" placeholder="Beds" required>
+            <input type="number" name="units-${unitCount}-baths" class="input input-bordered w-full" placeholder="Baths" required>
+            <input type="number" step="0.1" name="units-${unitCount}-floor_area" class="input input-bordered w-full" placeholder="Size (sq. ft.)" required>
+            <input type="number" step="0.01" name="units-${unitCount}-market_rent" class="input input-bordered w-full" placeholder="Market Rent" required>
+            <button type="button" class="btn btn-xs btn-outline btn-error btn-circle text-sm" onclick="removeUnit(this)">✕</button>
+        `;
+        container.appendChild(unitRow);
+        unitCount++;
     }
 
 </script>

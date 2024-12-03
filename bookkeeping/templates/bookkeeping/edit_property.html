@@ -62,16 +62,61 @@
     <!-- Units -->
     <div class="mb-4">
         <h2 class="text-lg font-bold">Units</h2>
-        {% for unit in property.units.all %}
-        <div class="unit-row flex space-x-4">
-            <input type="text" name="units-{{ forloop.counter0 }}-unit_name" class="input input-bordered w-full" placeholder="Unit Name" value="{{ unit.unit_name }}" required>
-            <input type="number" name="units-{{ forloop.counter0 }}-rooms" class="input input-bordered w-full" placeholder="Beds" value="{{ unit.rooms }}" required>
-            <input type="number" name="units-{{ forloop.counter0 }}-baths" class="input input-bordered w-full" placeholder="Baths" value="{{ unit.baths }}" required>
-            <input type="number" step="0.1" name="units-{{ forloop.counter0 }}-floor_area" class="input input-bordered w-full" placeholder="Size (sq. ft.)" value="{{ unit.floor_area }}" required>
-            <input type="number" step="0.01" name="units-{{ forloop.counter0 }}-market_rent" class="input input-bordered w-full" placeholder="Market Rent" value="{{ unit.market_rent }}" required>
+
+        <!-- Include the management form -->
+        {{ unit_formset.management_form }}
+
+        <div id="units-container-edit" class="space-y-4">
+            {% for form in unit_formset %}
+            <div class="unit-row flex space-x-4">
+                <!-- Unit Name -->
+                <input type="text" name="{{ form.unit_name.name }}" class="input input-bordered w-full" placeholder="Unit Name" value="{{ form.unit_name.value|default_if_none:'' }}" required>
+                
+                <!-- Rooms -->
+                <input type="number" name="{{ form.rooms.name }}" class="input input-bordered w-full" placeholder="Beds" value="{{ form.rooms.value|default_if_none:'' }}" required>
+                
+                <!-- Baths -->
+                <input type="number" name="{{ form.baths.name }}" class="input input-bordered w-full" placeholder="Baths" value="{{ form.baths.value|default_if_none:'' }}" required>
+                
+                <!-- Floor Area -->
+                <input type="text" name="{{ form.floor_area.name }}" class="input input-bordered w-full" placeholder="Size (sq. ft.)" value="{{ form.floor_area.value|default_if_none:'' }}" required>
+                
+                <!-- Market Rent -->
+                <input type="text" name="{{ form.market_rent.name }}" class="input input-bordered w-full" placeholder="Market Rent" value="{{ form.market_rent.value|default_if_none:'' }}" required>
+                
+                <!-- Remove Unit Button -->
+                <button type="button" class="btn btn-xs btn-outline btn-error btn-circle text-sm" onclick="removeUnit(this)">✕</button>
+            </div>
+            {% endfor %}
         </div>
-        {% empty %}
-        <p class="text-base-content/50">No units available. Add a unit below.</p>
-        {% endfor %}
+
+        <!-- Add Unit Button -->
+        <button type="button" class="btn btn-outline mt-3" onclick="addUnit_edit()">+ Add Another Unit</button>
     </div>
 </div>
+
+<script>
+    let unitCount = {{ unit_formset.total_form_count|default:0 }}; // Start with the total count of units for editing
+
+    function addUnit_edit() {
+        const container = document.getElementById('units-container-edit'); // Use unique ID for edit modal
+        const unitRow = document.createElement('div');
+        unitRow.className = 'unit-row flex space-x-4';
+
+        unitRow.innerHTML = `
+            <input type="text" name="units-${unitCount}-unit_name" class="input input-bordered w-full" placeholder="Unit Name" required>
+            <input type="number" name="units-${unitCount}-rooms" class="input input-bordered w-full" placeholder="Beds" required>
+            <input type="number" name="units-${unitCount}-baths" class="input input-bordered w-full" placeholder="Baths" required>
+            <input type="text" name="units-${unitCount}-floor_area" class="input input-bordered w-full" placeholder="Size (sq. ft.)" required>
+            <input type="text" name="units-${unitCount}-market_rent" class="input input-bordered w-full" placeholder="Market Rent" required>
+            <button type="button" class="btn btn-xs btn-outline btn-error btn-circle text-sm" onclick="removeUnit(this)">✕</button>
+        `;
+        container.appendChild(unitRow);
+        unitCount++;
+    }
+
+    function removeUnit(button) {
+        const row = button.parentElement;
+        row.remove();
+    }
+</script>
