@@ -94,7 +94,7 @@
                 <details open>
                   <summary>
                     <div class="flex items-center gap-2">
-                        <iconify-icon icon="mdi:notebook" height="18"></iconify-icon>
+                        <iconify-icon icon="mdi:book" height="18"></iconify-icon>
                         Books
                     </div>
                   </summary>
@@ -110,20 +110,6 @@
                       <a class="hover:bg-base-content/15" href="#">
                         <div class="flex items-center gap-2">
                           Income Profiles
-                        </div>
-                      </a>
-                    </li>
-                    <li class="mb-0.5">
-                      <a class="hover:bg-base-content/15" href="#">
-                        <div class="flex items-center gap-2">
-                          Upload Bank Statement
-                        </div>
-                      </a>
-                    </li>
-                    <li class="mb-0.5">
-                      <a class="hover:bg-base-content/15" href="#">
-                        <div class="flex items-center gap-2">
-                          Parsed Transactions
                         </div>
                       </a>
                     </li>
@@ -297,6 +283,8 @@
     </div>
     <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js" async></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/simplebar/6.2.7/simplebar.min.js"></script>
+    {% block extra_scripts %}
+    {% endblock %}
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/simplebar/6.2.7/simplebar.css" />
