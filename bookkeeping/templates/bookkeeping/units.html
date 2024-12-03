@@ -33,25 +33,27 @@
                 </div>
                 <div class="mb-4">
                     <label class="label">
-                        <span class="label-text">Lease Status</span>
+                        <span class="label-text">Floor Area (sq. ft.)</span>
                     </label>
-                    <select name="lease_status" class="select select-bordered w-full" required>
-                        <option value="empty">Empty</option>
-                        <option value="renovation">Under Renovation</option>
-                        <option value="filled">Leased</option>
-                    </select>
+                    <input type="number" name="floor_area" step="0.1" class="input input-bordered w-full" required>
                 </div>
                 <div class="mb-4">
                     <label class="label">
-                        <span class="label-text">Rent</span>
+                        <span class="label-text">Number of Rooms</span>
                     </label>
-                    <input type="number" name="rent" class="input input-bordered w-full" required>
+                    <input type="number" name="rooms" class="input input-bordered w-full" required>
                 </div>
                 <div class="mb-4">
                     <label class="label">
-                        <span class="label-text">Maintenance</span>
+                        <span class="label-text">Number of Bathrooms</span>
                     </label>
-                    <input type="number" name="maintenance" class="input input-bordered w-full" required>
+                    <input type="number" name="baths" class="input input-bordered w-full" required>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Market Rent</span>
+                    </label>
+                    <input type="number" name="market_rent" step="0.01" class="input input-bordered w-full" required>
                 </div>
                 <div class="modal-action">
                     <button type="submit" class="btn btn-outline">Add</button>
@@ -68,7 +70,6 @@
                 {% csrf_token %}
                 <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="edit_unit_modal.close()">✕</button>
                 <h1 class="text-lg font-bold mb-4">Edit Unit</h1>
-                <input type="hidden" name="unit_id" id="unit_id">
                 <div class="mb-4">
                     <label class="label">
                         <span class="label-text">Property</span>
@@ -87,25 +88,27 @@
                 </div>
                 <div class="mb-4">
                     <label class="label">
-                        <span class="label-text">Lease Status</span>
+                        <span class="label-text">Floor Area (sq. ft.)</span>
                     </label>
-                    <select name="lease_status" id="edit_lease_status" class="select select-bordered w-full" required>
-                        <option value="empty">Empty</option>
-                        <option value="renovation">Under Renovation</option>
-                        <option value="filled">Leased</option>
-                    </select>
+                    <input type="number" name="floor_area" id="edit_floor_area" step="0.1" class="input input-bordered w-full" required>
                 </div>
                 <div class="mb-4">
                     <label class="label">
-                        <span class="label-text">Rent</span>
+                        <span class="label-text">Number of Rooms</span>
                     </label>
-                    <input type="number" name="rent" id="edit_rent" class="input input-bordered w-full" required>
+                    <input type="number" name="rooms" id="edit_rooms" class="input input-bordered w-full" required>
                 </div>
                 <div class="mb-4">
                     <label class="label">
-                        <span class="label-text">Maintenance</span>
+                        <span class="label-text">Number of Bathrooms</span>
                     </label>
-                    <input type="number" name="maintenance" id="edit_maintenance" class="input input-bordered w-full" required>
+                    <input type="number" name="baths" id="edit_baths" class="input input-bordered w-full" required>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Market Rent</span>
+                    </label>
+                    <input type="number" name="market_rent" id="edit_market_rent" step="0.01" class="input input-bordered w-full" required>
                 </div>
                 <div class="modal-action">
                     <button type="submit" class="btn btn-outline">Save</button>
@@ -123,9 +126,10 @@
                 <tr class="border-b border-base-200">
                     <th>Property</th>
                     <th>Unit Name</th>
-                    <th>Lease Status</th>
-                    <th>Rent</th>
-                    <th>Maintenance</th>
+                    <th>Floor Area</th>
+                    <th>Rooms</th>
+                    <th>Baths</th>
+                    <th>Market Rent</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -133,15 +137,18 @@
                 {% for unit in units %}
                 <tr>
                     <td>{{ unit.property.name }}</td>
+                    <td>{{ unit.unit_name }}</td>
+                    <td>{{ unit.floor_area }}</td>
+                    <td>{{ unit.rooms }}</td>
+                    <td>{{ unit.baths }}</td>
+                    <td>{{ unit.market_rent }}</td>
                     <td>
-                        <a href="javascript:void(0)" onclick="openEditModal({{ unit.id }}, {{ unit.property.id }}, '{{ unit.unit_name }}', '{{ unit.lease_status }}', {{ unit.rent }}, {{ unit.maintenance }})">
-                            {{ unit.unit_name }}
-                        </a>
-                    </td>
-                    <td>{{ unit.lease_status }}</td>
-                    <td>{{ unit.rent }}</td>
-                    <td>{{ unit.maintenance }}</td>
-                    <td>
+                        <!-- Edit Button -->
+                        <button 
+                            class="btn btn-sm btn-outline" 
+                            onclick="openEditModal({{ unit.id }}, {{ unit.property.id }}, '{{ unit.unit_name }}', {{ unit.floor_area }}, {{ unit.rooms }}, {{ unit.baths }}, {{ unit.market_rent }})">
+                            Edit
+                        </button>
                         <!-- Delete Button -->
                         <form method="post" action="{% url 'delete_unit' unit.id %}" class="inline">
                             {% csrf_token %}
@@ -151,7 +158,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center text-base-content/50">No units available.</td>
+                    <td colspan="7" class="text-center text-base-content/50">No units available.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -160,17 +167,17 @@
 </div>
 
 <script>
-    function openEditModal(id, propertyId, unitName, leaseStatus, rent, maintenance) {
+    function openEditModal(id, propertyId, unitName, floorArea, rooms, baths, marketRent) {
         // Set form action URL dynamically
-        document.getElementById('edit_unit_form').action = `/units/edit_unit/${id}/`;
+        document.getElementById('edit_unit_form').action = `/edit_unit/${id}/`;
 
         // Populate form fields
-        document.getElementById('unit_id').value = id;
         document.getElementById('edit_property').value = propertyId;
         document.getElementById('edit_unit_name').value = unitName;
-        document.getElementById('edit_lease_status').value = leaseStatus;
-        document.getElementById('edit_rent').value = rent;
-        document.getElementById('edit_maintenance').value = maintenance;
+        document.getElementById('edit_floor_area').value = parseFloat(floorArea).toFixed(1);
+        document.getElementById('edit_rooms').value = parseInt(rooms, 10);
+        document.getElementById('edit_baths').value = parseInt(baths, 10);
+        document.getElementById('edit_market_rent').value = parseFloat(marketRent).toFixed(2);
 
         // Open the modal
         document.getElementById('edit_unit_modal').showModal();

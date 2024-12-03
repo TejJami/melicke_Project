@@ -12,7 +12,7 @@ from io import BytesIO
 import openpyxl
 from django.http import HttpResponse
 from django.forms import modelformset_factory
-
+from django.forms import model_to_dict
 
 # Dashboard: Displays Earmarked and Parsed Transactions
 def dashboard(request):
@@ -204,12 +204,12 @@ def properties(request):
     })
 
 # Add Property
-def add_property(request):
-    # Create a formset for multiple units
-    UnitFormSet = modelformset_factory(Unit, fields=('unit_name', 'floor_area', 'rooms', 'baths', 'market_rent'), extra=1, can_delete=True)
+from django.forms import model_to_dict
 
+# Add Property
+def add_property(request):
     if request.method == 'POST':
-        # Property fields
+        # Get property fields
         property_type = request.POST.get('property_type')
         name = request.POST.get('name')
         street = request.POST.get('street')
@@ -219,7 +219,7 @@ def add_property(request):
         country = request.POST.get('country')
         landlord_ids = request.POST.getlist('landlords')
 
-        # Create the property
+        # Create the Property object
         property_obj = Property.objects.create(
             property_type=property_type,
             name=name,
@@ -229,25 +229,41 @@ def add_property(request):
             zip=zip_code,
             country=country,
         )
-        property_obj.landlords.set(landlord_ids)  # Set many-to-many landlords
+        property_obj.landlords.set(landlord_ids)  # Set landlords for the property
 
-        # Save units associated with the property
-        unit_formset = UnitFormSet(request.POST, queryset=Unit.objects.none(), prefix='units')
-        if unit_formset.is_valid():
-            units = unit_formset.save(commit=False)
-            for unit in units:
-                unit.property = property_obj
-                unit.save()
+        # Handle Units
+        unit_data_keys = [key for key in request.POST.keys() if key.startswith('units-')]
+        unit_data = {}
+
+        # Organize unit data
+        for key in unit_data_keys:
+            match = re.match(r'units-(\d+)-(.+)', key)
+            if match:
+                unit_index, field_name = match.groups()
+                if unit_index not in unit_data:
+                    unit_data[unit_index] = {}
+                unit_data[unit_index][field_name] = request.POST.get(key)
+
+        # Create Unit objects
+        for unit_index, unit_fields in unit_data.items():
+            if unit_fields.get('unit_name'):  # Check if unit has a name (to avoid blank entries)
+                Unit.objects.create(
+                    property=property_obj,
+                    unit_name=unit_fields.get('unit_name'),
+                    floor_area=unit_fields.get('floor_area'),
+                    rooms=unit_fields.get('rooms'),
+                    baths=unit_fields.get('baths'),
+                    market_rent=unit_fields.get('market_rent'),
+                )
 
         return redirect('properties')
 
     landlords = Landlord.objects.all()
-    unit_formset = UnitFormSet(queryset=Unit.objects.none(), prefix='units')
 
     return render(request, 'bookkeeping/add_property.html', {
         'landlords': landlords,
-        'unit_formset': unit_formset,
     })
+
 
 # Edit Property
 def edit_property(request, pk):
@@ -443,7 +459,7 @@ def units(request):
         'properties': properties
      })
 
-# Add units
+# Add Unit
 def add_unit(request):
     if request.method == 'POST':
         property_id = request.POST.get('property')
@@ -472,26 +488,33 @@ def add_unit(request):
     return render(request, 'bookkeeping/add_unit.html', {'properties': properties})
 
 
-# Edit units
+# Edit Unit
 def edit_unit(request, pk):
     unit = get_object_or_404(Unit, id=pk)
 
     if request.method == 'POST':
-        unit.property_id = request.POST.get('property')
+        property_id = request.POST.get('property')
         unit.unit_name = request.POST.get('unit_name')
         unit.floor_area = request.POST.get('floor_area')
         unit.rooms = request.POST.get('rooms')
         unit.baths = request.POST.get('baths')
         unit.market_rent = request.POST.get('market_rent')
+
+        # Ensure the property exists and update
+        unit.property = get_object_or_404(Property, id=property_id)
         unit.save()
 
         return redirect('units')
 
+    # Fetch properties for the dropdown
     properties = Property.objects.all()
-    return render(request, 'bookkeeping/edit_unit.html', {'unit': unit, 'properties': properties})
+    return render(request, 'bookkeeping/edit_unit.html', {
+        'unit': unit,
+        'properties': properties,
+    })
 
 
-# Delete units
+# Delete Unit
 def delete_unit(request, pk):
     unit = get_object_or_404(Unit, id=pk)
 
