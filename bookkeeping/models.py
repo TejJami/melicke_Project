@@ -26,7 +26,6 @@ class Property(models.Model):
     zip = models.CharField(max_length=10)
     country = models.CharField(max_length=100)
     landlords = models.ManyToManyField(Landlord, related_name='owned_properties')  # Multiple landlords can own a property
-    potential_rent = models.FloatField(default=0.0)
 
     def __str__(self):
         return self.name

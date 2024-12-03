@@ -11,6 +11,8 @@ import PyPDF2
 from io import BytesIO
 import openpyxl
 from django.http import HttpResponse
+from django.forms import modelformset_factory
+
 
 # Dashboard: Displays Earmarked and Parsed Transactions
 def dashboard(request):
@@ -216,7 +218,6 @@ def add_property(request):
         zip_code = request.POST.get('zip')
         country = request.POST.get('country')
         landlord_ids = request.POST.getlist('landlords')
-        potential_rent = request.POST.get('potential_rent')
 
         # Create the property
         property_obj = Property.objects.create(
@@ -227,7 +228,6 @@ def add_property(request):
             city=city,
             zip=zip_code,
             country=country,
-            potential_rent=potential_rent,
         )
         property_obj.landlords.set(landlord_ids)  # Set many-to-many landlords
 
@@ -262,7 +262,6 @@ def edit_property(request, pk):
         property_obj.city = request.POST.get('city')
         property_obj.zip = request.POST.get('zip')
         property_obj.country = request.POST.get('country')
-        property_obj.potential_rent = request.POST.get('potential_rent')
 
         landlord_ids = request.POST.getlist('landlords')
         property_obj.landlords.set(landlord_ids)  # Update landlords
