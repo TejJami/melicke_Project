@@ -58,7 +58,7 @@
               <!--  Start: Apps -->
               <li class="menu-title font-semibold">Apps</li>
               <li class="mb-0.5">
-                <details>
+                <details open>
                   <summary>
                     <div class="flex items-center gap-2">
                       <iconify-icon icon="lucide:store" height="18"></iconify-icon>
@@ -91,7 +91,7 @@
                 </details>
               </li>
               <li class="mb-0.5">
-                <details>
+                <details open>
                   <summary>
                     <div class="flex items-center gap-2">
                         <iconify-icon icon="mdi:notebook" height="18"></iconify-icon>
@@ -113,6 +113,46 @@
                         </div>
                       </a>
                     </li>
+                    <li class="mb-0.5">
+                      <a class="hover:bg-base-content/15" href="#">
+                        <div class="flex items-center gap-2">
+                          Upload Bank Statement
+                        </div>
+                      </a>
+                    </li>
+                    <li class="mb-0.5">
+                      <a class="hover:bg-base-content/15" href="#">
+                        <div class="flex items-center gap-2">
+                          Parsed Transactions
+                        </div>
+                      </a>
+                    </li>
+                  </ul>
+                </details>
+              </li>
+              <li class="mb-0.5">
+                <details open>
+                  <summary>
+                    <div class="flex items-center gap-2">
+                      <iconify-icon icon="lucide:user" height="16"></iconify-icon>
+                        Users
+                    </div>
+                  </summary>
+                  <ul>
+                    <li class="mb-0.5">
+                      <a class="hover:bg-base-content/15" href="{% url 'tenants' %}">
+                        <div class="flex items-center gap-2">
+                          Tenants
+                        </div>
+                      </a>
+                    </li>
+                    <li class="mb-0.5">
+                      <a class="hover:bg-base-content/15" href="{% url 'landlords' %}">
+                        <div class="flex items-center gap-2">
+                          Landlords
+                        </div>
+                      </a>
+                    </li>
                   </ul>
                 </details>
               </li>
@@ -121,7 +161,7 @@
           </div>
         </div>
         <div class="leftbar-backdrop"></div>
-        <div class="main-wrapper flex-grow overflow-auto">
+        <div class="main-wrapper flex-grow max-h-screen overflow-auto">
           <div class="flex h-full flex-col">
             <div
               role="navigation"
@@ -166,61 +206,30 @@
                             <div>
                             <iconify-icon icon="lucide:folder-plus" height="18"></iconify-icon>
             
-                            <p class="grow text-sm">Create a new folder</p>
+                            <p class="grow text-sm">Create a new property</p>
                             </div>
                         </li>
                         <li class="">
                             <div>
                             <iconify-icon icon="lucide:file-plus" height="18"></iconify-icon>
             
-                            <p class="grow text-sm">Upload new document</p>
+                            <p class="grow text-sm">Create a new unit</p>
                             </div>
                         </li>
                         <li class="">
                             <div>
                             <iconify-icon icon="lucide:user-plus" height="18"></iconify-icon>
             
-                            <p class="grow text-sm">Invite to project</p>
-                            </div>
-                        </li>
-                        <hr class="-mx-2 mt-3 h-px border-base-content/10" />
-                        <li class="menu-title">Quick Links</li>
-                        <li class="">
-                            <div>
-                            <iconify-icon icon="lucide:folders" height="18"></iconify-icon>
-            
-                            <p class="grow text-sm">File Manager</p>
+                            <p class="grow text-sm">Create a new tenant</p>
                             </div>
                         </li>
                         <li class="">
                             <div>
-                            <iconify-icon icon="lucide:user" height="18"></iconify-icon>
+                            <iconify-icon icon="lucide:user-plus" height="18"></iconify-icon>
             
-                            <p class="grow text-sm">Profile</p>
+                            <p class="grow text-sm">Create a new landlord</p>
                             </div>
                         </li>
-                        <li class="">
-                            <div>
-                            <iconify-icon icon="lucide:layout-dashboard" height="18"></iconify-icon>
-            
-                            <p class="grow text-sm">Dashboard</p>
-                            </div>
-                        </li>
-                        <li class="">
-                            <div>
-                            <iconify-icon icon="lucide:help-circle" height="18"></iconify-icon>
-            
-                            <p class="grow text-sm">Support</p>
-                            </div>
-                        </li>
-                        <li class="">
-                            <div>
-                            <iconify-icon icon="lucide:keyboard" height="18"></iconify-icon>
-            
-                            <p class="grow text-sm">Keyboard Shortcuts</p>
-                            </div>
-                        </li>
-                        </ul>
                     </div>
                     </div>
                     <form method="dialog" class="modal-backdrop">
@@ -263,8 +272,8 @@
                     </li>
                     <li>
                       <div>
-                        <iconify-icon icon="lucide:bell" height="16"></iconify-icon>
-                        Notification
+                        <iconify-icon icon="mdi:bank" height="16"></iconify-icon>
+                        Link Bank account
                       </div>
                     </li>
                     <hr class="-mx-2 my-1 border-base-content/10" />
@@ -278,11 +287,8 @@
                 </div>
               </div>
             </div>
-            <div class="content-wrapper flex-grow h-full overflow-auto">
+            <div class="max-w-screen-lg mx-auto p-4">
                 {% block content %}
-                <div class="h-full overflow-auto p-4">
-                  <!-- Content will load here dynamically -->
-                </div>
                 {% endblock %}
             </div>
           </div>

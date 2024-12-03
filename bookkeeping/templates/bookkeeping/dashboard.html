@@ -3,7 +3,7 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="card bg-white shadow-md p-5 h-screen">
+<div class="card bg-white shadow-md p-5">
     
     <!-- Trigger Button -->
     <button class="btn btn-outline mb-5" onclick="upload_modal.showModal()">Upload Bank Statement</button>
@@ -27,7 +27,7 @@
     </dialog>
 
     <!-- Earmarked Transactions -->
-    <div class="h-1/2 overflow-y-auto border-b pb-4 mb-4">
+    <div class="max-h-48 overflow-y-auto border-b pb-4 mb-4">
         <h2 class="text-xl font-semibold mb-3">Earmarked Transactions</h2>
         <table class="table w-full text-left">
             <thead>
