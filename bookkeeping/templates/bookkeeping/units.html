@@ -145,10 +145,18 @@
                     <td>
                         <!-- Edit Button -->
                         <button 
-                            class="btn btn-sm btn-outline" 
-                            onclick="openEditModal({{ unit.id }}, {{ unit.property.id }}, '{{ unit.unit_name }}', {{ unit.floor_area }}, {{ unit.rooms }}, {{ unit.baths }}, {{ unit.market_rent }})">
-                            Edit
-                        </button>
+                        class="btn btn-sm btn-outline" 
+                        onclick="openEditModal(
+                            {{ unit.id }}, 
+                            {{ unit.property.id }}, 
+                            '{{ unit.unit_name|escapejs }}', 
+                            '{{ unit.floor_area|floatformat:"1" }}', 
+                            {{ unit.rooms }}, 
+                            {{ unit.baths }}, 
+                            '{{ unit.market_rent|floatformat:"2" }}'
+                        )">
+                        Edit
+                    </button>                                     
                         <!-- Delete Button -->
                         <form method="post" action="{% url 'delete_unit' unit.id %}" class="inline">
                             {% csrf_token %}
@@ -171,16 +179,17 @@
         // Set form action URL dynamically
         document.getElementById('edit_unit_form').action = `/edit_unit/${id}/`;
 
-        // Populate form fields
+        // Populate form fields with appropriate types
         document.getElementById('edit_property').value = propertyId;
         document.getElementById('edit_unit_name').value = unitName;
-        document.getElementById('edit_floor_area').value = parseFloat(floorArea).toFixed(1);
-        document.getElementById('edit_rooms').value = parseInt(rooms, 10);
-        document.getElementById('edit_baths').value = parseInt(baths, 10);
-        document.getElementById('edit_market_rent').value = parseFloat(marketRent).toFixed(2);
+        document.getElementById('edit_floor_area').value = floorArea ? parseFloat(floorArea).toFixed(1) : '';
+        document.getElementById('edit_rooms').value = rooms ? parseInt(rooms, 10) : 0;
+        document.getElementById('edit_baths').value = baths ? parseInt(baths, 10) : 0;
+        document.getElementById('edit_market_rent').value = marketRent ? parseFloat(marketRent).toFixed(2) : '';
 
         // Open the modal
         document.getElementById('edit_unit_modal').showModal();
     }
+
 </script>
 {% endblock %}
