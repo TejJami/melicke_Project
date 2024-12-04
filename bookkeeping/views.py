@@ -15,6 +15,8 @@ import openpyxl
 from django.http import HttpResponse
 from django.forms import modelformset_factory
 from django.forms import model_to_dict
+from django.http import JsonResponse
+
 
 # Dashboard: Displays Earmarked and Parsed Transactions
 def dashboard(request):
@@ -651,20 +653,25 @@ def leases(request):
 # Add Lease
 def add_lease(request):
     if request.method == 'POST':
-        property_id = request.POST.get('property')
         unit_id = request.POST.get('unit')
         tenant_id = request.POST.get('tenant')
-        landlord_ids = request.POST.getlist('landlords')
         start_date = request.POST.get('start_date')
         end_date = request.POST.get('end_date')
         ust_type = request.POST.get('ust_type')
         deposit_amount = request.POST.get('deposit_amount')
 
-        # Create the lease
-        property_obj = get_object_or_404(Property, id=property_id)
+        # Fetch the unit and its associated property, landlords, and rent
         unit_obj = get_object_or_404(Unit, id=unit_id)
-        tenant_obj = get_object_or_404(Tenant, id=tenant_id)
+        property_obj = unit_obj.property
+        landlords = property_obj.landlords.all()
+        rent = unit_obj.market_rent  # Assume the Unit model has a rent field
 
+        # Fetch tenant and related data
+        tenant_obj = get_object_or_404(Tenant, id=tenant_id)
+        account_name = tenant_obj.name
+        iban = tenant_obj.iban
+
+        # Create the lease
         lease = Lease.objects.create(
             property=property_obj,
             unit=unit_obj,
@@ -672,20 +679,23 @@ def add_lease(request):
             start_date=start_date,
             end_date=end_date,
             ust_type=ust_type,
-            deposit_amount=deposit_amount
+            deposit_amount=deposit_amount,
+            rent=rent,
+            account_names=[account_name],
+            ibans=[iban],
         )
-        lease.landlords.set(landlord_ids)
+        lease.landlords.set(landlords)
+        lease.save()
+
         return redirect('leases')
 
     properties = Property.objects.all()
     units = Unit.objects.all()
     tenants = Tenant.objects.all()
-    landlords = Landlord.objects.all()
     return render(request, 'bookkeeping/add_lease.html', {
         'properties': properties,
         'units': units,
         'tenants': tenants,
-        'landlords': landlords
     })
 
 # Edit Lease
@@ -796,3 +806,23 @@ def delete_income_profile(request, pk):
         return redirect('income_profiles')
 
     return render(request, 'bookkeeping/delete_income_profile.html', {'income_profile': income_profile})
+
+# AJAX endpoint to fetch unit and tenant data
+def fetch_unit_tenant_data(request):
+    unit_id = request.GET.get('unit_id')
+    tenant_id = request.GET.get('tenant_id')
+
+    response = {}
+
+    if unit_id:
+        unit = get_object_or_404(Unit, id=unit_id)
+        response['property_id'] = unit.property.id
+        response['landlord_ids'] = list(unit.property.landlords.values_list('id', flat=True))
+        response['rent'] = unit.market_rent
+
+    if tenant_id:
+        tenant = get_object_or_404(Tenant, id=tenant_id)
+        response['account_name'] = tenant.name
+        response['iban'] = tenant.iban
+
+    return JsonResponse(response)

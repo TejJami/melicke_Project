@@ -95,22 +95,23 @@ class Lease(models.Model):
     property = models.ForeignKey(Property, related_name='leases', on_delete=models.CASCADE)
     unit = models.ForeignKey(Unit, related_name='leases', on_delete=models.CASCADE)
     tenant = models.ForeignKey(Tenant, related_name='leases', on_delete=models.CASCADE)
-    landlords = models.ManyToManyField(Landlord, related_name='leases')  # Multiple landlords for a lease
+    landlords = models.ManyToManyField(Landlord, related_name='leases')
 
     start_date = models.DateField()
-    end_date = models.DateField(null=True, blank=True)  # Optional for ongoing leases
+    end_date = models.DateField(null=True, blank=True)
     ust_type = models.CharField(
         max_length=10,
         choices=[('Nicht', 'Nicht'), ('Voll', 'Voll'), ('Teilw', 'Teilw')],
         default='Voll'
     )
-
-    deposit_amount = models.DecimalField(max_digits=10, decimal_places=2)  # One-time deposit
-    account_names = ArrayField(models.CharField(max_length=255), blank=True, default=list)  # Tags for account names
-    ibans = ArrayField(models.CharField(max_length=34), blank=True, default=list)  # Tags for IBANs
+    deposit_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    rent = models.DecimalField(max_digits=10, decimal_places=2)  # Add rent field
+    account_names = ArrayField(models.CharField(max_length=255), blank=True, default=list)
+    ibans = ArrayField(models.CharField(max_length=34), blank=True, default=list)
 
     def __str__(self):
         return f"Lease: {self.property.name} - {self.unit.unit_name} ({self.tenant.name})"
+
 
 # Model to represent expense categories
 class ExpenseProfile(models.Model):
