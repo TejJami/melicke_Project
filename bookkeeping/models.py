@@ -1,4 +1,6 @@
 from django.db import models
+from django.contrib.postgres.fields import ArrayField  # For account names and IBANs as tags
+import psycopg2
 
 # Landlord Model
 class Landlord(models.Model):
@@ -52,36 +54,6 @@ class Unit(models.Model):
         return f"{self.unit_name} - {self.property.name}"
 
 
-# Model to represent expense categories
-class ExpenseProfile(models.Model):
-    UST_CHOICES = [(0, '0%'), (7, '7%'), (19, '19%')]
-    UST_SCH_CHOICES = [('Nicht', 'Nicht'), ('Voll', 'Voll'), ('Teilw', 'Teilw')]
-
-    profile_name = models.CharField(max_length=255, unique=True)
-    account_name = models.CharField(max_length=255, unique=True)
-    ust = models.IntegerField(choices=UST_CHOICES, default=19)
-    ust_sch = models.CharField(max_length=10, choices=UST_SCH_CHOICES, default='Voll')
-    transactions = models.ManyToManyField('ParsedTransaction', related_name='expense_profiles', blank=True)
-
-    # Updated related names
-    property = models.ForeignKey(
-        Property,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='property_expense_profiles',  # Unique name for the reverse relation
-    )
-    unit = models.ForeignKey(
-        Unit,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='unit_expense_profiles',  # Unique name for the reverse relation
-    )
-
-    def __str__(self):
-        return f"{self.profile_name} ({self.account_name})"
-
 
 # Model to represent parsed transactions after categorization
 class ParsedTransaction(models.Model):
@@ -119,3 +91,84 @@ class EarmarkedTransaction(models.Model):
     def __str__(self):
         return f"Earmarked {self.amount} on {self.date}"
 
+# Model to represent leases for a property
+class Lease(models.Model):
+    property = models.ForeignKey(Property, related_name='leases', on_delete=models.CASCADE)
+    unit = models.ForeignKey(Unit, related_name='leases', on_delete=models.CASCADE)
+    tenant = models.ForeignKey(Tenant, related_name='leases', on_delete=models.CASCADE)
+    landlords = models.ManyToManyField(Landlord, related_name='leases')  # Multiple landlords for a lease
+
+    start_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)  # Optional for ongoing leases
+    ust_type = models.CharField(
+        max_length=10,
+        choices=[('Nicht', 'Nicht'), ('Voll', 'Voll'), ('Teilw', 'Teilw')],
+        default='Voll'
+    )
+
+    deposit_amount = models.DecimalField(max_digits=10, decimal_places=2)  # One-time deposit
+    account_names = ArrayField(models.CharField(max_length=255), blank=True, default=list)  # Tags for account names
+    ibans = ArrayField(models.CharField(max_length=34), blank=True, default=list)  # Tags for IBANs
+
+    def __str__(self):
+        return f"Lease: {self.property.name} - {self.unit.unit_name} ({self.tenant.name})"
+
+# Model to represent expense categories
+class ExpenseProfile(models.Model):
+    lease = models.ForeignKey(Lease, related_name='expense_profiles', on_delete=models.CASCADE, null=True, blank=True)
+    transaction_type = models.CharField(
+        max_length=50,
+        choices=[('repair', 'Repair'), ('maintenance', 'Maintenance'), ('other', 'Other')],
+        default='other'
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    date = models.DateField()  # For one-time expenses
+    recurring = models.BooleanField(default=False)  # For recurring expenses
+    frequency = models.CharField(
+        max_length=10,
+        choices=[('monthly', 'Monthly'), ('yearly', 'Yearly')],
+        null=True,
+        blank=True  # Only applicable if recurring=True
+    )
+
+    # Allow general or property/unit-specific expenses
+    property = models.ForeignKey(
+        Property,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='property_expense_profiles'
+    )
+    unit = models.ForeignKey(
+        Unit,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='unit_expense_profiles'
+    )
+    account_name = models.CharField(max_length=255, unique=False)
+    ust = models.IntegerField(choices=[(0, '0%'), (7, '7%'), (19, '19%')], default=19)
+
+    def __str__(self):
+        return f"{self.transaction_type.capitalize()} - {self.amount} ({self.lease or self.property or self.unit})"
+
+# Model to represent income categories
+class IncomeProfile(models.Model):
+    lease = models.ForeignKey(Lease, related_name='income_profiles', on_delete=models.CASCADE)
+    transaction_type = models.CharField(
+        max_length=20,
+        choices=[('rent', 'Rent'), ('deposit', 'Deposit')],
+        default='rent'
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    date = models.DateField(null=True,blank=True)  # For single events like deposits
+    recurring = models.BooleanField(default=False)  # For recurring income like rent
+    frequency = models.CharField(
+        max_length=10,
+        choices=[('monthly', 'Monthly'), ('yearly', 'Yearly')],
+        null=True,
+        blank=True  # Only applicable if recurring=True
+    )
+
+    def __str__(self):
+        return f"{self.transaction_type.capitalize()} - {self.amount} ({self.lease})"

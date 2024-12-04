@@ -3,7 +3,9 @@ import fitz  # PyMuPDF
 import re
 from django.shortcuts import render, redirect
 from .models import (
-    EarmarkedTransaction, ParsedTransaction, Property, Tenant, ExpenseProfile, Unit, Landlord
+    EarmarkedTransaction, ParsedTransaction, 
+    Property, Tenant, ExpenseProfile, Unit, 
+    Landlord, Lease , IncomeProfile
 )
 from django.shortcuts import get_object_or_404
 from datetime import datetime
@@ -634,3 +636,161 @@ def export_parsed_transactions(request):
     # Save workbook to the response
     wb.save(response)
     return response
+
+#################################################################
+
+# leases
+def leases(request):
+    leases = Lease.objects.select_related('property', 'unit', 'tenant').prefetch_related('landlords').all()
+    return render(request, 'bookkeeping/leases.html', {
+        'leases': leases,
+    })
+
+# Add Lease
+def add_lease(request):
+    if request.method == 'POST':
+        property_id = request.POST.get('property')
+        unit_id = request.POST.get('unit')
+        tenant_id = request.POST.get('tenant')
+        landlord_ids = request.POST.getlist('landlords')
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+        ust_type = request.POST.get('ust_type')
+        deposit_amount = request.POST.get('deposit_amount')
+
+        # Create the lease
+        property_obj = get_object_or_404(Property, id=property_id)
+        unit_obj = get_object_or_404(Unit, id=unit_id)
+        tenant_obj = get_object_or_404(Tenant, id=tenant_id)
+
+        lease = Lease.objects.create(
+            property=property_obj,
+            unit=unit_obj,
+            tenant=tenant_obj,
+            start_date=start_date,
+            end_date=end_date,
+            ust_type=ust_type,
+            deposit_amount=deposit_amount
+        )
+        lease.landlords.set(landlord_ids)
+        return redirect('leases')
+
+    properties = Property.objects.all()
+    units = Unit.objects.all()
+    tenants = Tenant.objects.all()
+    landlords = Landlord.objects.all()
+    return render(request, 'bookkeeping/add_lease.html', {
+        'properties': properties,
+        'units': units,
+        'tenants': tenants,
+        'landlords': landlords
+    })
+
+# Edit Lease
+def edit_lease(request, pk):
+    lease = get_object_or_404(Lease, id=pk)
+
+    if request.method == 'POST':
+        lease.property = get_object_or_404(Property, id=request.POST.get('property'))
+        lease.unit = get_object_or_404(Unit, id=request.POST.get('unit'))
+        lease.tenant = get_object_or_404(Tenant, id=request.POST.get('tenant'))
+        lease.start_date = request.POST.get('start_date')
+        lease.end_date = request.POST.get('end_date')
+        lease.ust_type = request.POST.get('ust_type')
+        lease.deposit_amount = request.POST.get('deposit_amount')
+
+        # Update landlords
+        landlord_ids = request.POST.getlist('landlords')
+        lease.landlords.set(landlord_ids)
+
+        lease.save()
+        return redirect('leases')
+
+    properties = Property.objects.all()
+    units = Unit.objects.all()
+    tenants = Tenant.objects.all()
+    landlords = Landlord.objects.all()
+    return render(request, 'bookkeeping/edit_lease.html', {
+        'lease': lease,
+        'properties': properties,
+        'units': units,
+        'tenants': tenants,
+        'landlords': landlords
+    })
+
+# Delete Lease
+def delete_lease(request, pk):
+    lease = get_object_or_404(Lease, id=pk)
+
+    if request.method == 'POST':
+        lease.delete()
+        return redirect('leases')
+
+    return render(request, 'bookkeeping/delete_lease.html', {'lease': lease})
+
+#################################################################
+
+# Income Profiles
+def income_profiles(request):
+    income_profiles = IncomeProfile.objects.select_related('lease').all()
+    return render(request, 'bookkeeping/income_profiles.html', {
+        'income_profiles': income_profiles,
+    })
+
+# Add Income Profile
+def add_income_profile(request):
+    if request.method == 'POST':
+        lease_id = request.POST.get('lease')
+        transaction_type = request.POST.get('transaction_type')
+        amount = request.POST.get('amount')
+        date = request.POST.get('date')
+        recurring = request.POST.get('recurring') == 'on'
+        frequency = request.POST.get('frequency') if recurring else None
+
+        lease = get_object_or_404(Lease, id=lease_id)
+
+        IncomeProfile.objects.create(
+            lease=lease,
+            transaction_type=transaction_type,
+            amount=amount,
+            date=date,
+            recurring=recurring,
+            frequency=frequency
+        )
+        return redirect('income_profiles')
+
+    leases = Lease.objects.all()
+    return render(request, 'bookkeeping/add_income_profile.html', {
+        'leases': leases,
+    })
+
+# Edit Income Profile
+def edit_income_profile(request, pk):
+    income_profile = get_object_or_404(IncomeProfile, id=pk)
+
+    if request.method == 'POST':
+        income_profile.lease = get_object_or_404(Lease, id=request.POST.get('lease'))
+        income_profile.transaction_type = request.POST.get('transaction_type')
+        income_profile.amount = request.POST.get('amount')
+        income_profile.date = request.POST.get('date')
+        income_profile.recurring = request.POST.get('recurring') == 'on'
+        income_profile.frequency = request.POST.get('frequency') if income_profile.recurring else None
+
+        income_profile.save()
+        return redirect('income_profiles')
+
+    leases = Lease.objects.all()
+    return render(request, 'bookkeeping/edit_income_profile.html', {
+        'income_profile': income_profile,
+        'leases': leases,
+    })
+
+# Delete Income Profile
+def delete_income_profile(request, pk):
+    income_profile = get_object_or_404(IncomeProfile, id=pk)
+
+    if request.method == 'POST':
+        income_profile.delete()
+        return redirect('income_profiles')
+
+    return render(request, 'bookkeeping/delete_income_profile.html', {'income_profile': income_profile})

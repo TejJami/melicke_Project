@@ -35,6 +35,18 @@ urlpatterns = [
     path('edit-expense-profile/', views.edit_expense_profile, name='edit_expense_profile'),
     path('delete-expense-profile/<int:pk>/', views.delete_expense_profile, name='delete_expense_profile'),
 
+    # Leases
+    path('leases/', views.leases, name='leases'),
+    path('add_lease/', views.add_lease, name='add_lease'),
+    path('edit_lease/<int:pk>/', views.edit_lease, name='edit_lease'),
+    path('delete_lease/<int:pk>/', views.delete_lease, name='delete_lease'),
+
+    # Income Profiles
+    path('income_profiles/', views.income_profiles, name='income_profiles'),
+    path('add_income_profile/', views.add_income_profile, name='add_income_profile'),
+    path('edit_income_profile/<int:pk>/', views.edit_income_profile, name='edit_income_profile'),
+    path('delete_income_profile/<int:pk>/', views.delete_income_profile, name='delete_income_profile'),
+
     # Transactions
     path('upload_statement/', views.upload_bank_statement, name='upload_statement'),
     path('export_parsed_transactions/', views.export_parsed_transactions, name='export_parsed_transactions'),
