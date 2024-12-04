@@ -122,8 +122,10 @@
             <thead>
                 <tr class="border-b border-base-200">
                     <th>Property Name</th>
+                    <th>Property Type</th>
                     <th>Address</th>
                     <th>Landlord(s)</th>
+                    <th>Units</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -131,10 +133,16 @@
                 {% for property in properties %}
                 <tr>
                     <td>{{ property.name }}</td>
+                    <td>{{ property.property_type }}</td>
                     <td>{{ property.street }} {{ property.building_no }}, {{ property.city }}, {{ property.zip }}, {{ property.country }}</td>
                     <td>
                         {% for landlord in property.landlords.all %}
                         {{ landlord.name }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for unit in property.units.all %}
+                        {{ unit.unit_name }}{% if not forloop.last %}, {% endif %}
                         {% endfor %}
                     </td>
                     <td>
