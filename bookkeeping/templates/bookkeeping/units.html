@@ -33,7 +33,7 @@
                 </div>
                 <div class="mb-4">
                     <label class="label">
-                        <span class="label-text">Floor Area (sq. ft.)</span>
+                        <span class="label-text">Floor Area (sq.M.)</span>
                     </label>
                     <input type="number" name="floor_area" step="0.1" class="input input-bordered w-full" required>
                 </div>
@@ -88,7 +88,7 @@
                 </div>
                 <div class="mb-4">
                     <label class="label">
-                        <span class="label-text">Floor Area (sq. ft.)</span>
+                        <span class="label-text">Floor Area (sq.M.)</span>
                     </label>
                     <input type="number" name="floor_area" id="edit_floor_area" step="0.1" class="input input-bordered w-full" required>
                 </div>
@@ -134,36 +134,46 @@
                 </tr>
             </thead>
             <tbody>
-                {% for unit in units %}
-                <tr>
-                    <td>{{ unit.property.name }}</td>
-                    <td>{{ unit.unit_name }}</td>
-                    <td>{{ unit.floor_area }}</td>
-                    <td>{{ unit.rooms }}</td>
-                    <td>{{ unit.baths }}</td>
-                    <td>{{ unit.market_rent }}</td>
-                    <td>
-                        <!-- Edit Button -->
-                        <button 
-                        class="btn btn-sm btn-outline" 
-                        onclick="openEditModal(
-                            {{ unit.id }}, 
-                            {{ unit.property.id }}, 
-                            '{{ unit.unit_name|escapejs }}', 
-                            '{{ unit.floor_area|floatformat:"1" }}', 
-                            {{ unit.rooms }}, 
-                            {{ unit.baths }}, 
-                            '{{ unit.market_rent|floatformat:"2" }}'
-                        )">
-                        Edit
-                    </button>                                     
-                        <!-- Delete Button -->
-                        <form method="post" action="{% url 'delete_unit' unit.id %}" class="inline">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-outline btn-error btn-sm">Delete</button>
-                        </form>
-                    </td>
-                </tr>
+                {% regroup units by property as grouped_units %}
+                {% for group in grouped_units %}
+                    <!-- Property Header -->
+                    <tr class="bg-base-200">
+                        <td colspan="7" class="font-normal text-md">
+                            {{ group.grouper }}
+                        </td>
+                    </tr>
+                    <!-- Units for this Property -->
+                    {% for unit in group.list %}
+                    <tr>
+                        <td></td> <!-- Leave this blank, as Property is already shown in header -->
+                        <td>{{ unit.unit_name }}</td>
+                        <td>{{ unit.floor_area }}</td>
+                        <td>{{ unit.rooms }}</td>
+                        <td>{{ unit.baths }}</td>
+                        <td>{{ unit.market_rent }}</td>
+                        <td>
+                            <!-- Edit Button -->
+                            <button 
+                            class="btn btn-sm btn-outline" 
+                            onclick="openEditModal(
+                                {{ unit.id }}, 
+                                {{ unit.property.id }}, 
+                                '{{ unit.unit_name|escapejs }}', 
+                                '{{ unit.floor_area|floatformat:"1" }}', 
+                                {{ unit.rooms }}, 
+                                {{ unit.baths }}, 
+                                '{{ unit.market_rent|floatformat:"2" }}'
+                            )">
+                            Edit
+                        </button>                                     
+                            <!-- Delete Button -->
+                            <form method="post" action="{% url 'delete_unit' unit.id %}" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline btn-error btn-sm">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
                 {% empty %}
                 <tr>
                     <td colspan="7" class="text-center text-base-content/50">No units available.</td>
@@ -172,6 +182,7 @@
             </tbody>
         </table>
     </div>
+    
 </div>
 
 <script>
