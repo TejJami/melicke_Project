@@ -26,7 +26,7 @@ urlpatterns = [
     # Tenants
     path('tenants/', views.tenants, name='tenants'),
     path('add_tenant/', views.add_tenant, name='add_tenant'),
-    path('edit_tenant/', views.edit_tenant, name='edit_tenant'),
+    path('edit_tenant/<int:pk>/', views.edit_tenant, name='edit_tenant'),
     path('delete_tenant/<int:pk>/', views.delete_tenant, name='delete_tenant'),
     
     # Expenses

@@ -370,14 +370,11 @@ def tenants(request):
 def add_tenant(request):
     if request.method == 'POST':
         name = request.POST.get('name')
-        property_id = request.POST.get('property')
         iban = request.POST.get('iban')
 
-        # Get the related property
-        property_obj = get_object_or_404(Property, id=property_id)
 
         # Create the tenant
-        Tenant.objects.create(name=name, property=property_obj, iban=iban)
+        Tenant.objects.create(name=name, iban=iban)
         return redirect('tenants')
 
     # Retrieve all properties for the dropdown
@@ -390,19 +387,14 @@ def edit_tenant(request, pk):
 
     if request.method == 'POST':
         tenant.name = request.POST.get('name')
-        property_id = request.POST.get('property')
         tenant.iban = request.POST.get('iban')
-
-        # Update the related property
-        tenant.property = get_object_or_404(Property, id=property_id)
 
         # Save the updated tenant
         tenant.save()
-        return redirect('tenants')
+        return redirect('tenants')  # Redirect to the tenants list page
 
-    # Retrieve all properties for the dropdown
-    properties = Property.objects.all()
-    return render(request, 'bookkeeping/edit_tenant.html', {'tenant': tenant, 'properties': properties})
+    # For GET requests, render the edit template with the tenant details
+    return render(request, 'bookkeeping/edit_tenant.html', {'tenant': tenant})
 
 # Delete Tenant
 def delete_tenant(request, pk):
@@ -642,9 +634,19 @@ def export_parsed_transactions(request):
 # leases
 def leases(request):
     leases = Lease.objects.select_related('property', 'unit', 'tenant').prefetch_related('landlords').all()
+    properties = Property.objects.all()
+    units = Unit.objects.all()
+    tenants = Tenant.objects.all()
+    landlords = Landlord.objects.all()
+
     return render(request, 'bookkeeping/leases.html', {
         'leases': leases,
+        'properties': properties,
+        'units': units,
+        'tenants': tenants,
+        'landlords': landlords,
     })
+
 
 # Add Lease
 def add_lease(request):

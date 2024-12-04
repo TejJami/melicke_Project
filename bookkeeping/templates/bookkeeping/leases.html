@@ -1,0 +1,233 @@
+{% extends 'bookkeeping/base.html' %}
+
+{% block title %}Leases{% endblock %}
+
+{% block content %}
+<div class="card bg-base-100 shadow-md p-5 h-screen">
+
+    <!-- Trigger Button -->
+    <button class="btn btn-outline mb-5" onclick="add_lease_modal.showModal()">Add Lease</button>
+
+    <!-- Add Lease Modal -->
+    <dialog id="add_lease_modal" class="modal">
+        <div class="modal-box bg-base-100 text-base-content">
+            <form method="post" action="{% url 'add_lease' %}">
+                {% csrf_token %}
+                <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_lease_modal.close()">✕</button>
+                <h1 class="text-lg font-bold mb-4">Add Lease</h1>
+                
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Property</span>
+                    </label>
+                    <select name="property" class="select select-bordered w-full" required>
+                        {% for property in properties %}
+                        <option value="{{ property.id }}">{{ property.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Unit</span>
+                    </label>
+                    <select name="unit" class="select select-bordered w-full" required>
+                        {% for unit in units %}
+                        <option value="{{ unit.id }}">{{ unit.unit_name }} ({{ unit.property.name }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Tenant</span>
+                    </label>
+                    <select name="tenant" class="select select-bordered w-full" required>
+                        {% for tenant in tenants %}
+                        <option value="{{ tenant.id }}">{{ tenant.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Landlords</span>
+                    </label>
+                    <select name="landlords" class="select select-bordered w-full" multiple>
+                        {% for landlord in landlords %}
+                        <option value="{{ landlord.id }}">{{ landlord.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Start Date</span>
+                    </label>
+                    <input type="date" name="start_date" class="input input-bordered w-full" required>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">End Date (Optional)</span>
+                    </label>
+                    <input type="date" name="end_date" class="input input-bordered w-full">
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Deposit Amount</span>
+                    </label>
+                    <input type="number" name="deposit_amount" step="0.01" class="input input-bordered w-full" required>
+                </div>
+                <div class="modal-action">
+                    <button type="submit" class="btn btn-outline">Add</button>
+                    <button type="button" class="btn btn-outline btn-error" onclick="add_lease_modal.close()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
+    <!-- Edit Lease Modal -->
+    <dialog id="edit_lease_modal" class="modal">
+        <div class="modal-box bg-base-100 text-base-content">
+            <form method="post" id="edit_lease_form">
+                {% csrf_token %}
+                <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="edit_lease_modal.close()">✕</button>
+                <h1 class="text-lg font-bold mb-4">Edit Lease</h1>
+                <!-- Similar fields to Add Lease -->
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Property</span>
+                    </label>
+                    <select name="property" id="edit_property" class="select select-bordered w-full" required>
+                        {% for property in properties %}
+                        <option value="{{ property.id }}">{{ property.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Unit</span>
+                    </label>
+                    <select name="unit" id="edit_unit" class="select select-bordered w-full" required>
+                        {% for unit in units %}
+                        <option value="{{ unit.id }}">{{ unit.unit_name }} ({{ unit.property.name }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Tenant</span>
+                    </label>
+                    <select name="tenant" id="edit_tenant" class="select select-bordered w-full" required>
+                        {% for tenant in tenants %}
+                        <option value="{{ tenant.id }}">{{ tenant.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Start Date</span>
+                    </label>
+                    <input type="date" name="start_date" id="edit_start_date" class="input input-bordered w-full" required>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">End Date</span>
+                    </label>
+                    <input type="date" name="end_date" id="edit_end_date" class="input input-bordered w-full">
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Deposit Amount</span>
+                    </label>
+                    <input type="number" name="deposit_amount" id="edit_deposit_amount" step="0.01" class="input input-bordered w-full" required>
+                </div>
+                <div class="modal-action">
+                    <button type="submit" class="btn btn-outline">Save</button>
+                    <button type="button" class="btn btn-outline btn-error" onclick="edit_lease_modal.close()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
+    <!-- Lease List -->
+    <div class="overflow-x-auto">
+        <h2 class="text-xl font-semibold mb-3">All Leases</h2>
+        <table class="table w-full text-left bg-base-100 text-base-content">
+            <thead>
+                <tr class="border-b border-base-200">
+                    <th>Property</th>
+                    <th>Unit</th>
+                    <th>Tenant</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Deposit</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% regroup leases by property as grouped_leases %}
+                {% for group in grouped_leases %}
+                    <!-- Property Header -->
+                    <tr class="bg-base-200">
+                        <td colspan="7" class="font-normal text-md">
+                            {{ group.grouper }}
+                        </td>
+                    </tr>
+                    <!-- Leases for this Property -->
+                    {% for lease in group.list %}
+                    <tr>
+                        <td></td> <!-- Leave this blank as Property is shown in header -->
+                        <td>{{ lease.unit.unit_name }}</td>
+                        <td>{{ lease.tenant.name }}</td>
+                        <td>{{ lease.start_date }}</td>
+                        <td>{{ lease.end_date|default:"Ongoing" }}</td>
+                        <td>{{ lease.deposit_amount }}</td>
+                        <td>
+                            <!-- Edit Button -->
+                            <button 
+                            class="btn btn-sm btn-outline" 
+                            onclick="openEditModal(
+                                {{ lease.id }}, 
+                                {{ lease.property.id }}, 
+                                {{ lease.unit.id }}, 
+                                {{ lease.tenant.id }}, 
+                                '{{ lease.start_date }}', 
+                                '{{ lease.end_date|default:'' }}', 
+                                '{{ lease.deposit_amount }}'
+                            )">
+                            Edit
+                        </button>
+                            <!-- Delete Button -->
+                            <form method="post" action="{% url 'delete_lease' lease.id %}" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline btn-error btn-sm">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-base-content/50">No leases available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+</div>
+
+<script>
+    function openEditModal(id, propertyId, unitId, tenantId, startDate, endDate, depositAmount) {
+        // Set form action URL dynamically
+        document.getElementById('edit_lease_form').action = `/edit_lease/${id}/`;
+
+        // Populate form fields with appropriate data
+        document.getElementById('edit_property').value = propertyId;
+        document.getElementById('edit_unit').value = unitId;
+        document.getElementById('edit_tenant').value = tenantId;
+        document.getElementById('edit_start_date').value = startDate;
+        document.getElementById('edit_end_date').value = endDate || '';
+        document.getElementById('edit_deposit_amount').value = depositAmount;
+
+        // Open the modal
+        document.getElementById('edit_lease_modal').showModal();
+    }
+</script>
+{% endblock %}

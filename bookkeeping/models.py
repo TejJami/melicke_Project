@@ -34,7 +34,6 @@ class Property(models.Model):
 
 # Model to represent tenants within a property
 class Tenant(models.Model):
-    property = models.ForeignKey(Property, related_name='tenants', on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     iban = models.CharField(max_length=34)
 
