@@ -163,6 +163,16 @@
                 </div>
                 <div class="mb-4">
                     <label class="label">
+                        <span class="label-text">UST Type</span>
+                    </label>
+                    <select name="ust_type" id="edit_ust_type" class="select select-bordered w-full">
+                        <option value="Nicht">Nicht</option>
+                        <option value="Voll">Voll</option>
+                        <option value="Teilw">Teilw</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
                         <span class="label-text">Rent</span>
                     </label>
                     <input type="number" name="rent" id="edit_rent" step="0.01" class="input input-bordered w-full" readonly>
@@ -187,16 +197,18 @@
                     <th>Tenant</th>
                     <th>Start Date</th>
                     <th>End Date</th>
+                    <th>UST Type</th> <!-- Add this line -->
                     <th>Rent</th>
                     <th>Deposit</th>
                     <th>Actions</th>
                 </tr>
             </thead>
+            
             <tbody>
                 {% regroup leases by property as grouped_leases %}
                 {% for group in grouped_leases %}
                 <tr class="bg-base-200">
-                    <td colspan="8" class="font-normal text-md">{{ group.grouper }}</td>
+                    <td colspan="9" class="font-normal text-md">{{ group.grouper }}</td> <!-- Update colspan to 9 -->
                 </tr>
                 {% for lease in group.list %}
                 <tr>
@@ -205,6 +217,7 @@
                     <td>{{ lease.tenant.name }}</td>
                     <td>{{ lease.start_date|date:'Y-m-d' }}</td>
                     <td>{{ lease.end_date|date:'Y-m-d' }}</td>
+                    <td>{{ lease.ust_type }}</td> <!-- Add this line -->
                     <td>{{ lease.rent|floatformat:2 }}</td>
                     <td>{{ lease.deposit_amount|floatformat:2 }}</td>
                     <td>
@@ -216,7 +229,8 @@
                             '{{ lease.start_date|date:'Y-m-d' }}', 
                             '{{ lease.end_date|date:'Y-m-d' }}', 
                             '{{ lease.deposit_amount|floatformat:2 }}', 
-                            '{{ lease.rent|floatformat:2 }}')">
+                            '{{ lease.rent|floatformat:2 }}',
+                            '{{ lease.ust_type }}')"> <!-- Pass ust_type -->
                             Edit
                         </button>
                         <form method="post" action="{% url 'delete_lease' lease.id %}" class="inline">
@@ -228,10 +242,11 @@
                 {% endfor %}
                 {% empty %}
                 <tr>
-                    <td colspan="8" class="text-center text-base-content/50">No leases available.</td>
+                    <td colspan="9" class="text-center text-base-content/50">No leases available.</td> <!-- Update colspan to 9 -->
                 </tr>
                 {% endfor %}
             </tbody>
+            
         </table>
     </div>
 </div>
@@ -255,7 +270,7 @@
             });
     }
 
-    function openEditModal(id, propertyId, unitId, tenantId, startDate, endDate, depositAmount, rent) {
+    function openEditModal(id, propertyId, unitId, tenantId, startDate, endDate, depositAmount, rent, ustType) {
         const form = document.getElementById('edit_lease_form');
         if (!form) {
             console.error('Edit Lease Form not found!');
@@ -281,6 +296,9 @@
             if (!numberString) return '';
             return parseFloat(numberString.replace(',', '.')).toFixed(2);
         }
+
+            // Set UST Type
+        document.getElementById('edit_ust_type').value = ustType;
 
         document.getElementById('edit_deposit_amount').value = formatNumber(depositAmount);
         document.getElementById('edit_rent').value = formatNumber(rent);
