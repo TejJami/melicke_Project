@@ -410,65 +410,70 @@ def delete_tenant(request, pk):
 
 #################################################################
 
-# Expenses
-def expenses(request):
-    expenses = ExpenseProfile.objects.all()
-    properties = Property.objects.all()
-    units = Unit.objects.all()
-    return render(request, 'bookkeeping/expenses.html', {
+# Expense Profiles
+def expense_profiles(request):
+    """
+    Fetch all expense profiles, including those with and without leases.
+    """
+    expenses = ExpenseProfile.objects.select_related('lease', 'lease__property').all()
+    leases = Lease.objects.all()
+    return render(request, 'bookkeeping/expense_profiles.html', {
         'expenses': expenses,
-        'properties': properties,
-        'units': units,
+        'leases': leases,
     })
 
 # Add Expense Profile
 def add_expense_profile(request):
     if request.method == 'POST':
-        profile_name = request.POST.get('profile_name')
-        account_name = request.POST.get('account_name')
-        ust = request.POST.get('ust')
-        ust_sch = request.POST.get('ust_sch')
-        property_id = request.POST.get('property')
-        unit_id = request.POST.get('unit')
-
-        property_obj = Property.objects.filter(id=property_id).first()
-        unit_obj = Unit.objects.filter(id=unit_id).first()
+        lease_id = request.POST.get('lease')
+        lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
 
         ExpenseProfile.objects.create(
-            profile_name=profile_name,
-            account_name=account_name,
-            ust=ust,
-            ust_sch=ust_sch,
-            property=property_obj,
-            unit=unit_obj,
+            lease=lease,
+            profile_name=request.POST.get('profile_name'),
+            transaction_type=request.POST.get('transaction_type'),
+            amount=request.POST.get('amount'),
+            date=request.POST.get('date'),
+            recurring=request.POST.get('recurring') == 'on',
+            frequency=request.POST.get('frequency'),
+            account_name=request.POST.get('account_name'),
+            ust=lease.ust_type if lease else 0,
+            booking_no=request.POST.get('booking_no'),
         )
-        return redirect('expenses')
+        return redirect('expense_profiles')
 
-    properties = Property.objects.all()
-    units = Unit.objects.all()
+    leases = Lease.objects.all()
     return render(request, 'bookkeeping/add_expense_profile.html', {
-        'properties': properties,
-        'units': units,
+        'leases': leases,
     })
 
 # Edit Expense Profile
-def edit_expense_profile(request):
+def edit_expense_profile(request, pk):
+    expense = get_object_or_404(ExpenseProfile, id=pk)
+
     if request.method == 'POST':
-        expense_id = request.POST.get('expense_id')
-        profile_name = request.POST.get('profile_name')
-        account_name = request.POST.get('account_name')
-        ust = request.POST.get('ust')
-        ust_sch = request.POST.get('ust_sch')
+        lease_id = request.POST.get('lease')
+        lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
 
-        # Update the expense profile
-        expense = get_object_or_404(ExpenseProfile, id=expense_id)
-        expense.profile_name = profile_name
-        expense.account_name = account_name
-        expense.ust = ust
-        expense.ust_sch = ust_sch
+        expense.lease = lease
+        expense.profile_name = request.POST.get('profile_name')
+        expense.transaction_type = request.POST.get('transaction_type')
+        expense.amount = request.POST.get('amount')
+        expense.date = request.POST.get('date')
+        expense.recurring = request.POST.get('recurring') == 'on'
+        expense.frequency = request.POST.get('frequency') if expense.recurring else None
+        expense.account_name = request.POST.get('account_name')
+        expense.ust = lease.ust_type if lease else 0
+        expense.booking_no = request.POST.get('booking_no')
+
         expense.save()
+        return redirect('expense_profiles')
 
-        return redirect('expenses')  # Redirect back to the expenses page
+    leases = Lease.objects.all()
+    return render(request, 'bookkeeping/edit_expense_profile.html', {
+        'expense': expense,
+        'leases': leases,
+    })
 
 # Delete Expense Profile
 def delete_expense_profile(request, pk):
@@ -744,30 +749,33 @@ def delete_lease(request, pk):
 
 # Income Profiles
 def income_profiles(request):
-    income_profiles = IncomeProfile.objects.select_related('lease').all()
+    """
+    Fetch all income profiles, including those without leases.
+    """
+    incomes = IncomeProfile.objects.select_related('lease', 'lease__property').all()
+    leases = Lease.objects.all()
     return render(request, 'bookkeeping/income_profiles.html', {
-        'income_profiles': income_profiles,
+        'incomes': incomes,
+        'leases': leases,
     })
 
 # Add Income Profile
 def add_income_profile(request):
     if request.method == 'POST':
         lease_id = request.POST.get('lease')
-        transaction_type = request.POST.get('transaction_type')
-        amount = request.POST.get('amount')
-        date = request.POST.get('date')
-        recurring = request.POST.get('recurring') == 'on'
-        frequency = request.POST.get('frequency') if recurring else None
-
-        lease = get_object_or_404(Lease, id=lease_id)
+        lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
 
         IncomeProfile.objects.create(
             lease=lease,
-            transaction_type=transaction_type,
-            amount=amount,
-            date=date,
-            recurring=recurring,
-            frequency=frequency
+            profile_name=request.POST.get('profile_name'),
+            transaction_type=request.POST.get('transaction_type'),
+            amount=request.POST.get('amount'),
+            date=request.POST.get('date'),
+            recurring=request.POST.get('recurring') == 'on',
+            frequency=request.POST.get('frequency'),
+            account_name=request.POST.get('account_name'),
+            ust=lease.ust_type if lease else 0,
+            booking_no=request.POST.get('booking_no'),
         )
         return redirect('income_profiles')
 
@@ -778,22 +786,29 @@ def add_income_profile(request):
 
 # Edit Income Profile
 def edit_income_profile(request, pk):
-    income_profile = get_object_or_404(IncomeProfile, id=pk)
+    income = get_object_or_404(IncomeProfile, id=pk)
 
     if request.method == 'POST':
-        income_profile.lease = get_object_or_404(Lease, id=request.POST.get('lease'))
-        income_profile.transaction_type = request.POST.get('transaction_type')
-        income_profile.amount = request.POST.get('amount')
-        income_profile.date = request.POST.get('date')
-        income_profile.recurring = request.POST.get('recurring') == 'on'
-        income_profile.frequency = request.POST.get('frequency') if income_profile.recurring else None
+        lease_id = request.POST.get('lease')
+        lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
 
-        income_profile.save()
+        income.lease = lease
+        income.profile_name = request.POST.get('profile_name')
+        income.transaction_type = request.POST.get('transaction_type')
+        income.amount = request.POST.get('amount')
+        income.date = request.POST.get('date')
+        income.recurring = request.POST.get('recurring') == 'on'
+        income.frequency = request.POST.get('frequency') if income.recurring else None
+        income.account_name = request.POST.get('account_name')
+        income.ust = lease.ust_type if lease else 0
+        income.booking_no = request.POST.get('booking_no')
+
+        income.save()
         return redirect('income_profiles')
 
     leases = Lease.objects.all()
     return render(request, 'bookkeeping/edit_income_profile.html', {
-        'income_profile': income_profile,
+        'income': income,
         'leases': leases,
     })
 
@@ -806,6 +821,8 @@ def delete_income_profile(request, pk):
         return redirect('income_profiles')
 
     return render(request, 'bookkeeping/delete_income_profile.html', {'income_profile': income_profile})
+
+#################################################################
 
 # AJAX endpoint to fetch unit and tenant data
 def fetch_unit_tenant_data(request):
@@ -826,3 +843,14 @@ def fetch_unit_tenant_data(request):
         response['iban'] = tenant.iban
 
     return JsonResponse(response)
+
+def lease_profiles(request, lease_id):
+    lease = get_object_or_404(Lease, id=lease_id)
+    income_profiles = IncomeProfile.objects.filter(lease=lease)
+    expense_profiles = ExpenseProfile.objects.filter(lease=lease)
+
+    return render(request, 'bookkeeping/lease.html', {
+        'lease': lease,
+        'income_profiles': income_profiles,
+        'expense_profiles': expense_profiles,
+    })

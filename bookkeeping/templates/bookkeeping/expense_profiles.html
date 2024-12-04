@@ -1,0 +1,171 @@
+{% extends 'bookkeeping/base.html' %}
+
+{% block title %}Expense Profiles{% endblock %}
+
+{% block content %}
+<div class="card bg-base-100 shadow-md p-5 h-screen">
+    <!-- Add Expense Profile Button -->
+    <button class="btn btn-outline mb-5" onclick="add_expense_modal.showModal()">Add Expense Profile</button>
+
+    <!-- Add Expense Modal -->
+    <dialog id="add_expense_modal" class="modal">
+        <div class="modal-box bg-base-100 text-base-content">
+            <form method="post" action="{% url 'add_expense_profile' %}">
+                {% csrf_token %}
+                <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_expense_modal.close()">✕</button>
+                <h1 class="text-lg font-bold mb-4">Add Expense Profile</h1>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Profile Name</span>
+                    </label>
+                    <input type="text" name="profile_name" class="input input-bordered w-full" placeholder="Profile Name" required>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Transaction Type</span>
+                    </label>
+                    <select name="transaction_type" class="select select-bordered w-full" required>
+                        <option value="repair">Repair</option>
+                        <option value="maintenance">Maintenance</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Amount</span>
+                    </label>
+                    <input type="number" step="0.01" name="amount" class="input input-bordered w-full" placeholder="Amount" required>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Date</span>
+                    </label>
+                    <input type="date" name="date" class="input input-bordered w-full" required>
+                </div>
+                <div class="mb-4">
+                    <label class="label cursor-pointer">
+                        <span class="label-text">Recurring</span>
+                        <input type="checkbox" name="recurring" class="checkbox">
+                    </label>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Frequency</span>
+                    </label>
+                    <select name="frequency" class="select select-bordered w-full">
+                        <option value="">-- None --</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Lease (Optional)</span>
+                    </label>
+                    <select name="lease" class="select select-bordered w-full">
+                        <option value="">-- General Expense --</option>
+                        {% for lease in leases %}
+                            <option value="{{ lease.id }}">{{ lease }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Account Name</span>
+                    </label>
+                    <input type="text" name="account_name" class="input input-bordered w-full" placeholder="Account Name" required>
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Booking No (BN)</span>
+                    </label>
+                    <input type="text" name="booking_no" class="input input-bordered w-full" placeholder="Booking Number" required>
+                </div>
+                <div class="modal-action">
+                    <button type="submit" class="btn btn-outline">Add</button>
+                    <button type="button" class="btn btn-outline btn-error" onclick="add_expense_modal.close()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
+    <!-- Expense Profiles List -->
+    <div class="overflow-x-auto">
+        <h2 class="text-xl font-semibold mb-3">Expense Profiles</h2>
+        <table class="table w-full text-left bg-base-100 text-base-content">
+            <thead>
+                <tr class="border-b border-base-200">
+                    <th>Profile Name</th>
+                    <th>Transaction Type</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                    <th>Recurring</th>
+                    <th>Lease</th>
+                    <th>Account Name</th>
+                    <th>Booking No</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for expense in expenses %}
+                <tr>
+                    <td>{{ expense.profile_name }}</td>
+                    <td>{{ expense.get_transaction_type_display }}</td>
+                    <td>{{ expense.amount }}</td>
+                    <td>{{ expense.date }}</td>
+                    <td>
+                        {% if expense.recurring %}
+                            Yes
+                            {% else %}
+                            No
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if expense.lease %}
+                            {{ expense.lease }}
+                        {% else %}
+                            General Expense
+                        {% endif %}
+                    </td>
+                    <td>{{ expense.account_name }}</td>
+                    <td>{{ expense.booking_no }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" 
+                            onclick="openEditExpenseModal('{{ expense.id }}', '{{ expense.profile_name }}', '{{ expense.transaction_type }}', '{{ expense.amount }}', '{{ expense.date }}', '{{ expense.recurring }}', '{{ expense.frequency }}', '{% if expense.lease %}{{ expense.lease.id }}{% else %}{% endif %}', '{{ expense.account_name }}', '{{ expense.booking_no }}')">
+                            Edit
+                        </button>
+                        <form method="post" action="{% url 'delete_expense_profile' expense.id %}" class="inline" onsubmit="return confirm('Are you sure you want to delete this expense profile?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline btn-error">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center text-base-content/50">No expense profiles available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function openEditExpenseModal(id, profileName, transactionType, amount, date, recurring, frequency, leaseId, accountName, bookingNo) {
+    const form = document.getElementById('edit_expense_form');
+    form.action = `/edit_expense_profile/${id}/`; // Ensure this matches your URL pattern
+
+    document.getElementById('edit_profile_name').value = profileName;
+    document.getElementById('edit_transaction_type').value = transactionType;
+    document.getElementById('edit_amount').value = amount;
+    document.getElementById('edit_date').value = date;
+    document.getElementById('edit_recurring').checked = recurring === 'True';
+    document.getElementById('edit_frequency').value = frequency;
+    document.getElementById('edit_lease').value = leaseId || '';  // Handle null leases
+    document.getElementById('edit_account_name').value = accountName;
+    document.getElementById('edit_booking_no').value = bookingNo;
+
+    document.getElementById('edit_expense_modal').showModal();
+}
+</script>
+{% endblock %}
