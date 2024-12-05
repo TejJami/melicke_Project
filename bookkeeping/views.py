@@ -844,6 +844,9 @@ def fetch_unit_tenant_data(request):
 
     return JsonResponse(response)
 
+#################################################################
+
+# AJAX endpoint to fetch lease profiles
 def lease_profiles(request, lease_id):
     lease = get_object_or_404(Lease, id=lease_id)
     income_profiles = IncomeProfile.objects.filter(lease=lease)

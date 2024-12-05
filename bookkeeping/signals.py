@@ -46,7 +46,6 @@ def process_earmarked_transaction(sender, instance, created, **kwargs):
         except Exception as e:
             print(f"Error processing EarmarkedTransaction (ID: {instance.id}): {e}")
 
-
 @receiver(post_save, sender=ExpenseProfile)
 def match_earmarked_transactions_for_expense(sender, instance, created, **kwargs):
     if created:
@@ -70,7 +69,6 @@ def match_earmarked_transactions_for_expense(sender, instance, created, **kwargs
                 txn.delete()
             except Exception as e:
                 print(f"Error processing EarmarkedTransaction (ID: {txn.id}) for ExpenseProfile (ID: {instance.id}): {e}")
-
 
 @receiver(post_save, sender=IncomeProfile)
 def match_earmarked_transactions_for_income(sender, instance, created, **kwargs):

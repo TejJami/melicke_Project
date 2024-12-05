@@ -52,8 +52,6 @@ class Unit(models.Model):
     def __str__(self):
         return f"{self.unit_name} - {self.property.name}"
 
-
-
 # Model to represent parsed transactions after categorization
 class ParsedTransaction(models.Model):
     date = models.DateField()  # Date of transaction
@@ -111,7 +109,6 @@ class Lease(models.Model):
 
     def __str__(self):
         return f"Lease: {self.property.name} - {self.unit.unit_name} ({self.tenant.name})"
-
 
 # Model to represent expense categories
 class ExpenseProfile(models.Model):
