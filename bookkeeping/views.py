@@ -480,7 +480,7 @@ def delete_expense_profile(request, pk):
     if request.method == 'POST':
         expense = get_object_or_404(ExpenseProfile, pk=pk)
         expense.delete()
-        return redirect('expenses')  # Redirect back to the expenses page
+        return redirect('expense_profiles')  # Redirect back to the expenses page
 
 #################################################################
 

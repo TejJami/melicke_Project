@@ -63,31 +63,37 @@
         <table class="table w-full text-left bg-base-100 text-base-content">
             <thead>
                 <tr class="border-b border-base-200">
+                    <th>Booking No</th>
                     <th>Date</th>
+                    <th>Transaction Type</th>
+                    <th>Property Name</th>
+                    <th>Unit Name</th>
                     <th>Account Name</th>
-                    <th>Gggkto</th>
-                    <th>Betrag Brutto</th>
-                    <th>Ust.</th>
-                    <th>Betrag Netto</th>
+                    <th>Gross Amount</th>
+                    <th>UST</th>
+                    <th>Net Amount</th>
                 </tr>
             </thead>
             <tbody>
                 {% for transaction in parsed|dictsort:"date" %}
                 <tr>
+                    <td>{{ transaction.booking_no }}</td>
                     <td>{{ transaction.date }}</td>
+                    <td>{{ transaction.transaction_type }}</td>
+                    <td>{{ transaction.property_name }}</td>
+                    <td>{{ transaction.unit_name }}</td>
                     <td>{{ transaction.account_name }}</td>
-                    <td>{{ transaction.gggkto }}</td>
-                    <td class="{% if transaction.is_income %}text-primary{% else %}text-error{% endif %}">
-                        {{ transaction.betrag_brutto }}
+                    <td class="{% if transaction.gross_amount > 0 %}text-primary{% else %}text-error{% endif %}">
+                        {{ transaction.gross_amount }}
                     </td>
                     <td>{{ transaction.ust }}</td>
-                    <td class="{% if transaction.is_income %}text-primary{% else %}text-error{% endif %}">
-                        {{ transaction.betrag_netto }}
+                    <td class="{% if transaction.net_amount > 0 %}text-primary{% else %}text-error{% endif %}">
+                        {{ transaction.net_amount }}
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6">No parsed transactions available.</td>
+                    <td colspan="9" class="text-center text-base-content/50">No parsed transactions available.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -98,5 +104,6 @@
             </a>
         </div>        
     </div>
+
 </div>
 {% endblock %}
