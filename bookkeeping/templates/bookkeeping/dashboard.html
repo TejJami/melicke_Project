@@ -63,7 +63,7 @@
         <table class="table w-full text-left bg-base-100 text-base-content">
             <thead>
                 <tr class="border-b border-base-200">
-                    <th>Booking No</th>
+                    <th>BN</th>
                     <th>Date</th>
                     <th>Transaction Type</th>
                     <th>Property Name</th>
@@ -83,12 +83,12 @@
                     <td>{{ transaction.property_name }}</td>
                     <td>{{ transaction.unit_name }}</td>
                     <td>{{ transaction.account_name }}</td>
-                    <td class="{% if transaction.gross_amount > 0 %}text-primary{% else %}text-error{% endif %}">
-                        {{ transaction.gross_amount }}
+                    <td class="{% if transaction.betrag_brutto > 0 %}text-primary{% else %}text-error{% endif %}">
+                        {{ transaction.betrag_brutto }}
                     </td>
                     <td>{{ transaction.ust }}</td>
-                    <td class="{% if transaction.net_amount > 0 %}text-primary{% else %}text-error{% endif %}">
-                        {{ transaction.net_amount }}
+                    <td class="{% if transaction.betrag_netto > 0 %}text-primary{% else %}text-error{% endif %}">
+                        {{ transaction.betrag_netto }}
                     </td>
                 </tr>
                 {% empty %}
@@ -102,8 +102,9 @@
             <a href="{% url 'export_parsed_transactions' %}" class="btn btn-outline">
                 Download as Excel
             </a>
-        </div>        
+        </div>
     </div>
+
 
 </div>
 {% endblock %}
