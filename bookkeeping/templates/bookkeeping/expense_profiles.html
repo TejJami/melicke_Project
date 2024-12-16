@@ -85,7 +85,7 @@
                         <span class="label-text">Lease (Optional)</span>
                     </label>
                     <select name="lease" class="select select-bordered w-full">
-                        <option value="">-- General Expense --</option>
+                        <option value="">-- Select Lease --</option>
                         {% for property in properties %}
                             {% for lease in property.leases.all %}
                                 <option value="{{ lease.id }}">{{ lease }}</option>
@@ -135,6 +135,7 @@
                             <th>Amount</th>
                             <th>Date</th>
                             <th>Recurring</th>
+                            <th>Lease</th>
                             <th>Account Name</th>
                             <th>Booking No</th>
                             <th>Actions</th>
@@ -148,11 +149,28 @@
                             <td>{{ expense.amount }}</td>
                             <td>{{ expense.date }}</td>
                             <td>{% if expense.recurring %}Yes{% else %}No{% endif %}</td>
+                            <td>{{ lease.unit}}</td>
                             <td>{{ expense.account_name }}</td>
                             <td>{{ expense.booking_no }}</td>
                             <td>
-                                <button class="btn btn-sm btn-outline" onclick="openEditExpenseModal('{{ expense.id }}')">Edit</button>
-                                <form method="post" action="{% url 'delete_expense_profile' expense.id %}" class="inline" onsubmit="return confirm('Are you sure you want to delete this expense profile?');">
+                                <button class="btn btn-sm btn-outline" 
+                                onclick="openEditExpenseModal(
+                                    '{{ expense.id }}',
+                                    '{{ expense.profile_name }}',
+                                    '{{ expense.transaction_type }}',
+                                    '{{ expense.amount }}',
+                                    '{{ expense.date }}',
+                                    '{{ expense.recurring }}',
+                                    '{{ expense.frequency }}',
+                                    '{{ expense.property.id}}',
+                                    '{{ expense.lease.id }}',
+                                    '{{ expense.account_name }}',
+                                    '{{ expense.booking_no }}'
+                                )">
+                                Edit
+                            </button>
+                            
+                                                                                      <form method="post" action="{% url 'delete_expense_profile' expense.id %}" class="inline" onsubmit="return confirm('Are you sure you want to delete this expense profile?');">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-sm btn-outline btn-error">Delete</button>
                                 </form>
@@ -160,7 +178,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="8" class="text-center text-base-content/50">No expenses for this lease.</td>
+                            <td colspan="9" class="text-center text-base-content/50">No expenses for this lease.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -186,22 +204,39 @@
                     </thead>
                     <tbody>
                         {% for expense in property.expense_profiles.all %}
-                        <tr>
-                            <td>{{ expense.profile_name }}</td>
-                            <td>{{ expense.get_transaction_type_display }}</td>
-                            <td>{{ expense.amount }}</td>
-                            <td>{{ expense.date }}</td>
-                            <td>{% if expense.recurring %}Yes{% else %}No{% endif %}</td>
-                            <td>{{ expense.account_name }}</td>
-                            <td>{{ expense.booking_no }}</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline" onclick="openEditExpenseModal('{{ expense.id }}')">Edit</button>
-                                <form method="post" action="{% url 'delete_expense_profile' expense.id %}" class="inline" onsubmit="return confirm('Are you sure you want to delete this expense profile?');">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline btn-error">Delete</button>
-                                </form>
-                            </td>
-                        </tr>
+                            {% if not expense.lease %}  {# Only show if expense does not belong to a lease #}
+                            <tr>
+                                <td>{{ expense.profile_name }}</td>
+                                <td>{{ expense.get_transaction_type_display }}</td>
+                                <td>{{ expense.amount }}</td>
+                                <td>{{ expense.date }}</td>
+                                <td>{% if expense.recurring %}Yes{% else %}No{% endif %}</td>
+                                <td>{{ expense.account_name }}</td>
+                                <td>{{ expense.booking_no }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline" 
+                                    onclick="openEditExpenseModal(
+                                        '{{ expense.id }}',
+                                        '{{ expense.profile_name }}',
+                                        '{{ expense.transaction_type }}',
+                                        '{{ expense.amount }}',
+                                        '{{ expense.date }}',
+                                        '{{ expense.recurring }}',
+                                        '{{ expense.frequency }}',
+                                        '{{ expense.property.id|default:'' }}',
+                                        '{{ expense.lease.id|default:'' }}',
+                                        '{{ expense.account_name }}',
+                                        '{{ expense.booking_no }}'
+                                    )">
+                                    Edit
+                                </button>
+                                                                                                                     <form method="post" action="{% url 'delete_expense_profile' expense.id %}" class="inline" onsubmit="return confirm('Are you sure you want to delete this expense profile?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline btn-error">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endif %}
                         {% empty %}
                         <tr>
                             <td colspan="8" class="text-center text-base-content/50">No general expenses for this property.</td>
@@ -210,16 +245,167 @@
                     </tbody>
                 </table>
             </div>
+
+
         </div>
         {% endfor %}
     </div>
+
+    <!-- Edit Expense Modal -->
+    <dialog id="edit_expense_modal" class="modal">
+        <div class="modal-box bg-base-100 text-base-content">
+            <form method="post" id="edit_expense_form">
+                {% csrf_token %}
+                <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="edit_expense_modal.close()">✕</button>
+                <h1 class="text-lg font-bold mb-4">Edit Expense Profile</h1>
+
+                <!-- Profile Name -->
+                <div class="mb-4">
+                    <label class="label"><span class="label-text">Profile Name</span></label>
+                    <input type="text" name="profile_name" id="edit_profile_name" class="input input-bordered w-full" required>
+                </div>
+
+                <!-- Transaction Type -->
+                <div class="mb-4">
+                    <label class="label"><span class="label-text">Transaction Type</span></label>
+                    <select name="transaction_type" id="edit_transaction_type" class="select select-bordered w-full" required>
+                        <option value="bk_back_payments">BK Back Payments</option>
+                        <option value="bk_general_electricity">BK General Electricity</option>
+                        <option value="bk_insurance">BK Insurance</option>
+                        <option value="bk_heating_costs">BK Heating Costs</option>
+                        <option value="bk_property_taxes">BK Property Taxes</option>
+                        <option value="other_non_bk">Other Non-BK</option>
+                    </select>
+                </div>
+
+                <!-- Amount -->
+                <div class="mb-4">
+                    <label class="label"><span class="label-text">Amount</span></label>
+                    <input type="number" step="0.01" name="amount" id="edit_amount" class="input input-bordered w-full" required>
+                </div>
+
+                <!-- Date -->
+                <div class="mb-4">
+                    <label class="label"><span class="label-text">Date</span></label>
+                    <input type="date" name="date" id="edit_date" class="input input-bordered w-full" required>
+                </div>
+
+                <!-- Recurring -->
+                <div class="mb-4">
+                    <label class="label cursor-pointer">
+                        <span class="label-text">Recurring</span>
+                        <input type="checkbox" name="recurring" id="edit_recurring" class="checkbox">
+                    </label>
+                </div>
+
+                <!-- Frequency -->
+                <div class="mb-4">
+                    <label class="label"><span class="label-text">Frequency</span></label>
+                    <select name="frequency" id="edit_frequency" class="select select-bordered w-full">
+                        <option value="">-- None --</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                    </select>
+                </div>
+
+                <!-- Property -->
+                <div class="mb-4">
+                    <label class="label"><span class="label-text">Property</span></label>
+                    <select name="property" id="edit_property" class="select select-bordered w-full">
+                        <option value="">-- Select Property --</option>
+                        {% for property in properties %}
+                            <option value="{{ property.id }}">{{ property.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Lease -->
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Lease </span>
+                    </label>
+                    <select name="lease" class="select select-bordered w-full">
+                        <option value="">-- Select Lease --</option>
+                        {% for property in properties %}
+                            {% for lease in property.leases.all %}
+                                <option value="{{ lease.id }}">{{ lease }}</option>
+                            {% endfor %}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Account Name -->
+                <div class="mb-4">
+                    <label class="label"><span class="label-text">Account Name</span></label>
+                    <input type="text" name="account_name" id="edit_account_name" class="input input-bordered w-full" required>
+                </div>
+
+                <!-- Booking Number -->
+                <div class="mb-4">
+                    <label class="label"><span class="label-text">Booking No (BN)</span></label>
+                    <input type="text" name="booking_no" id="edit_booking_no" class="input input-bordered w-full" required>
+                </div>
+
+                <!-- Actions -->
+                <div class="modal-action">
+                    <button type="submit" class="btn btn-outline">Save</button>
+                    <button type="button" class="btn btn-outline btn-error" onclick="edit_expense_modal.close()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
 </div>
 
 <script>
-    function openEditExpenseModal(expenseId) {
+    function openEditExpenseModal(id, profileName, transactionType, amount, date, recurring, frequency, leaseId, accountName, bookingNo, propertyId) {
         const form = document.getElementById('edit_expense_form');
-        form.action = `/edit_expense_profile/${expenseId}/`; // Update the form action dynamically
+        form.action = `/edit_expense_profile/${id}/`;
+
+        // Convert German date format (26. Dezember 2024) to yyyy-MM-dd
+        function formatDate(dateStr) {
+            const months = {
+                'Januar': '01', 'Februar': '02', 'März': '03', 'April': '04',
+                'Mai': '05', 'Juni': '06', 'Juli': '07', 'August': '08',
+                'September': '09', 'Oktober': '10', 'November': '11', 'Dezember': '12'
+            };
+            const parts = dateStr.replace('.', '').split(' ');
+            if (parts.length === 3) {
+                const day = parts[0].padStart(2, '0');
+                const month = months[parts[1]] || parts[1];
+                const year = parts[2];
+                return `${year}-${month}-${day}`;
+            }
+            return ""; // Fallback for invalid format
+        }
+
+        // Convert German amount format (200,00) to valid numeric format
+        function formatAmount(amountStr) {
+            return amountStr.replace('.', '').replace(',', '.');
+        }
+
+        // Populate the form fields
+        document.getElementById('edit_profile_name').value = profileName;
+        document.getElementById('edit_transaction_type').value = transactionType;
+        document.getElementById('edit_amount').value = formatAmount(amount);
+        document.getElementById('edit_date').value = formatDate(date);
+        document.getElementById('edit_recurring').checked = recurring === 'True';
+        document.getElementById('edit_frequency').value = frequency || "";
+        
+        // Set the property and lease dropdown values
+        const propertySelect = document.getElementById('edit_property');
+        const leaseSelect = document.getElementById('edit_lease');
+
+        if (propertySelect) propertySelect.value = propertyId || "";
+        if (leaseSelect) leaseSelect.value = leaseId || "";
+
+        document.getElementById('edit_account_name').value = accountName;
+        document.getElementById('edit_booking_no').value = bookingNo;
+
+        // Show the Edit Modal
         document.getElementById('edit_expense_modal').showModal();
     }
 </script>
+
+
 {% endblock %}

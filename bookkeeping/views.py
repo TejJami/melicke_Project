@@ -471,16 +471,18 @@ def edit_expense_profile(request, pk):
         lease_id = request.POST.get('lease')
         property_id = request.POST.get('property')
 
-        if not lease_id and not property_id:
-            return render(request, 'bookkeeping/edit_expense_profile.html', {
-                'error': "You must select either a Property or a Lease.",
-                'expense': expense,
-                'leases': Lease.objects.all(),
-                'properties': Property.objects.all(),
-            })
 
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
         property_obj = Property.objects.filter(id=property_id).first() if property_id else None
+
+        ust = 0  # Default value
+        if lease and lease.ust_type:
+            if lease.ust_type == 'Voll':
+                ust = 19
+            elif lease.ust_type == 'Teilw':
+                ust = 7
+            elif lease.ust_type == 'Nicht':
+                ust = 0
 
         expense.lease = lease
         expense.property = property_obj
@@ -491,12 +493,12 @@ def edit_expense_profile(request, pk):
         expense.recurring = request.POST.get('recurring') == 'on'
         expense.frequency = request.POST.get('frequency') if expense.recurring else None
         expense.account_name = request.POST.get('account_name')
-        expense.ust = lease.ust_type if lease else 0
+        expense.ust = ust
 
         expense.save()
         return redirect('expense_profiles')
 
-    return render(request, 'bookkeeping/edit_expense_profile.html', {
+    return render(request, 'bookkeeping/expense_profiles.html', {
         'expense': expense,
         'leases': Lease.objects.all(),
         'properties': Property.objects.all(),
