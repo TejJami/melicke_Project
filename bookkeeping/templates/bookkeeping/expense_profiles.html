@@ -154,23 +154,37 @@
                             <td>{{ expense.booking_no }}</td>
                             <td>
                                 <button class="btn btn-sm btn-outline" 
-                                onclick="openEditExpenseModal(
-                                    '{{ expense.id }}',
-                                    '{{ expense.profile_name }}',
-                                    '{{ expense.transaction_type }}',
-                                    '{{ expense.amount }}',
-                                    '{{ expense.date }}',
-                                    '{{ expense.recurring }}',
-                                    '{{ expense.frequency }}',
-                                    '{{ expense.property.id}}',
-                                    '{{ expense.lease.id }}',
-                                    '{{ expense.account_name }}',
-                                    '{{ expense.booking_no }}'
-                                )">
+                                onclick="
+                                    console.log('ID:', '{{ expense.id }}');
+                                    console.log('Profile Name:', '{{ expense.profile_name }}');
+                                    console.log('Transaction Type:', '{{ expense.transaction_type }}');
+                                    console.log('Amount:', '{{ expense.amount }}');
+                                    console.log('Date:', '{{ expense.date }}');
+                                    console.log('Recurring:', '{{ expense.recurring }}');
+                                    console.log('Frequency:', '{{ expense.frequency }}');
+                                    console.log('Property ID:', '{{ expense.property.id|default_if_none:'' }}');
+                                    console.log('Lease ID:', '{{ expense.lease.id|default_if_none:'' }}');
+                                    console.log('Account Name:', '{{ expense.account_name }}');
+                                    console.log('Booking No:', '{{ expense.booking_no }}');
+                                    openEditExpenseModal(
+                                        '{{ expense.id }}',
+                                        '{{ expense.profile_name }}',
+                                        '{{ expense.transaction_type }}',
+                                        '{{ expense.amount }}',
+                                        '{{ expense.date }}',
+                                        '{{ expense.recurring }}',
+                                        '{{ expense.frequency }}',
+                                        '{{ expense.property.id|default_if_none:'' }}',
+                                        '{{ expense.lease.id|default_if_none:'' }}',
+                                        '{{ expense.account_name }}',
+                                        '{{ expense.booking_no }}'
+                                    )
+                                ">
                                 Edit
                             </button>
                             
-                                                                                      <form method="post" action="{% url 'delete_expense_profile' expense.id %}" class="inline" onsubmit="return confirm('Are you sure you want to delete this expense profile?');">
+                            
+                                                                                                                                         <form method="post" action="{% url 'delete_expense_profile' expense.id %}" class="inline" onsubmit="return confirm('Are you sure you want to delete this expense profile?');">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-sm btn-outline btn-error">Delete</button>
                                 </form>
@@ -215,21 +229,35 @@
                                 <td>{{ expense.booking_no }}</td>
                                 <td>
                                     <button class="btn btn-sm btn-outline" 
-                                    onclick="openEditExpenseModal(
-                                        '{{ expense.id }}',
-                                        '{{ expense.profile_name }}',
-                                        '{{ expense.transaction_type }}',
-                                        '{{ expense.amount }}',
-                                        '{{ expense.date }}',
-                                        '{{ expense.recurring }}',
-                                        '{{ expense.frequency }}',
-                                        '{{ expense.property.id|default:'' }}',
-                                        '{{ expense.lease.id|default:'' }}',
-                                        '{{ expense.account_name }}',
-                                        '{{ expense.booking_no }}'
-                                    )">
+                                    onclick="
+                                        console.log('ID:', '{{ expense.id }}');
+                                        console.log('Profile Name:', '{{ expense.profile_name }}');
+                                        console.log('Transaction Type:', '{{ expense.transaction_type }}');
+                                        console.log('Amount:', '{{ expense.amount }}');
+                                        console.log('Date:', '{{ expense.date }}');
+                                        console.log('Recurring:', '{{ expense.recurring }}');
+                                        console.log('Frequency:', '{{ expense.frequency }}');
+                                        console.log('Property ID:', '{{ expense.property.id|default:'' }}');
+                                        console.log('Lease ID:', '{{ expense.lease.id|default:'' }}');
+                                        console.log('Account Name:', '{{ expense.account_name }}');
+                                        console.log('Booking No:', '{{ expense.booking_no }}');
+                                        openEditExpenseModal(
+                                            '{{ expense.id }}',
+                                            '{{ expense.profile_name }}',
+                                            '{{ expense.transaction_type }}',
+                                            '{{ expense.amount }}',
+                                            '{{ expense.date }}',
+                                            '{{ expense.recurring }}',
+                                            '{{ expense.frequency }}',
+                                            '{{ expense.property.id|default:'' }}',
+                                            '{{ expense.lease.id|default:'' }}',
+                                            '{{ expense.account_name }}',
+                                            '{{ expense.booking_no }}'
+                                        )
+                                    ">
                                     Edit
                                 </button>
+                                
                                                                                                                      <form method="post" action="{% url 'delete_expense_profile' expense.id %}" class="inline" onsubmit="return confirm('Are you sure you want to delete this expense profile?');">
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-sm btn-outline btn-error">Delete</button>
@@ -324,7 +352,7 @@
                     <label class="label">
                         <span class="label-text">Lease </span>
                     </label>
-                    <select name="lease" class="select select-bordered w-full">
+                    <select name="lease" id="edit_lease" class="select select-bordered w-full">
                         <option value="">-- Select Lease --</option>
                         {% for property in properties %}
                             {% for lease in property.leases.all %}
@@ -358,54 +386,82 @@
 </div>
 
 <script>
-    function openEditExpenseModal(id, profileName, transactionType, amount, date, recurring, frequency, leaseId, accountName, bookingNo, propertyId) {
-        const form = document.getElementById('edit_expense_form');
-        form.action = `/edit_expense_profile/${id}/`;
+function openEditExpenseModal(id, profileName, transactionType, amount, date, recurring, frequency, propertyId, leaseId, accountName, bookingNo) {
+    const form = document.getElementById('edit_expense_form');
+    form.action = `/edit_expense_profile/${id}/`;
 
-        // Convert German date format (26. Dezember 2024) to yyyy-MM-dd
-        function formatDate(dateStr) {
-            const months = {
-                'Januar': '01', 'Februar': '02', 'März': '03', 'April': '04',
-                'Mai': '05', 'Juni': '06', 'Juli': '07', 'August': '08',
-                'September': '09', 'Oktober': '10', 'November': '11', 'Dezember': '12'
-            };
-            const parts = dateStr.replace('.', '').split(' ');
-            if (parts.length === 3) {
-                const day = parts[0].padStart(2, '0');
-                const month = months[parts[1]] || parts[1];
-                const year = parts[2];
-                return `${year}-${month}-${day}`;
-            }
-            return ""; // Fallback for invalid format
+    console.log("=== DEBUG: Function Parameters ===");
+    console.log("ID:", id);
+    console.log("Profile Name:", profileName);
+    console.log("Transaction Type:", transactionType);
+    console.log("Amount:", amount);
+    console.log("Date:", date);
+    console.log("Recurring:", recurring);
+    console.log("Frequency:", frequency);
+    console.log("Property ID (Received):", propertyId);
+    console.log("Lease ID (Received):", leaseId);
+    console.log("Account Name:", accountName);
+    console.log("Booking No:", bookingNo);
+
+    function formatDate(dateStr) {
+        const months = {
+            'Januar': '01', 'Februar': '02', 'März': '03', 'April': '04',
+            'Mai': '05', 'Juni': '06', 'Juli': '07', 'August': '08',
+            'September': '09', 'Oktober': '10', 'November': '11', 'Dezember': '12'
+        };
+        const parts = dateStr.replace('.', '').split(' ');
+        if (parts.length === 3) {
+            const day = parts[0].padStart(2, '0');
+            const month = months[parts[1]] || parts[1];
+            const year = parts[2];
+            return `${year}-${month}-${day}`;
         }
-
-        // Convert German amount format (200,00) to valid numeric format
-        function formatAmount(amountStr) {
-            return amountStr.replace('.', '').replace(',', '.');
-        }
-
-        // Populate the form fields
-        document.getElementById('edit_profile_name').value = profileName;
-        document.getElementById('edit_transaction_type').value = transactionType;
-        document.getElementById('edit_amount').value = formatAmount(amount);
-        document.getElementById('edit_date').value = formatDate(date);
-        document.getElementById('edit_recurring').checked = recurring === 'True';
-        document.getElementById('edit_frequency').value = frequency || "";
-        
-        // Set the property and lease dropdown values
-        const propertySelect = document.getElementById('edit_property');
-        const leaseSelect = document.getElementById('edit_lease');
-
-        if (propertySelect) propertySelect.value = propertyId || "";
-        if (leaseSelect) leaseSelect.value = leaseId || "";
-
-        document.getElementById('edit_account_name').value = accountName;
-        document.getElementById('edit_booking_no').value = bookingNo;
-
-        // Show the Edit Modal
-        document.getElementById('edit_expense_modal').showModal();
+        return dateStr;
     }
+
+    function formatAmount(amountStr) {
+        return amountStr.replace('.', '').replace(',', '.');
+    }
+
+    document.getElementById('edit_profile_name').value = profileName;
+    document.getElementById('edit_transaction_type').value = transactionType;
+    document.getElementById('edit_amount').value = formatAmount(amount);
+    document.getElementById('edit_date').value = formatDate(date);
+    document.getElementById('edit_recurring').checked = recurring === 'True';
+    document.getElementById('edit_frequency').value = frequency || "";
+
+    const propertySelect = document.getElementById('edit_property');
+    const leaseSelect = document.getElementById('edit_lease');
+
+    if (propertySelect) {
+        propertySelect.value = propertyId || "";
+        console.log("Setting Property Select to:", propertyId);
+    }
+
+    if (leaseSelect) {
+        console.log("=== Lease Options in Modal ===");
+        Array.from(leaseSelect.options).forEach(option => {
+            console.log(`Option Value: ${option.value}, Option Text: ${option.text}`);
+        });
+
+        // Select the correct lease ID
+        Array.from(leaseSelect.options).forEach(option => {
+            if (option.value == leaseId) {
+                option.selected = true;
+            }
+        });
+        console.log("Setting Lease Select to:", leaseId);
+    }
+
+
+    document.getElementById('edit_account_name').value = accountName;
+    document.getElementById('edit_booking_no').value = bookingNo;
+
+    document.getElementById('edit_expense_modal').showModal();
+}
+
 </script>
+
 
 
 {% endblock %}
