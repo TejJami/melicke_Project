@@ -845,6 +845,15 @@ def edit_income_profile(request, pk):
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
         property_obj = Property.objects.filter(id=property_id).first() if property_id else None
 
+        ust = 0  # Default value
+        if lease and lease.ust_type:
+            if lease.ust_type == 'Voll':
+                ust = 19
+            elif lease.ust_type == 'Teilw':
+                ust = 7
+            elif lease.ust_type == 'Nicht':
+                ust = 0
+
         income.lease = lease
         income.property = property_obj
         income.profile_name = request.POST.get('profile_name')
@@ -854,8 +863,7 @@ def edit_income_profile(request, pk):
         income.recurring = request.POST.get('recurring') == 'on'
         income.frequency = request.POST.get('frequency') if income.recurring else None
         income.account_name = request.POST.get('account_name')
-        income.ust = lease.ust_type if lease else 0
-
+        income.ust = ust
         income.save()
         return redirect('income_profiles')
 

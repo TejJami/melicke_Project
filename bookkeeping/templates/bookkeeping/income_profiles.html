@@ -16,16 +16,12 @@
                 <h1 class="text-lg font-bold mb-4">Add Income Profile</h1>
 
                 <div class="mb-4">
-                    <label class="label">
-                        <span class="label-text">Profile Name</span>
-                    </label>
-                    <input type="text" name="profile_name" class="input input-bordered w-full" placeholder="Profile Name" required>
+                    <label class="label"><span class="label-text">Profile Name</span></label>
+                    <input type="text" name="profile_name" class="input input-bordered w-full" required>
                 </div>
 
                 <div class="mb-4">
-                    <label class="label">
-                        <span class="label-text">Transaction Type</span>
-                    </label>
+                    <label class="label"><span class="label-text">Transaction Type</span></label>
                     <select name="transaction_type" class="select select-bordered w-full" required>
                         <option value="rent">Rent</option>
                         <option value="bk_advance_payments">BK Advance Payments</option>
@@ -36,30 +32,22 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="label">
-                        <span class="label-text">Amount</span>
-                    </label>
-                    <input type="number" step="0.01" name="amount" class="input input-bordered w-full" placeholder="Amount" required>
+                    <label class="label"><span class="label-text">Amount</span></label>
+                    <input type="number" step="0.01" name="amount" class="input input-bordered w-full" required>
                 </div>
 
                 <div class="mb-4">
-                    <label class="label">
-                        <span class="label-text">Date</span>
-                    </label>
+                    <label class="label"><span class="label-text">Date</span></label>
                     <input type="date" name="date" class="input input-bordered w-full">
                 </div>
 
                 <div class="mb-4">
-                    <label class="label cursor-pointer">
-                        <span class="label-text">Recurring</span>
-                        <input type="checkbox" name="recurring" class="checkbox">
-                    </label>
+                    <label class="label cursor-pointer"><span class="label-text">Recurring</span></label>
+                    <input type="checkbox" name="recurring" class="checkbox">
                 </div>
 
                 <div class="mb-4">
-                    <label class="label">
-                        <span class="label-text">Frequency</span>
-                    </label>
+                    <label class="label"><span class="label-text">Frequency</span></label>
                     <select name="frequency" class="select select-bordered w-full">
                         <option value="">-- None --</option>
                         <option value="monthly">Monthly</option>
@@ -68,9 +56,7 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="label">
-                        <span class="label-text">Property</span>
-                    </label>
+                    <label class="label"><span class="label-text">Property</span></label>
                     <select name="property" class="select select-bordered w-full">
                         <option value="">-- Select Property --</option>
                         {% for property in properties %}
@@ -80,11 +66,9 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="label">
-                        <span class="label-text">Lease (Optional)</span>
-                    </label>
+                    <label class="label"><span class="label-text">Lease (Optional)</span></label>
                     <select name="lease" class="select select-bordered w-full">
-                        <option value="">-- General Income --</option>
+                        <option value="">-- Select Lease --</option>
                         {% for property in properties %}
                             {% for lease in property.leases.all %}
                                 <option value="{{ lease.id }}">{{ lease }}</option>
@@ -94,17 +78,13 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="label">
-                        <span class="label-text">Account Name</span>
-                    </label>
-                    <input type="text" name="account_name" class="input input-bordered w-full" placeholder="Account Name" required>
+                    <label class="label"><span class="label-text">Account Name</span></label>
+                    <input type="text" name="account_name" class="input input-bordered w-full" required>
                 </div>
 
                 <div class="mb-4">
-                    <label class="label">
-                        <span class="label-text">Booking No (BN)</span>
-                    </label>
-                    <input type="text" name="booking_no" class="input input-bordered w-full" placeholder="Booking Number" required>
+                    <label class="label"><span class="label-text">Booking No (BN)</span></label>
+                    <input type="text" name="booking_no" class="input input-bordered w-full" required>
                 </div>
 
                 <div class="modal-action">
@@ -115,18 +95,17 @@
         </div>
     </dialog>
 
-    <!-- Income Profiles Grouped by Property and Lease -->
+    <!-- Income Profiles Table -->
     <div class="overflow-x-auto">
         <h2 class="text-xl font-semibold mb-3">Income Profiles</h2>
         {% for property in properties %}
         <div class="card bg-base-200 p-4 mb-4">
-            <!-- Property Header -->
             <h3 class="text-lg font-bold">{{ property.name }}</h3>
-            
-            <!-- Leases with Income Profiles -->
+
+            <!-- Lease-Specific Incomes -->
             {% for lease in property.leases.all %}
             <div class="ml-5">
-                <h4 class="text-md font-semibold">Lease: {{ lease.unit_name }} - {{ lease.tenant_name }}</h4>
+                <h4 class="text-md font-semibold">Lease Specific Income</h4>
                 <table class="table w-full">
                     <thead>
                         <tr>
@@ -135,6 +114,7 @@
                             <th>Amount</th>
                             <th>Date</th>
                             <th>Recurring</th>
+                            <th>Lease Name</th>
                             <th>Account Name</th>
                             <th>Booking No</th>
                             <th>Actions</th>
@@ -148,80 +128,202 @@
                             <td>{{ income.amount }}</td>
                             <td>{{ income.date }}</td>
                             <td>{% if income.recurring %}Yes{% else %}No{% endif %}</td>
+                            <td>{{ lease.unit }}</td>
                             <td>{{ income.account_name }}</td>
                             <td>{{ income.booking_no }}</td>
                             <td>
-                                <button class="btn btn-sm btn-outline" onclick="openEditIncomeModal('{{ income.id }}')">Edit</button>
-                                <form method="post" action="{% url 'delete_income_profile' income.id %}" class="inline" onsubmit="return confirm('Are you sure you want to delete this income profile?');">
+                                <button class="btn btn-sm btn-outline" 
+                                    onclick="openEditIncomeModal(
+                                        '{{ income.id }}',
+                                        '{{ income.profile_name }}',
+                                        '{{ income.transaction_type }}',
+                                        '{{ income.amount }}',
+                                        '{{ income.date }}',
+                                        '{{ income.recurring }}',
+                                        '{{ income.frequency }}',
+                                        '{{ income.property.id|default:'' }}',
+                                        '{{ income.lease.id|default:'' }}',
+                                        '{{ income.account_name }}',
+                                        '{{ income.booking_no }}'
+                                    )">Edit</button>
+                                <form method="post" action="{% url 'delete_income_profile' income.id %}" class="inline">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-sm btn-outline btn-error">Delete</button>
                                 </form>
                             </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="8" class="text-center text-base-content/50">No incomes for this lease.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
             {% endfor %}
-    
-            <!-- General Property Incomes -->
-            <div class="ml-5">
-                <h4 class="text-md font-semibold">General Property Incomes</h4>
-                <table class="table w-full">
-                    <thead>
-                        <tr>
-                            <th>Profile Name</th>
-                            <th>Transaction Type</th>
-                            <th>Amount</th>
-                            <th>Date</th>
-                            <th>Recurring</th>
-                            <th>Account Name</th>
-                            <th>Booking No</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for income in property.income_profiles.all %}
-                        <tr>
-                            <td>{{ income.profile_name }}</td>
-                            <td>{{ income.get_transaction_type_display }}</td>
-                            <td>{{ income.amount }}</td>
-                            <td>{{ income.date }}</td>
-                            <td>{% if income.recurring %}Yes{% else %}No{% endif %}</td>
-                            <td>{{ income.account_name }}</td>
-                            <td>{{ income.booking_no }}</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline" onclick="openEditIncomeModal('{{ income.id }}')">Edit</button>
-                                <form method="post" action="{% url 'delete_income_profile' income.id %}" class="inline" onsubmit="return confirm('Are you sure you want to delete this income profile?');">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline btn-error">Delete</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="8" class="text-center text-base-content/50">No general incomes for this property.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
         </div>
         {% endfor %}
     </div>
-    
-    
+
+    <!-- Edit Income Modal -->
+    <dialog id="edit_income_modal" class="modal">
+        <div class="modal-box bg-base-100 text-base-content">
+            <form method="post" id="edit_income_form">
+                {% csrf_token %}
+                <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="edit_income_modal.close()">✕</button>
+                <h1 class="text-lg font-bold mb-4">Edit Income Profile</h1>
+
+                <!-- Profile Name -->
+                <div class="mb-4">
+                    <label class="label"><span class="label-text">Profile Name</span></label>
+                    <input type="text" name="profile_name" id="edit_profile_name" class="input input-bordered w-full" required>
+                </div>
+
+                <!-- Transaction Type -->
+                <div class="mb-4">
+                    <label class="label"><span class="label-text">Transaction Type</span></label>
+                    <select name="transaction_type" id="edit_transaction_type" class="select select-bordered w-full" required>
+                        <option value="rent">Rent</option>
+                        <option value="bk_advance_payments">BK Advance Payments</option>
+                        <option value="security_deposit">Security Deposit</option>
+                        <option value="subsidy">Subsidy</option>
+                        <option value="deposit_withdrawal">Deposit / Withdrawal</option>
+                    </select>
+                </div>
+
+                <!-- Amount -->
+                <div class="mb-4">
+                    <label class="label"><span class="label-text">Amount</span></label>
+                    <input type="number" step="0.01" name="amount" id="edit_amount" class="input input-bordered w-full" required>
+                </div>
+
+                <!-- Date -->
+                <div class="mb-4">
+                    <label class="label"><span class="label-text">Date</span></label>
+                    <input type="date" name="date" id="edit_date" class="input input-bordered w-full" required>
+                </div>
+
+                <!-- Recurring -->
+                <div class="mb-4">
+                    <label class="label cursor-pointer"><span class="label-text">Recurring</span></label>
+                    <input type="checkbox" name="recurring" id="edit_recurring" class="checkbox">
+                </div>
+
+                <!-- Frequency -->
+                <div class="mb-4">
+                    <label class="label"><span class="label-text">Frequency</span></label>
+                    <select name="frequency" id="edit_frequency" class="select select-bordered w-full">
+                        <option value="">-- None --</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                    </select>
+                </div>
+
+                <!-- Property -->
+                <div class="mb-4">
+                    <label class="label"><span class="label-text">Property</span></label>
+                    <select name="property" id="edit_property" class="select select-bordered w-full">
+                        <option value="">-- Select Property --</option>
+                        {% for property in properties %}
+                            <option value="{{ property.id }}">{{ property.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Lease -->
+                <div class="mb-4">
+                    <label class="label"><span class="label-text">Lease</span></label>
+                    <select name="lease" id="edit_lease" class="select select-bordered w-full">
+                        <option value="">-- Select Lease --</option>
+                        {% for property in properties %}
+                            {% for lease in property.leases.all %}
+                                <option value="{{ lease.id }}">{{ lease }}</option>
+                            {% endfor %}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Account Name -->
+                <div class="mb-4">
+                    <label class="label"><span class="label-text">Account Name</span></label>
+                    <input type="text" name="account_name" id="edit_account_name" class="input input-bordered w-full" required>
+                </div>
+
+                <!-- Booking No -->
+                <div class="mb-4">
+                    <label class="label"><span class="label-text">Booking No (BN)</span></label>
+                    <input type="text" name="booking_no" id="edit_booking_no" class="input input-bordered w-full" required>
+                </div>
+
+                <!-- Actions -->
+                <div class="modal-action">
+                    <button type="submit" class="btn btn-outline">Save</button>
+                    <button type="button" class="btn btn-outline btn-error" onclick="edit_income_modal.close()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
 </div>
 
 <script>
-    function openEditIncomeModal(incomeId) {
+    function openEditIncomeModal(id, profileName, transactionType, amount, date, recurring, frequency, propertyId, leaseId, accountName, bookingNo) {
         const form = document.getElementById('edit_income_form');
-        form.action = `/edit_income_profile/${incomeId}/`; // Update the form action dynamically
+        form.action = `/edit_income_profile/${id}/`;
+    
+        console.log("=== DEBUG: Edit Income Modal Parameters ===");
+        console.log("ID:", id);
+        console.log("Profile Name:", profileName);
+        console.log("Transaction Type:", transactionType);
+        console.log("Amount:", amount);
+        console.log("Date:", date);
+        console.log("Recurring:", recurring);
+        console.log("Frequency:", frequency);
+        console.log("Property ID:", propertyId);
+        console.log("Lease ID:", leaseId);
+        console.log("Account Name:", accountName);
+        console.log("Booking No:", bookingNo);
+    
+        // Helper function to format date
+        function formatDate(dateStr) {
+            const months = {
+                'Januar': '01', 'Februar': '02', 'März': '03', 'April': '04',
+                'Mai': '05', 'Juni': '06', 'Juli': '07', 'August': '08',
+                'September': '09', 'Oktober': '10', 'November': '11', 'Dezember': '12'
+            };
+            const parts = dateStr.replace('.', '').split(' ');
+            if (parts.length === 3) {
+                const day = parts[0].padStart(2, '0');
+                const month = months[parts[1]] || parts[1];
+                const year = parts[2];
+                return `${year}-${month}-${day}`;
+            }
+            return dateStr;
+        }
+    
+        // Helper function to format amount
+        function formatAmount(amountStr) {
+            return amountStr.replace('.', '').replace(',', '.');
+        }
+    
+        // Populate the form fields
+        document.getElementById('edit_profile_name').value = profileName;
+        document.getElementById('edit_transaction_type').value = transactionType;
+        document.getElementById('edit_amount').value = formatAmount(amount);
+        document.getElementById('edit_date').value = formatDate(date);
+        document.getElementById('edit_recurring').checked = recurring === "True";
+        document.getElementById('edit_frequency').value = frequency || "";
+        document.getElementById('edit_property').value = propertyId || "";
+    
+        const leaseSelect = document.getElementById('edit_lease');
+        if (leaseSelect) {
+            Array.from(leaseSelect.options).forEach(option => {
+                if (option.value == leaseId) {
+                    option.selected = true;
+                }
+            });
+        }
+    
+        document.getElementById('edit_account_name').value = accountName;
+        document.getElementById('edit_booking_no').value = bookingNo;
+    
         document.getElementById('edit_income_modal').showModal();
     }
-</script>
+    </script>
+
 {% endblock %}
