@@ -412,24 +412,40 @@ def delete_tenant(request, pk):
 
 # Expense Profiles
 def expense_profiles(request):
-    """
-    Fetch all expense profiles, including those with and without leases.
-    """
-    expenses = ExpenseProfile.objects.select_related('lease', 'lease__property').all()
-    leases = Lease.objects.all()
+    properties = Property.objects.prefetch_related('leases', 'expense_profiles').all()
     return render(request, 'bookkeeping/expense_profiles.html', {
-        'expenses': expenses,
-        'leases': leases,
+        'properties': properties,
     })
 
 # Add Expense Profile
 def add_expense_profile(request):
     if request.method == 'POST':
         lease_id = request.POST.get('lease')
+        property_id = request.POST.get('property')
+        
+        # Ensure that either a property or lease is selected
+        if not lease_id and not property_id:
+            return render(request, 'bookkeeping/add_expense_profile.html', {
+                'error': "You must select either a Property or a Lease.",
+                'leases': Lease.objects.all(),
+                'properties': Property.objects.all(),
+            })
+        
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
+        property_obj = Property.objects.filter(id=property_id).first() if property_id else None
+
+        ust = 0  # Default value
+        if lease and lease.ust_type:
+            if lease.ust_type == 'Voll':
+                ust = 19
+            elif lease.ust_type == 'Teilw':
+                ust = 7
+            elif lease.ust_type == 'Nicht':
+                ust = 0
 
         ExpenseProfile.objects.create(
             lease=lease,
+            property=property_obj,
             profile_name=request.POST.get('profile_name'),
             transaction_type=request.POST.get('transaction_type'),
             amount=request.POST.get('amount'),
@@ -437,14 +453,14 @@ def add_expense_profile(request):
             recurring=request.POST.get('recurring') == 'on',
             frequency=request.POST.get('frequency'),
             account_name=request.POST.get('account_name'),
-            ust=lease.ust_type if lease else 0,
+            ust=ust,
             booking_no=request.POST.get('booking_no'),
         )
         return redirect('expense_profiles')
 
-    leases = Lease.objects.all()
     return render(request, 'bookkeeping/add_expense_profile.html', {
-        'leases': leases,
+        'leases': Lease.objects.all(),
+        'properties': Property.objects.all(),
     })
 
 # Edit Expense Profile
@@ -453,9 +469,21 @@ def edit_expense_profile(request, pk):
 
     if request.method == 'POST':
         lease_id = request.POST.get('lease')
+        property_id = request.POST.get('property')
+
+        if not lease_id and not property_id:
+            return render(request, 'bookkeeping/edit_expense_profile.html', {
+                'error': "You must select either a Property or a Lease.",
+                'expense': expense,
+                'leases': Lease.objects.all(),
+                'properties': Property.objects.all(),
+            })
+
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
+        property_obj = Property.objects.filter(id=property_id).first() if property_id else None
 
         expense.lease = lease
+        expense.property = property_obj
         expense.profile_name = request.POST.get('profile_name')
         expense.transaction_type = request.POST.get('transaction_type')
         expense.amount = request.POST.get('amount')
@@ -464,15 +492,14 @@ def edit_expense_profile(request, pk):
         expense.frequency = request.POST.get('frequency') if expense.recurring else None
         expense.account_name = request.POST.get('account_name')
         expense.ust = lease.ust_type if lease else 0
-        expense.booking_no = request.POST.get('booking_no')
 
         expense.save()
         return redirect('expense_profiles')
 
-    leases = Lease.objects.all()
     return render(request, 'bookkeeping/edit_expense_profile.html', {
         'expense': expense,
-        'leases': leases,
+        'leases': Lease.objects.all(),
+        'properties': Property.objects.all(),
     })
 
 # Delete Expense Profile
@@ -749,24 +776,37 @@ def delete_lease(request, pk):
 
 # Income Profiles
 def income_profiles(request):
-    """
-    Fetch all income profiles, including those without leases.
-    """
-    incomes = IncomeProfile.objects.select_related('lease', 'lease__property').all()
-    leases = Lease.objects.all()
-    return render(request, 'bookkeeping/income_profiles.html', {
-        'incomes': incomes,
-        'leases': leases,
-    })
+    properties = Property.objects.prefetch_related('leases__income_profiles', 'income_profiles')
+    return render(request, 'bookkeeping/income_profiles.html', {'properties': properties})
 
 # Add Income Profile
 def add_income_profile(request):
     if request.method == 'POST':
         lease_id = request.POST.get('lease')
+        property_id = request.POST.get('property')
+
+        if not lease_id and not property_id:
+            return render(request, 'bookkeeping/add_income_profile.html', {
+                'error': "You must select either a Property or a Lease.",
+                'leases': Lease.objects.all(),
+                'properties': Property.objects.all(),
+            })
+
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
+        property_obj = Property.objects.filter(id=property_id).first() if property_id else None
+
+        ust = 0  # Default value
+        if lease and lease.ust_type:
+            if lease.ust_type == 'Voll':
+                ust = 19
+            elif lease.ust_type == 'Teilw':
+                ust = 7
+            elif lease.ust_type == 'Nicht':
+                ust = 0
 
         IncomeProfile.objects.create(
             lease=lease,
+            property=property_obj,
             profile_name=request.POST.get('profile_name'),
             transaction_type=request.POST.get('transaction_type'),
             amount=request.POST.get('amount'),
@@ -774,14 +814,14 @@ def add_income_profile(request):
             recurring=request.POST.get('recurring') == 'on',
             frequency=request.POST.get('frequency'),
             account_name=request.POST.get('account_name'),
-            ust=lease.ust_type if lease else 0,
+            ust=ust,
             booking_no=request.POST.get('booking_no'),
         )
         return redirect('income_profiles')
 
-    leases = Lease.objects.all()
     return render(request, 'bookkeeping/add_income_profile.html', {
-        'leases': leases,
+        'leases': Lease.objects.all(),
+        'properties': Property.objects.all(),
     })
 
 # Edit Income Profile
@@ -790,9 +830,21 @@ def edit_income_profile(request, pk):
 
     if request.method == 'POST':
         lease_id = request.POST.get('lease')
+        property_id = request.POST.get('property')
+
+        if not lease_id and not property_id:
+            return render(request, 'bookkeeping/edit_income_profile.html', {
+                'error': "You must select either a Property or a Lease.",
+                'income': income,
+                'leases': Lease.objects.all(),
+                'properties': Property.objects.all(),
+            })
+
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
+        property_obj = Property.objects.filter(id=property_id).first() if property_id else None
 
         income.lease = lease
+        income.property = property_obj
         income.profile_name = request.POST.get('profile_name')
         income.transaction_type = request.POST.get('transaction_type')
         income.amount = request.POST.get('amount')
@@ -801,15 +853,14 @@ def edit_income_profile(request, pk):
         income.frequency = request.POST.get('frequency') if income.recurring else None
         income.account_name = request.POST.get('account_name')
         income.ust = lease.ust_type if lease else 0
-        income.booking_no = request.POST.get('booking_no')
 
         income.save()
         return redirect('income_profiles')
 
-    leases = Lease.objects.all()
     return render(request, 'bookkeeping/edit_income_profile.html', {
         'income': income,
-        'leases': leases,
+        'leases': Lease.objects.all(),
+        'properties': Property.objects.all(),
     })
 
 # Delete Income Profile

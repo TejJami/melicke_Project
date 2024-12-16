@@ -99,7 +99,7 @@ class Lease(models.Model):
     end_date = models.DateField(null=True, blank=True)
     ust_type = models.CharField(
         max_length=10,
-        choices=[('Nicht', 'Nicht'), ('Voll', 'Voll'), ('Teilw', 'Teilw')],
+        choices=[('Nicht', '0'), ('Voll', '19'), ('Teilw', '7')],
         default='Voll'
     )
     deposit_amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -134,29 +134,32 @@ class ExpenseProfile(models.Model):
         ('deposit_withdrawal', 'Deposit / Withdrawal'),
     ]
 
-    lease = models.ForeignKey(Lease, related_name='expense_profiles', on_delete=models.CASCADE, null=True, blank=True)
-    profile_name = models.CharField(max_length=255)  # Profile name
+    property = models.ForeignKey(
+        Property, related_name='expense_profiles', on_delete=models.CASCADE, null=True, blank=True
+    )
+    lease = models.ForeignKey(
+        Lease, related_name='expense_profiles', on_delete=models.CASCADE, null=True, blank=True
+    )
+    profile_name = models.CharField(max_length=255)
     transaction_type = models.CharField(
-        max_length=50,
-        choices=TRANSACTION_TYPES,
-        default='other_non_bk'  # Default to 'Other Non-BK'
+        max_length=50, choices=TRANSACTION_TYPES, default='other_non_bk'
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    date = models.DateField()  # For one-time expenses
-    recurring = models.BooleanField(default=False)  # For recurring expenses
+    date = models.DateField()
+    recurring = models.BooleanField(default=False)
     frequency = models.CharField(
-        max_length=10,
-        choices=[('monthly', 'Monthly'), ('yearly', 'Yearly')],
-        null=True,
-        blank=True  # Only applicable if recurring=True
+        max_length=10, choices=[('monthly', 'Monthly'), ('yearly', 'Yearly')], null=True, blank=True
     )
-    account_name = models.CharField(max_length=255)  # For specifying the account name
+    account_name = models.CharField(max_length=255)
     ust = models.IntegerField(choices=[(0, '0%'), (7, '7%'), (19, '19%')], default=19)
-    booking_no = models.CharField(max_length=100, unique=True)  # Booking number (BN)
+    booking_no = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
-        lease_info = f" - Lease: {self.lease}" if self.lease else " - General"
-        return f"{self.profile_name} - {self.get_transaction_type_display()} - {self.amount}{lease_info}"
+        if self.lease:
+            return f"{self.profile_name} ({self.lease.property.name} - {self.lease.unit.unit_name})"
+        elif self.property:
+            return f"{self.profile_name} ({self.property.name})"
+        return self.profile_name
 
 # Model to represent income categories
 class IncomeProfile(models.Model):
@@ -168,26 +171,29 @@ class IncomeProfile(models.Model):
         ('deposit_withdrawal', 'Deposit / Withdrawal'),
     ]
 
-    lease = models.ForeignKey(Lease, related_name='income_profiles', on_delete=models.CASCADE, null=True, blank=True)
-    profile_name = models.CharField(max_length=255)  # Profile name
+    property = models.ForeignKey(
+        Property, related_name='income_profiles', on_delete=models.CASCADE, null=True, blank=True
+    )
+    lease = models.ForeignKey(
+        Lease, related_name='income_profiles', on_delete=models.CASCADE, null=True, blank=True
+    )
+    profile_name = models.CharField(max_length=255)
     transaction_type = models.CharField(
-        max_length=30,
-        choices=TRANSACTION_TYPES,
-        default='rent'  # Default to 'Rent'
+        max_length=30, choices=TRANSACTION_TYPES, default='rent'
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    date = models.DateField(null=True, blank=True)  # For single events like deposits
-    recurring = models.BooleanField(default=False)  # For recurring income like rent
+    date = models.DateField(null=True, blank=True)
+    recurring = models.BooleanField(default=False)
     frequency = models.CharField(
-        max_length=10,
-        choices=[('monthly', 'Monthly'), ('yearly', 'Yearly')],
-        null=True,
-        blank=True  # Only applicable if recurring=True
+        max_length=10, choices=[('monthly', 'Monthly'), ('yearly', 'Yearly')], null=True, blank=True
     )
-    account_name = models.CharField(max_length=255)  # For specifying the account name
-    ust = models.IntegerField(choices=[(0, '0%'), (7, '7%'), (19, '19%')], default=19)  # Tax percentage (linked from lease)
-    booking_no = models.CharField(max_length=100, unique=True)  # Booking number (BN)
+    account_name = models.CharField(max_length=255)
+    ust = models.IntegerField(choices=[(0, '0%'), (7, '7%'), (19, '19%')], default=19)
+    booking_no = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
-        lease_info = f" - Lease: {self.lease}" if self.lease else " - General"
-        return f"{self.profile_name} - {self.get_transaction_type_display()} - {self.amount}{lease_info}"
+        if self.lease:
+            return f"{self.profile_name} ({self.lease.property.name} - {self.lease.unit.unit_name})"
+        elif self.property:
+            return f"{self.profile_name} ({self.property.name})"
+        return self.profile_name
