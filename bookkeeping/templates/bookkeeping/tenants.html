@@ -14,18 +14,55 @@
                 {% csrf_token %}
                 <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_tenant_modal.close()">✕</button>
                 <h1 class="text-lg font-bold mb-4">Add Tenant</h1>
+                
+                <!-- Name -->
                 <div class="mb-4">
-                    <label class="label">
-                        <span class="label-text">Name</span>
-                    </label>
+                    <label class="label"> <span class="label-text">Name *</span> </label>
                     <input type="text" name="name" class="input input-bordered w-full" placeholder="Tenant Name" required>
                 </div>
+
+                <!-- Other Account Names -->
                 <div class="mb-4">
-                    <label class="label">
-                        <span class="label-text">IBAN</span>
-                    </label>
-                    <input type="text" name="iban" class="input input-bordered w-full" placeholder="IBAN" required>
+                    <label class="label"> <span class="label-text">Other Account Names</span> </label>
+                    <input type="text" name="other_account_names" class="input input-bordered w-full" placeholder="Other Account Names">
                 </div>
+
+                <!-- Phone Number -->
+                <div class="mb-4">
+                    <label class="label"> <span class="label-text">Phone Number</span> </label>
+                    <input type="text" name="phone_number" class="input input-bordered w-full" placeholder="Phone Number">
+                </div>
+
+                <!-- Email -->
+                <div class="mb-4">
+                    <label class="label"> <span class="label-text">Email</span> </label>
+                    <input type="email" name="email" class="input input-bordered w-full" placeholder="Email">
+                </div>
+
+                <!-- Address -->
+                <div class="mb-4">
+                    <label class="label"> <span class="label-text">Address</span> </label>
+                    <textarea name="address" class="textarea textarea-bordered w-full" placeholder="Address"></textarea>
+                </div>
+
+                <!-- IBAN -->
+                <div class="mb-4">
+                    <label class="label"> <span class="label-text">IBAN</span> </label>
+                    <input type="text" name="iban" class="input input-bordered w-full" placeholder="IBAN">
+                </div>
+
+                <!-- BIC -->
+                <div class="mb-4">
+                    <label class="label"> <span class="label-text">BIC</span> </label>
+                    <input type="text" name="bic" class="input input-bordered w-full" placeholder="BIC">
+                </div>
+
+                <!-- Notes -->
+                <div class="mb-4">
+                    <label class="label"> <span class="label-text">Notes</span> </label>
+                    <textarea name="notes" class="textarea textarea-bordered w-full" placeholder="Additional Notes"></textarea>
+                </div>
+
                 <div class="modal-action">
                     <button type="submit" class="btn btn-outline">Add</button>
                     <button type="button" class="btn btn-outline btn-error" onclick="add_tenant_modal.close()">Cancel</button>
@@ -41,8 +78,13 @@
             <thead>
                 <tr class="border-b border-base-200">
                     <th>Name</th>
+                    <th>Other Account Names</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Address</th>
                     <th>IBAN</th>
-                    <th>Tags</th>
+                    <th>BIC</th>
+                    <th>Notes</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -50,13 +92,18 @@
                 {% for tenant in tenants %}
                 <tr>
                     <td>{{ tenant.name }}</td>
+                    <td>{{ tenant.other_account_names }}</td>
+                    <td>{{ tenant.phone_number }}</td>
+                    <td>{{ tenant.email }}</td>
+                    <td>{{ tenant.address }}</td>
                     <td>{{ tenant.iban }}</td>
-                    <td></td>
+                    <td>{{ tenant.bic }}</td>
+                    <td>{{ tenant.notes }}</td>
                     <td>
                         <!-- Edit Button -->
                         <button 
                             class="btn btn-sm btn-outline mr-2" 
-                            onclick="openEditTenantModal('{{ tenant.id }}', '{{ tenant.name }}', '{{ tenant.iban }}')">
+                            onclick="openEditTenantModal('{{ tenant.id }}', '{{ tenant.name }}', '{{ tenant.other_account_names }}', '{{ tenant.phone_number }}', '{{ tenant.email }}', '{{ tenant.address }}', '{{ tenant.iban }}', '{{ tenant.bic }}', '{{ tenant.notes }}')">
                             Edit
                         </button>
                         <!-- Delete Form -->
@@ -68,7 +115,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="4" class="text-center text-base-content/50">No tenants available.</td>
+                    <td colspan="9" class="text-center text-base-content/50">No tenants available.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -81,44 +128,59 @@
     <div class="modal-box bg-base-100 text-base-content">
         <form method="post" id="edit_tenant_form">
             {% csrf_token %}
-            <input type="hidden" name="tenant_id" id="edit_tenant_id">
             <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="edit_tenant_modal.close()">✕</button>
             <h1 class="text-lg font-bold mb-4">Edit Tenant</h1>
-            <div class="mb-4">
-                <label class="label">
-                    <span class="label-text">Name</span>
-                </label>
-                <input type="text" name="name" id="edit_tenant_name" class="input input-bordered w-full" required>
-            </div>
-            <div class="mb-4">
-                <label class="label">
-                    <span class="label-text">IBAN</span>
-                </label>
-                <input type="text" name="iban" id="edit_tenant_iban" class="input input-bordered w-full" required>
-            </div>
+            
+            <!-- Form Fields for Editing Tenant -->
+            <input type="hidden" name="tenant_id" id="edit_tenant_id">
+            <label>Name *</label>
+            <input type="text" name="name" id="edit_tenant_name" class="input input-bordered w-full mb-2" required>
+
+            <label>Other Account Names</label>
+            <input type="text" name="other_account_names" id="edit_other_account_names" class="input input-bordered w-full mb-2">
+
+            <label>Phone Number</label>
+            <input type="text" name="phone_number" id="edit_phone_number" class="input input-bordered w-full mb-2">
+
+            <label>Email</label>
+            <input type="email" name="email" id="edit_email" class="input input-bordered w-full mb-2">
+
+            <label>Address</label>
+            <textarea name="address" id="edit_address" class="textarea textarea-bordered w-full mb-2"></textarea>
+
+            <label>IBAN</label>
+            <input type="text" name="iban" id="edit_iban" class="input input-bordered w-full mb-2">
+
+            <label>BIC</label>
+            <input type="text" name="bic" id="edit_bic" class="input input-bordered w-full mb-2">
+
+            <label>Notes</label>
+            <textarea name="notes" id="edit_notes" class="textarea textarea-bordered w-full mb-2"></textarea>
+
             <div class="modal-action">
                 <button type="submit" class="btn btn-outline">Save</button>
                 <button type="button" class="btn btn-outline btn-error" onclick="edit_tenant_modal.close()">Cancel</button>
             </div>
         </form>
-        
     </div>
 </dialog>
 
 <script>
-function openEditTenantModal(id, name, iban) {
-    // Set form action dynamically
+function openEditTenantModal(id, name, otherAccountNames, phoneNumber, email, address, iban, bic, notes) {
     const form = document.getElementById('edit_tenant_form');
-    form.action = `/edit_tenant/${id}/`;  // Ensure this matches your Django URL pattern
+    form.action = `/edit_tenant/${id}/`;
 
-    // Populate the modal fields with the current tenant data
     document.getElementById('edit_tenant_id').value = id;
     document.getElementById('edit_tenant_name').value = name;
-    document.getElementById('edit_tenant_iban').value = iban;
+    document.getElementById('edit_other_account_names').value = otherAccountNames;
+    document.getElementById('edit_phone_number').value = phoneNumber;
+    document.getElementById('edit_email').value = email;
+    document.getElementById('edit_address').value = address;
+    document.getElementById('edit_iban').value = iban;
+    document.getElementById('edit_bic').value = bic;
+    document.getElementById('edit_notes').value = notes;
 
-    // Show the modal
-    document.getElementById('edit_tenant_modal').showModal();
+    edit_tenant_modal.showModal();
 }
-
 </script>
 {% endblock %}

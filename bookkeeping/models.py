@@ -2,17 +2,36 @@ from django.db import models
 from django.contrib.postgres.fields import ArrayField  # For account names and IBANs as tags
 import psycopg2
 
+# Model to represent tenants within a property
+class Tenant(models.Model):
+    name = models.CharField(max_length=255)
+    other_account_names = models.CharField(max_length=255 , blank=True , null=True)  # Mandatory
+    phone_number = models.CharField(max_length=15, blank=True, null=True)  # Optional phone number
+    email = models.EmailField(blank=True, null=True)  # Email address
+    address = models.TextField(blank=True, null=True)  # Physical address
+    iban = models.CharField(max_length=34, blank=True, null=True)  # Bank account IBAN
+    bic = models.CharField(max_length=11, blank=True, null=True)  # Optional BIC/SWIFT code
+    notes = models.TextField(blank=True, null=True)  # Free text for additional notes
+
+    def __str__(self):
+        return f"{self.name}"
+
 # Landlord Model
 class Landlord(models.Model):
     name = models.CharField(max_length=255)
-    contact_info = models.TextField()  # Could be an email, phone, or address
-    iban = models.CharField(max_length=34, blank=True, null=True)  # Optional IBAN for payments
+    phone_number = models.CharField(max_length=15, blank=True, null=True)  # Optional phone number
+    email = models.EmailField(blank=True, null=True)  # Email address
+    address = models.TextField(blank=True, null=True)  # Physical address
+    iban = models.CharField(max_length=34, blank=True, null=True)  # Bank account IBAN
+    bic = models.CharField(max_length=11, blank=True, null=True)  # Optional BIC/SWIFT code
+    tax_id = models.CharField(max_length=50, blank=True, null=True)  # Tax identification number
+    company_name = models.CharField(max_length=255, blank=True, null=True)  # Company name if landlord is a business
+    notes = models.TextField(blank=True, null=True)  # Free text for additional notes
 
     def __str__(self):
         return self.name
 
 # Property Model (Building)
-
 class Property(models.Model):
     PROPERTY_TYPE_CHOICES = [
         ('residential', 'Residential'),
@@ -31,14 +50,6 @@ class Property(models.Model):
 
     def __str__(self):
         return self.name
-
-# Model to represent tenants within a property
-class Tenant(models.Model):
-    name = models.CharField(max_length=255)
-    iban = models.CharField(max_length=34)
-
-    def __str__(self):
-        return f"{self.name}"
 
 # Unit Model (Part of the Property)
 class Unit(models.Model):

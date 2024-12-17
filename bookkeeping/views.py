@@ -374,16 +374,28 @@ def tenants(request):
 def add_tenant(request):
     if request.method == 'POST':
         name = request.POST.get('name')
+        other_account_names = request.POST.get('other_account_names')
+        phone_number = request.POST.get('phone_number')
+        email = request.POST.get('email')
+        address = request.POST.get('address')
         iban = request.POST.get('iban')
-
+        bic = request.POST.get('bic')
+        notes = request.POST.get('notes')
 
         # Create the tenant
-        Tenant.objects.create(name=name, iban=iban)
+        Tenant.objects.create(
+            name=name,
+            other_account_names=other_account_names,
+            phone_number=phone_number,
+            email=email,
+            address=address,
+            iban=iban,
+            bic=bic,
+            notes=notes,
+        )
         return redirect('tenants')
 
-    # Retrieve all properties for the dropdown
-    properties = Property.objects.all()
-    return render(request, 'bookkeeping/add_tenant.html', {'properties': properties})
+    return render(request, 'bookkeeping/add_tenant.html')
 
 # Edit Tenant
 def edit_tenant(request, pk):
@@ -391,13 +403,17 @@ def edit_tenant(request, pk):
 
     if request.method == 'POST':
         tenant.name = request.POST.get('name')
+        tenant.other_account_names = request.POST.get('other_account_names')
+        tenant.phone_number = request.POST.get('phone_number')
+        tenant.email = request.POST.get('email')
+        tenant.address = request.POST.get('address')
         tenant.iban = request.POST.get('iban')
+        tenant.bic = request.POST.get('bic')
+        tenant.notes = request.POST.get('notes')
 
-        # Save the updated tenant
         tenant.save()
-        return redirect('tenants')  # Redirect to the tenants list page
+        return redirect('tenants')
 
-    # For GET requests, render the edit template with the tenant details
     return render(request, 'bookkeeping/edit_tenant.html', {'tenant': tenant})
 
 # Delete Tenant
@@ -420,7 +436,6 @@ def expense_profiles(request):
     })
 
 # Add Expense Profile
-
 def add_expense_profile(request):
     if request.method == 'POST':
         lease_id = request.POST.get('lease')
@@ -618,10 +633,27 @@ def landlords(request):
 def add_landlord(request):
     if request.method == 'POST':
         name = request.POST.get('name')
-        contact_info = request.POST.get('contact_info')
+        phone_number = request.POST.get('phone_number')
+        email = request.POST.get('email')
+        address = request.POST.get('address')
         iban = request.POST.get('iban')
+        bic = request.POST.get('bic')
+        tax_id = request.POST.get('tax_id')
+        company_name = request.POST.get('company_name')
+        notes = request.POST.get('notes')
 
-        Landlord.objects.create(name=name, contact_info=contact_info, iban=iban)
+        # Create the landlord
+        Landlord.objects.create(
+            name=name,
+            phone_number=phone_number,
+            email=email,
+            address=address,
+            iban=iban,
+            bic=bic,
+            tax_id=tax_id,
+            company_name=company_name,
+            notes=notes,
+        )
         return redirect('landlords')
 
     return render(request, 'bookkeeping/add_landlord.html')
@@ -632,10 +664,16 @@ def edit_landlord(request, pk):
 
     if request.method == 'POST':
         landlord.name = request.POST.get('name')
-        landlord.contact_info = request.POST.get('contact_info')
+        landlord.phone_number = request.POST.get('phone_number')
+        landlord.email = request.POST.get('email')
+        landlord.address = request.POST.get('address')
         landlord.iban = request.POST.get('iban')
-        landlord.save()
+        landlord.bic = request.POST.get('bic')
+        landlord.tax_id = request.POST.get('tax_id')
+        landlord.company_name = request.POST.get('company_name')
+        landlord.notes = request.POST.get('notes')
 
+        landlord.save()
         return redirect('landlords')
 
     return render(request, 'bookkeeping/edit_landlord.html', {'landlord': landlord})
