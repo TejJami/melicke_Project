@@ -38,7 +38,7 @@ class Tenant(models.Model):
     iban = models.CharField(max_length=34)
 
     def __str__(self):
-        return f"{self.name} ({self.property.name})"
+        return f"{self.name}"
 
 # Unit Model (Part of the Property)
 class Unit(models.Model):
@@ -145,7 +145,7 @@ class ExpenseProfile(models.Model):
         max_length=50, choices=TRANSACTION_TYPES, default='other_non_bk'
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    date = models.DateField()
+    date = models.DateField(null=True, blank=True)
     recurring = models.BooleanField(default=False)
     frequency = models.CharField(
         max_length=10, choices=[('monthly', 'Monthly'), ('yearly', 'Yearly')], null=True, blank=True
@@ -181,7 +181,7 @@ class IncomeProfile(models.Model):
     transaction_type = models.CharField(
         max_length=30, choices=TRANSACTION_TYPES, default='rent'
     )
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    amount = models.DecimalField(max_digits=10, decimal_places=2,null=True, blank=True)
     date = models.DateField(null=True, blank=True)
     recurring = models.BooleanField(default=False)
     frequency = models.CharField(

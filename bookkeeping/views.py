@@ -16,6 +16,8 @@ from django.http import HttpResponse
 from django.forms import modelformset_factory
 from django.forms import model_to_dict
 from django.http import JsonResponse
+from decimal import Decimal
+from datetime import datetime
 
 
 # Dashboard: Displays Earmarked and Parsed Transactions
@@ -418,38 +420,48 @@ def expense_profiles(request):
     })
 
 # Add Expense Profile
+
 def add_expense_profile(request):
     if request.method == 'POST':
         lease_id = request.POST.get('lease')
         property_id = request.POST.get('property')
+        amount = request.POST.get('amount')
+        date = request.POST.get('date')
         
-        # Ensure that either a property or lease is selected
+        # Validate at least one of property or lease is selected
         if not lease_id and not property_id:
             return render(request, 'bookkeeping/add_expense_profile.html', {
                 'error': "You must select either a Property or a Lease.",
                 'leases': Lease.objects.all(),
                 'properties': Property.objects.all(),
             })
-        
+
+        # Fetch Lease and Property
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
         property_obj = Property.objects.filter(id=property_id).first() if property_id else None
 
-        ust = 0  # Default value
+        # Determine UST
+        ust = 0
         if lease and lease.ust_type:
-            if lease.ust_type == 'Voll':
-                ust = 19
-            elif lease.ust_type == 'Teilw':
-                ust = 7
-            elif lease.ust_type == 'Nicht':
-                ust = 0
+            ust = {'Voll': 19, 'Teilw': 7, 'Nicht': 0}.get(lease.ust_type, 0)
+
+        # Handle optional fields safely
+        try:
+            amount = Decimal(amount) if amount else None
+        except Exception as e:
+            amount = None
+        try:
+            date = datetime.strptime(date, "%Y-%m-%d").date() if date else None
+        except Exception as e:
+            date = None
 
         ExpenseProfile.objects.create(
             lease=lease,
             property=property_obj,
             profile_name=request.POST.get('profile_name'),
             transaction_type=request.POST.get('transaction_type'),
-            amount=request.POST.get('amount'),
-            date=request.POST.get('date'),
+            amount=amount,
+            date=date,
             recurring=request.POST.get('recurring') == 'on',
             frequency=request.POST.get('frequency'),
             account_name=request.POST.get('account_name'),
@@ -470,35 +482,43 @@ def edit_expense_profile(request, pk):
     if request.method == 'POST':
         lease_id = request.POST.get('lease')
         property_id = request.POST.get('property')
+        amount = request.POST.get('amount')
+        date = request.POST.get('date')
 
-
+        # Fetch Lease and Property
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
         property_obj = Property.objects.filter(id=property_id).first() if property_id else None
 
-        ust = 0  # Default value
+        # Determine UST
+        ust = 0
         if lease and lease.ust_type:
-            if lease.ust_type == 'Voll':
-                ust = 19
-            elif lease.ust_type == 'Teilw':
-                ust = 7
-            elif lease.ust_type == 'Nicht':
-                ust = 0
+            ust = {'Voll': 19, 'Teilw': 7, 'Nicht': 0}.get(lease.ust_type, 0)
 
+        # Safely handle optional fields
+        try:
+            expense.amount = Decimal(amount) if amount else None
+        except Exception as e:
+            expense.amount = None
+        try:
+            expense.date = datetime.strptime(date, "%Y-%m-%d").date() if date else None
+        except Exception as e:
+            expense.date = None
+
+        # Update fields
         expense.lease = lease
         expense.property = property_obj
         expense.profile_name = request.POST.get('profile_name')
         expense.transaction_type = request.POST.get('transaction_type')
-        expense.amount = request.POST.get('amount')
-        expense.date = request.POST.get('date')
         expense.recurring = request.POST.get('recurring') == 'on'
         expense.frequency = request.POST.get('frequency') if expense.recurring else None
         expense.account_name = request.POST.get('account_name')
         expense.ust = ust
+        expense.booking_no = request.POST.get('booking_no')
 
         expense.save()
         return redirect('expense_profiles')
 
-    return render(request, 'bookkeeping/expense_profiles.html', {
+    return render(request, 'bookkeeping/edit_expense_profile.html', {
         'expense': expense,
         'leases': Lease.objects.all(),
         'properties': Property.objects.all(),
@@ -786,7 +806,10 @@ def add_income_profile(request):
     if request.method == 'POST':
         lease_id = request.POST.get('lease')
         property_id = request.POST.get('property')
+        amount = request.POST.get('amount')
+        date = request.POST.get('date')
 
+        # Validate at least one of property or lease is selected
         if not lease_id and not property_id:
             return render(request, 'bookkeeping/add_income_profile.html', {
                 'error': "You must select either a Property or a Lease.",
@@ -794,25 +817,32 @@ def add_income_profile(request):
                 'properties': Property.objects.all(),
             })
 
+        # Fetch Lease and Property
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
         property_obj = Property.objects.filter(id=property_id).first() if property_id else None
 
-        ust = 0  # Default value
+        # Determine UST
+        ust = 0
         if lease and lease.ust_type:
-            if lease.ust_type == 'Voll':
-                ust = 19
-            elif lease.ust_type == 'Teilw':
-                ust = 7
-            elif lease.ust_type == 'Nicht':
-                ust = 0
+            ust = {'Voll': 19, 'Teilw': 7, 'Nicht': 0}.get(lease.ust_type, 0)
+
+        # Safely handle optional fields
+        try:
+            amount = Decimal(amount) if amount else None
+        except Exception as e:
+            amount = None
+        try:
+            date = datetime.strptime(date, "%Y-%m-%d").date() if date else None
+        except Exception as e:
+            date = None
 
         IncomeProfile.objects.create(
             lease=lease,
             property=property_obj,
             profile_name=request.POST.get('profile_name'),
             transaction_type=request.POST.get('transaction_type'),
-            amount=request.POST.get('amount'),
-            date=request.POST.get('date'),
+            amount=amount,
+            date=date,
             recurring=request.POST.get('recurring') == 'on',
             frequency=request.POST.get('frequency'),
             account_name=request.POST.get('account_name'),
@@ -833,40 +863,43 @@ def edit_income_profile(request, pk):
     if request.method == 'POST':
         lease_id = request.POST.get('lease')
         property_id = request.POST.get('property')
+        amount = request.POST.get('amount')
+        date = request.POST.get('date')
 
-        if not lease_id and not property_id:
-            return render(request, 'bookkeeping/edit_income_profile.html', {
-                'error': "You must select either a Property or a Lease.",
-                'income': income,
-                'leases': Lease.objects.all(),
-                'properties': Property.objects.all(),
-            })
-
+        # Fetch Lease and Property
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
         property_obj = Property.objects.filter(id=property_id).first() if property_id else None
 
-        ust = 0  # Default value
+        # Determine UST dynamically
+        ust = 0
         if lease and lease.ust_type:
-            if lease.ust_type == 'Voll':
-                ust = 19
-            elif lease.ust_type == 'Teilw':
-                ust = 7
-            elif lease.ust_type == 'Nicht':
-                ust = 0
+            ust = {'Voll': 19, 'Teilw': 7, 'Nicht': 0}.get(lease.ust_type, 0)
 
+        # Safely parse and handle optional fields
+        try:
+            income.amount = Decimal(amount) if amount else None
+        except Exception as e:
+            income.amount = None
+        try:
+            income.date = datetime.strptime(date, "%Y-%m-%d").date() if date else None
+        except Exception as e:
+            income.date = None
+
+        # Update fields
         income.lease = lease
         income.property = property_obj
         income.profile_name = request.POST.get('profile_name')
         income.transaction_type = request.POST.get('transaction_type')
-        income.amount = request.POST.get('amount')
-        income.date = request.POST.get('date')
         income.recurring = request.POST.get('recurring') == 'on'
         income.frequency = request.POST.get('frequency') if income.recurring else None
         income.account_name = request.POST.get('account_name')
         income.ust = ust
+        income.booking_no = request.POST.get('booking_no')
+
         income.save()
         return redirect('income_profiles')
 
+    # Render the edit template
     return render(request, 'bookkeeping/edit_income_profile.html', {
         'income': income,
         'leases': Lease.objects.all(),
