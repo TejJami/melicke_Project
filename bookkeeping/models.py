@@ -106,7 +106,7 @@ class Lease(models.Model):
     tenant = models.ForeignKey(Tenant, related_name='leases', on_delete=models.CASCADE)
     landlords = models.ManyToManyField(Landlord, related_name='leases')
 
-    start_date = models.DateField()
+    start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
     ust_type = models.CharField(
         max_length=10,

@@ -24,9 +24,15 @@ from datetime import datetime
 def dashboard(request):
     earmarked = EarmarkedTransaction.objects.all()
     parsed = ParsedTransaction.objects.all()
+    properties = Property.objects.all()
+    units = Unit.objects.all()
+    leases = Lease.objects.all()
     return render(request, 'bookkeeping/dashboard.html', {
         'earmarked': earmarked,
-        'parsed': parsed
+        'parsed': parsed,
+        'properties': properties,
+        'units': units,
+        'leases': leases,
     })
 
 # Upload Bank Statement
@@ -747,10 +753,10 @@ def add_lease(request):
     if request.method == 'POST':
         unit_id = request.POST.get('unit')
         tenant_id = request.POST.get('tenant')
-        start_date = request.POST.get('start_date')
-        end_date = request.POST.get('end_date')
+        start_date = request.POST.get('start_date') or None
+        end_date = request.POST.get('end_date') or None
         ust_type = request.POST.get('ust_type')
-        deposit_amount = request.POST.get('deposit_amount')
+        deposit_amount = request.POST.get('deposit_amount') or decimal.Decimal(0)   
 
         # Fetch the unit and its associated property, landlords, and rent
         unit_obj = get_object_or_404(Unit, id=unit_id)
@@ -798,8 +804,8 @@ def edit_lease(request, pk):
         lease.property = get_object_or_404(Property, id=request.POST.get('property'))
         lease.unit = get_object_or_404(Unit, id=request.POST.get('unit'))
         lease.tenant = get_object_or_404(Tenant, id=request.POST.get('tenant'))
-        lease.start_date = request.POST.get('start_date')
-        lease.end_date = request.POST.get('end_date')
+        lease.start_date = request.POST.get('start_date') or None
+        lease.end_date = request.POST.get('end_date') or None
         lease.ust_type = request.POST.get('ust_type')
         lease.deposit_amount = request.POST.get('deposit_amount')
 
