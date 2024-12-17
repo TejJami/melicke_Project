@@ -704,7 +704,7 @@ def export_parsed_transactions(request):
     ws.title = "Parsed Transactions"
 
     # Add header row
-    headers = ["Date", "Account Name", "Gggkto", "Betrag Brutto", "Ust.", "Betrag Netto"]
+    headers = ["Date", "Account Name", "Transaction Type", "Betrag Brutto", "Ust.", "Betrag Netto"]
     ws.append(headers)
 
     # Retrieve parsed transactions
@@ -713,12 +713,12 @@ def export_parsed_transactions(request):
     # Add data rows
     for transaction in parsed_transactions:
         ws.append([
-            transaction.date,
-            transaction.account_name,
-            str(transaction.gggkto) if transaction.gggkto else "N/A",
-            transaction.betrag_brutto,
-            transaction.ust,
-            transaction.betrag_netto,
+            transaction.date.strftime("%Y-%m-%d") if transaction.date else "N/A",
+            transaction.account_name or "N/A",
+            transaction.transaction_type or "N/A",
+            transaction.betrag_brutto if transaction.betrag_brutto is not None else "N/A",
+            transaction.ust,  # Calculated UST property
+            transaction.betrag_netto,  # Calculated Net Amount property
         ])
 
     # Prepare the HTTP response
@@ -728,6 +728,7 @@ def export_parsed_transactions(request):
     # Save workbook to the response
     wb.save(response)
     return response
+
 
 #################################################################
 
