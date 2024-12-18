@@ -3310,6 +3310,10 @@ details.collapse summary::-webkit-details-marker {
   margin-bottom: 1.5rem;
 }
 
+.ml-2 {
+  margin-left: 0.5rem;
+}
+
 .ml-5 {
   margin-left: 1.25rem;
 }
@@ -3328,10 +3332,6 @@ details.collapse summary::-webkit-details-marker {
 
 .mt-4 {
   margin-top: 1rem;
-}
-
-.ml-2 {
-  margin-left: 0.5rem;
 }
 
 .block {
@@ -3584,10 +3584,6 @@ details.collapse summary::-webkit-details-marker {
 .px-5 {
   padding-left: 1.25rem;
   padding-right: 1.25rem;
-}
-
-.pb-4 {
-  padding-bottom: 1rem;
 }
 
 .text-left {
