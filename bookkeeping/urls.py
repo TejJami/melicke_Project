@@ -11,10 +11,10 @@ urlpatterns = [
 
     # Units, Leases, Income, Expense already exist - no need to change those URLs
     # Add functionality for Uploading bank statement for a specific property
-    path('property/<int:property_id>/upload_statement/', views.upload_property_bank_statement, name='upload_property_bank_statement'),
+    path('property/<int:property_id>/upload_statement/', views.upload_bank_statement, name='upload_bank_statement'),
 
     # Dashboard
-    path('', views.dashboard, name='dashboard'),
+    path('dashboard/', views.dashboard, name='dashboard'),
 
     # Properties
     path('properties/', views.properties, name='properties'),

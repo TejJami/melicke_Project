@@ -896,6 +896,11 @@ html {
     --tw-text-opacity: 1;
   }
 
+  .tabs-boxed :is(.tab-active, [aria-selected="true"]):not(.tab-disabled):not([disabled]):hover, .tabs-boxed :is(input:checked):hover {
+    --tw-text-opacity: 1;
+    color: var(--fallback-pc,oklch(var(--pc)/var(--tw-text-opacity)));
+  }
+
   .table tr.hover:hover,
   .table tr.hover:nth-child(even):hover {
     --tw-bg-opacity: 1;
@@ -3000,6 +3005,13 @@ details.collapse summary::-webkit-details-marker {
   border-radius: var(--rounded-btn, 0.5rem);
 }
 
+.tabs-boxed :is(.tab-active, [aria-selected="true"]):not(.tab-disabled):not([disabled]), .tabs-boxed :is(input:checked) {
+  --tw-bg-opacity: 1;
+  background-color: var(--fallback-p,oklch(var(--p)/var(--tw-bg-opacity)));
+  --tw-text-opacity: 1;
+  color: var(--fallback-pc,oklch(var(--pc)/var(--tw-text-opacity)));
+}
+
 .table:where([dir="rtl"], [dir="rtl"] *) {
   text-align: right;
 }
@@ -3612,6 +3624,18 @@ details.collapse summary::-webkit-details-marker {
   margin-top: 1rem;
 }
 
+.ml-0 {
+  margin-left: 0px;
+}
+
+.ml-10 {
+  margin-left: 2.5rem;
+}
+
+.mb-10 {
+  margin-bottom: 2.5rem;
+}
+
 .block {
   display: block;
 }
@@ -3705,6 +3729,18 @@ details.collapse summary::-webkit-details-marker {
   width: 75%;
 }
 
+.w-96 {
+  width: 24rem;
+}
+
+.w-1\/4 {
+  width: 25%;
+}
+
+.w-4 {
+  width: 1rem;
+}
+
 .max-w-4xl {
   max-width: 56rem;
 }
@@ -3719,6 +3755,10 @@ details.collapse summary::-webkit-details-marker {
 
 .max-w-6xl {
   max-width: 72rem;
+}
+
+.flex-none {
+  flex: none;
 }
 
 .flex-grow {
@@ -3837,6 +3877,10 @@ details.collapse summary::-webkit-details-marker {
   border-radius: 0.5rem;
 }
 
+.rounded-md {
+  border-radius: 0.375rem;
+}
+
 .border {
   border-width: 1px;
 }
@@ -3921,6 +3965,10 @@ details.collapse summary::-webkit-details-marker {
   text-align: center;
 }
 
+.align-top {
+  vertical-align: top;
+}
+
 .text-3xl {
   font-size: 1.875rem;
   line-height: 2.25rem;
@@ -3954,6 +4002,11 @@ details.collapse summary::-webkit-details-marker {
 .text-xs\/none {
   font-size: 0.75rem;
   line-height: 1;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
 }
 
 .font-bold {

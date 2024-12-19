@@ -90,6 +90,7 @@ class ParsedTransaction(models.Model):
 
 # Model to represent transactions that are not yet categorized
 class EarmarkedTransaction(models.Model):
+    property = models.ForeignKey(Property, on_delete=models.CASCADE, null=True, blank=True)  # Associate with a property
     date = models.CharField(max_length=10)  # Keep DD.MM.YYYY format as a string
     amount = models.FloatField()    
     description = models.TextField()

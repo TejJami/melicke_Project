@@ -37,7 +37,7 @@ def dashboard(request):
     })
 
 # Upload Bank Statement
-def upload_bank_statement(request):
+def upload_bank_statement(request , property_id):
     if request.method == 'POST' and request.FILES.get('statement'):
         statement = request.FILES['statement']
         earmarked_transactions = []
@@ -1023,18 +1023,4 @@ def property_detail(request, property_id):
         'tenants': tenants,
     }
     return render(request, 'bookkeeping/property_detail.html', context)
-
-def upload_property_bank_statement(request, property_id):
-    property_obj = get_object_or_404(Property, id=property_id)
-
-    if request.method == 'POST' and request.FILES.get('statement'):
-        statement = request.FILES['statement']
-
-        # Parsing Logic (Update to tag transactions with the selected property)
-        earmarked_transactions = parse_bank_statement(statement, property_obj)
-        EarmarkedTransaction.objects.bulk_create(earmarked_transactions)
-
-        return redirect('property_detail', property_id=property_obj.id)
-
-    return render(request, 'bookkeeping/upload_statement.html', {'property': property_obj})
 

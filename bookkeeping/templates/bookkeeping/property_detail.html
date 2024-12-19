@@ -2,14 +2,14 @@
 {% block title %}{{ property.name }}{% endblock %}
 
 {% block content %}
-<div class="w-full max-w-6xl mx-auto">
+<div class="w-full max-w-6xl justify-start mx-auto">
   <!-- Page Title -->
   <div class="text-center mb-5">
     <h1 class="text-3xl font-bold">{{ property.name }}</h1>
   </div>
 
   <!-- Radio Tabs -->
-  <div role="tablist" class="tabs tabs-bordered justify-start mb-5">
+  <div role="tablist" class="tabs tabs-bordered justify-center  mb-5mx-auto">
     <!-- Units Tab -->
     <input type="radio" name="property_tabs" id="units_tab" role="tab" class="tab" aria-label="Units" checked>
     <div role="tabpanel" class="tab-content p-5 w-full max-w-6xl mx-auto">
@@ -37,8 +37,8 @@
     <!-- Dashboard Tab -->
     <input type="radio" name="property_tabs" id="dashboard_tab" role="tab" class="tab" aria-label="Dashboard">
     <div role="tabpanel" class="tab-content p-5 w-full max-w-6xl mx-auto">
-      <h2 class="text-lg font-semibold">Earmarked Transactions</h2>
-      <p>Here you can manage transactions related to {{ property.name }}.</p>
+      <!-- add dashboard here -->
+      {% include 'bookkeeping/dashboard.html' with dashboard=dashboard %}
     </div>
   </div>
 </div>

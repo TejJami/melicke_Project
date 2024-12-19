@@ -1,258 +1,36 @@
-{% extends 'bookkeeping/base.html' %}
+<div class="card bg-base-100 shadow-md p-5 w-full max-w-4xl mx-auto">
+    <!-- Dashboard Header -->
+    <h1 class="text-2xl font-bold mb-5">Dashboard for {{ property.name }}</h1>
 
-{% block title %}Dashboard{% endblock %}
-
-{% block content %}
-<div class="card bg-base-100 shadow-md p-5 h-screen">
-    <!-- Trigger Button -->
+    <!-- Upload Bank Statement Button -->
     <button class="btn btn-outline mb-5" onclick="upload_modal.showModal()">Upload Bank Statement</button>
 
-    <!-- Modal -->
+    <!-- Upload Modal -->
     <dialog id="upload_modal" class="modal">
         <div class="modal-box bg-base-100 text-base-content">
-            <form method="post" enctype="multipart/form-data" action="{% url 'upload_statement' %}" id="upload_form">
+            <form method="post" enctype="multipart/form-data" action="{% url 'upload_bank_statement' property.id %}">
+
                 {% csrf_token %}
                 <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="upload_modal.close()">✕</button>
-                <h1 class="text-lg mb-4">Upload Bank Statement</h1>
-                
+                <h1 class="text-lg font-bold mb-4">Upload Bank Statement</h1>
+
                 <!-- File Input -->
                 <div class="mb-4">
-                    <input type="file" name="statement" id="statement" class="file-input file-input-bordered file-input-sm w-full max-w-xs">
+                    <input type="file" name="statement" class="file-input file-input-bordered file-input-sm w-full max-w-xs" required>
                 </div>
-                
-                <!-- Loading Animation -->
-                <div id="loading_spinner" class="flex justify-center items-center my-4 hidden">
-                    <span class="loading loading-spinner loading-lg"></span>
-                    <span class="ml-2 text-sm text-base-content">Processing...</span>
-                </div>
-                
-                <!-- Buttons -->
+
+                <!-- Submit and Cancel Buttons -->
                 <div class="flex justify-end">
-                    <button type="button" class="btn btn-outline btn-error mr-2" onclick="upload_modal.close()">Cancel</button>
-                    <button type="submit" id="upload_submit" class="btn btn-outline">Upload</button>
-                </div>
-            </form>
-        </div>
-    </dialog>
-
-    
-    <!-- Add Income Modal -->
-    <dialog id="add_income_modal" class="modal">
-        <div class="modal-box bg-base-100 text-base-content">
-            <form method="post" action="{% url 'add_income_profile' %}">
-                {% csrf_token %}
-                <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_income_modal.close()">✕</button>
-                <h1 class="text-lg font-bold mb-4">Add Income Profile</h1>
-
-                <!-- Profile Name -->
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Profile Name *</span></label>
-                    <input type="text" name="profile_name" class="input input-bordered w-full" placeholder="Profile Name" required>
-                </div>
-
-                <!-- Account Name -->
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Account Name *</span></label>
-                    <input type="text" name="account_name" id="income_account_name" class="input input-bordered w-full" placeholder="Account Name" required>
-                </div>
-
-                <!-- Booking No -->
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Booking No (BN) *</span></label>
-                    <input type="text" name="booking_no" class="input input-bordered w-full" placeholder="Booking Number" required>
-                </div>
-
-                <!-- Transaction Type -->
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Transaction Type *</span></label>
-                    <select name="transaction_type" class="select select-bordered w-full" required>
-                        <option value="">-- Select Transaction Type --</option>
-                        <option value="rent">Rent</option>
-                        <option value="bk_advance_payments">BK Advance Payments</option>
-                        <option value="security_deposit">Security Deposit</option>
-                        <option value="subsidy">Subsidy</option>
-                        <option value="deposit_withdrawal">Deposit / Withdrawal</option>
-                    </select>
-                </div>
-
-                <!-- Property -->
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Property *</span></label>
-                    <select name="property" class="select select-bordered w-full" required>
-                        <option value="">-- Select Property --</option>
-                        {% for property in properties %}
-                            <option value="{{ property.id }}">{{ property.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <!-- Lease -->
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Lease *</span></label>
-                    <select name="lease" class="select select-bordered w-full" required>
-                        <option value="">-- Select Lease --</option>
-                        {% for property in properties %}
-                            {% for lease in property.leases.all %}
-                                <option value="{{ lease.id }}">{{ lease }}</option>
-                            {% endfor %}
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <!-- Frequency -->
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Frequency</span></label>
-                    <select name="frequency" class="select select-bordered w-full">
-                        <option value="">-- None --</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="yearly">Yearly</option>
-                    </select>
-                </div>
-
-                <!-- Amount -->
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Amount</span></label>
-                    <input type="number" step="0.01" name="amount" class="input input-bordered w-full" placeholder="Amount">
-                </div>
-
-                <!-- Date -->
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Date</span></label>
-                    <input type="date" name="date" class="input input-bordered w-full">
-                </div>
-
-                <!-- Recurring -->
-                <div class="mb-4">
-                    <label class="label cursor-pointer"><span class="label-text">Recurring</span></label>
-                    <input type="checkbox" name="recurring" class="checkbox">
-                </div>
-
-                <!-- Submit and Cancel Buttons -->
-                <div class="modal-action">
-                    <button type="submit" class="btn btn-outline">Add</button>
-                    <button type="button" class="btn btn-outline btn-error" onclick="add_income_modal.close()">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </dialog>
-
-    <!-- Add Expense Modal -->
-    <dialog id="add_expense_modal" class="modal">
-        <div class="modal-box bg-base-100 text-base-content">
-            <form method="post" action="{% url 'add_expense_profile' %}">
-                {% csrf_token %}
-                <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_expense_modal.close()">✕</button>
-                <h1 class="text-lg font-bold mb-4">Add Expense Profile</h1>
-                
-                <!-- Profile Name -->
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Profile Name *</span></label>
-                    <input type="text" name="profile_name" class="input input-bordered w-full" placeholder="Profile Name" required>
-                </div>
-
-                <!-- Account Name -->
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Account Name *</span></label>
-                    <input type="text" name="account_name" id="expense_account_name" class="input input-bordered w-full" placeholder="Account Name" required>
-                </div>
-
-                <!-- Booking No -->
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Booking No (BN) *</span></label>
-                    <input type="text" name="booking_no" class="input input-bordered w-full" placeholder="Booking Number" required>
-                </div>
-
-                <!-- Transaction Type -->
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Transaction Type *</span></label>
-                    <select name="transaction_type" class="select select-bordered w-full" required>
-                        <option value="">-- Select a GGkto --</option>
-                        <option value="bk_back_payments">BK Back Payments</option>
-                        <option value="bk_general_electricity">BK General Electricity</option>
-                        <option value="bk_insurance">BK Insurance</option>
-                        <option value="bk_heating_costs">BK Heating Costs</option>
-                        <option value="other_non_bk">Other Non-BK</option>
-                        <option value="BK-Aufzugsanlage">BK Elevator System</option>
-                        <option value="IH-direkt">Maintenance Direct</option>
-                        <option value="BK-Wasser">BK Water</option>
-                        <option value="BK-Entwässerung">BK Drainage</option>
-                        <option value="BK-Hausmeister/-reinigung">BK Caretaker / Cleaning</option>
-                        <option value="BK-Grundsteuern">BK Property Taxes</option>
-                        <option value="BK-Müllabfuhr">BK Waste Disposal</option>
-                        <option value="BK-Heizkosten gem. ISTA">BK Heating Costs per ISTA</option>
-                        <option value="Zinsen">Interest</option>
-                        <option value="IH-Aktivierung">Maintenance Activation</option>
-                        <option value="BK-direkt">BK Direct</option>
-                        <option value="BK-Sonstige">BK Miscellaneous</option>
-                        <option value="Inv-Miete">Investment Rent</option>
-                        <option value="Einlage / Entnahme">Deposit / Withdrawal</option>
-                    </select>
-                </div>
-
-                <!-- Property -->
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Property *</span></label>
-                    <select name="property" class="select select-bordered w-full" required>
-                        <option value="">-- Select Property --</option>
-                        {% for property in properties %}
-                            <option value="{{ property.id }}">{{ property.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <!-- Lease -->
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Lease (Optional)</span></label>
-                    <select name="lease" class="select select-bordered w-full">
-                        <option value="">-- Select Lease --</option>
-                        {% for property in properties %}
-                            {% for lease in property.leases.all %}
-                                <option value="{{ lease.id }}">{{ lease }}</option>
-                            {% endfor %}
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <!-- Frequency -->
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Frequency</span></label>
-                    <select name="frequency" class="select select-bordered w-full">
-                        <option value="">-- None --</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="yearly">Yearly</option>
-                    </select>
-                </div>
-
-                <!-- Amount -->
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Amount</span></label>
-                    <input type="number" step="0.01" name="amount" class="input input-bordered w-full" placeholder="Amount">
-                </div>
-
-                <!-- Date -->
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Date</span></label>
-                    <input type="date" name="date" class="input input-bordered w-full">
-                </div>
-
-                <!-- Recurring -->
-                <div class="mb-4">
-                    <label class="label cursor-pointer"><span class="label-text">Recurring</span></label>
-                    <input type="checkbox" name="recurring" class="checkbox">
-                </div>
-
-                <!-- Submit and Cancel Buttons -->
-                <div class="modal-action">
-                    <button type="submit" class="btn btn-outline">Add</button>
-                    <button type="button" class="btn btn-outline btn-error" onclick="add_expense_modal.close()">Cancel</button>
+                    <button type="submit" class="btn btn-outline">Upload</button>
+                    <button type="button" class="btn btn-outline btn-error" onclick="upload_modal.close()">Cancel</button>
                 </div>
             </form>
         </div>
     </dialog>
 
     <!-- Earmarked Transactions Table -->
-    <div class="h-1/2 overflow-y-auto">
-        <h2 class="text-xl font-semibold mb-3">Earmarked Transactions</h2>
+    <div class="overflow-x-auto mb-10">
+        <h2 class="text-xl font-semibold mb-3">Earmarked Transactions for {{ property.name }}</h2>
         <table class="table w-full text-left bg-base-100 text-base-content">
             <thead>
                 <tr>
@@ -274,15 +52,13 @@
                     <td>{{ transaction.description }}</td>
                     <td>
                         {% if transaction.is_income %}
-                            <button class="btn btn-sm btn-outline btn-success" 
-                                onclick="openIncomeModal('{{ transaction.account_name }}')">
-                                + Income
-                            </button>
+                        <button class="btn btn-sm btn-outline btn-success" onclick="openIncomeModal('{{ transaction.account_name }}')">
+                            + Income
+                        </button>
                         {% else %}
-                            <button class="btn btn-sm btn-outline btn-error" 
-                                onclick="openExpenseModal('{{ transaction.account_name }}')">
-                                + Expense
-                            </button>
+                        <button class="btn btn-sm btn-outline btn-error" onclick="openExpenseModal('{{ transaction.account_name }}')">
+                            + Expense
+                        </button>
                         {% endif %}
                     </td>
                 </tr>
@@ -295,32 +71,30 @@
         </table>
     </div>
 
-    <!-- Parsed Transactions -->
-    <div class="h-1/2 overflow-y-auto">
-        <h2 class="text-xl font-semibold mb-3">Parsed Transactions</h2>
+    <!-- Parsed Transactions Table -->
+    <div class="overflow-x-auto">
+        <h2 class="text-xl font-semibold mb-3">Parsed Transactions for {{ property.name }}</h2>
         <table class="table w-full text-left bg-base-100 text-base-content">
             <thead>
-                <tr class="border-b border-base-200">
+                <tr>
                     <th>BN</th>
                     <th>Date</th>
                     <th>Transaction Type</th>
                     <th>Property Name</th>
                     <th>Unit Name</th>
-                    <th>Account Name</th>
                     <th>Gross Amount</th>
                     <th>UST</th>
                     <th>Net Amount</th>
                 </tr>
             </thead>
             <tbody>
-                {% for transaction in parsed|dictsort:"date" %}
+                {% for transaction in parsed %}
                 <tr>
                     <td>{{ transaction.booking_no }}</td>
                     <td>{{ transaction.date }}</td>
                     <td>{{ transaction.transaction_type }}</td>
                     <td>{{ transaction.property_name }}</td>
                     <td>{{ transaction.unit_name }}</td>
-                    <td>{{ transaction.account_name }}</td>
                     <td class="{% if transaction.betrag_brutto > 0 %}text-primary{% else %}text-error{% endif %}">
                         {{ transaction.betrag_brutto }}
                     </td>
@@ -331,16 +105,11 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="9" class="text-center text-base-content/50">No parsed transactions available.</td>
+                    <td colspan="8" class="text-center text-base-content/50">No parsed transactions available.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-        <div class="flex justify-end mb-3">
-            <a href="{% url 'export_parsed_transactions' %}" class="btn btn-outline">
-                Download as Excel
-            </a>
-        </div>
     </div>
 </div>
 
@@ -354,13 +123,4 @@
         document.getElementById('expense_account_name').value = accountName;
         document.getElementById('add_expense_modal').showModal();
     }
-    
-    document.getElementById('upload_form').addEventListener('submit', function () {
-        // Hide the submit button to prevent multiple submissions
-        document.getElementById('upload_submit').disabled = true;
-
-        // Show the loading spinner
-        document.getElementById('loading_spinner').classList.remove('hidden');
-    });
 </script>
-{% endblock %}
