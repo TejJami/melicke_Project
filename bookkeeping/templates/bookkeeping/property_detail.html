@@ -2,47 +2,48 @@
 {% block title %}{{ property.name }}{% endblock %}
 
 {% block content %}
-<div class="w-full max-w-6xl justify-start mx-auto">
+<div class="w-full max-w-6xl mx-auto">
   <!-- Page Title -->
-  <div class="text-center mb-5">
-    <h1 class="text-3xl font-bold">{{ property.name }}</h1>
+  <div class="text-center mb-5 mt-2">
+      <h1 class="text-xl font-light">{{ property.name }}</h1>
   </div>
 
   <!-- Radio Tabs -->
-  <div role="tablist" class="tabs tabs-bordered justify-center  mb-5mx-auto">
-    <!-- Units Tab -->
-    <input type="radio" name="property_tabs" id="units_tab" role="tab" class="tab" aria-label="Units" checked>
-    <div role="tabpanel" class="tab-content p-5 w-full max-w-6xl mx-auto">
-      {% include 'bookkeeping/units.html' with units=units %}
-    </div>
+  <div class ="flex">
+    <div role="tablist" class="tabs tabs-bordered justify-start mb-5">
+      <!-- Units Tab -->
+      <input type="radio" name="property_tabs" id="units_tab" role="tab" class="tab" aria-label="Units" checked>
+      <div role="tabpanel" class="tab-content">
+        {% include 'bookkeeping/units.html' with units=units %}
+      </div>
 
-    <!-- Leases Tab -->
-    <input type="radio" name="property_tabs" id="leases_tab" role="tab" class="tab" aria-label="Leases">
-    <div role="tabpanel" class="tab-content p-5 w-full max-w-6xl mx-auto">
-      {% include 'bookkeeping/leases.html' with leases=leases %}
-    </div>
+      <!-- Leases Tab -->
+      <input type="radio" name="property_tabs" id="leases_tab" role="tab" class="tab" aria-label="Leases">
+      <div role="tabpanel" class="tab-content">
+        {% include 'bookkeeping/leases.html' with leases=leases %}
+      </div>
 
-    <!-- Income Profiles Tab -->
-    <input type="radio" name="property_tabs" id="income_tab" role="tab" class="tab" aria-label="Income">
-    <div role="tabpanel" class="tab-content p-5 w-full max-w-6xl mx-auto">
-      {% include 'bookkeeping/income_profiles.html' with income_profiles=income_profiles %}
-    </div>
+      <!-- Income Profiles Tab -->
+      <input type="radio" name="property_tabs" id="income_tab" role="tab" class="tab" aria-label="Income">
+      <div role="tabpanel" class="tab-content ">
+        {% include 'bookkeeping/income_profiles.html' with income_profiles=income_profiles %}
+      </div>
 
-    <!-- Expense Profiles Tab -->
-    <input type="radio" name="property_tabs" id="expense_tab" role="tab" class="tab" aria-label="Expense">
-    <div role="tabpanel" class="tab-content p-5 w-full max-w-6xl mx-auto">
-      {% include 'bookkeeping/expense_profiles.html' with expense_profiles=expense_profiles %}
-    </div>
+      <!-- Expense Profiles Tab -->
+      <input type="radio" name="property_tabs" id="expense_tab" role="tab" class="tab" aria-label="Expense">
+      <div role="tabpanel" class="tab-content ">
+        {% include 'bookkeeping/expense_profiles.html' with expense_profiles=expense_profiles %}
+      </div>
 
-    <!-- Dashboard Tab -->
-    <input type="radio" name="property_tabs" id="dashboard_tab" role="tab" class="tab" aria-label="Dashboard">
-    <div role="tabpanel" class="tab-content p-5 w-full max-w-6xl mx-auto">
-      <!-- add dashboard here -->
-      {% include 'bookkeeping/dashboard.html' with dashboard=dashboard %}
+      <!-- Dashboard Tab -->
+      <input type="radio" name="property_tabs" id="dashboard_tab" role="tab" class="tab" aria-label="BookKeeping">
+      <div role="tabpanel" class="tab-content">
+        <!-- add dashboard here -->
+        {% include 'bookkeeping/dashboard.html' with dashboard=dashboard %}
+      </div>
     </div>
   </div>
 </div>
-
 
 <!-- Edit Unit Modal -->
 <dialog id="edit_unit_modal" class="modal">
@@ -165,6 +166,174 @@
   </div>
 </dialog>
 
+<!-- Add Income Profile Modal -->
+<dialog id="add_income_modal_2" class="modal">
+  <div class="modal-box bg-base-100 text-base-content">
+      <form method="post" action="{% url 'add_income_profile' %}">
+          {% csrf_token %}
+          <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_income_modal_2.close()">✕</button>
+          <h1 class="text-lg font-bold mb-4">Add Income Profile</h1>
+
+          <div class="mb-4">
+              <label class="label"><span class="label-text">Profile Name *</span></label>
+              <input type="text" name="profile_name" class="input input-bordered w-full" required>
+          </div>
+
+          <div class="mb-4">
+              <label class="label"><span class="label-text">Account Name *</span></label>
+              <input type="text" id= "account_name_income" name="account_name_income" class="input input-bordered w-full" required>
+          </div>
+
+          <div class="mb-4">
+              <label class="label"><span class="label-text">Booking No (BN) *</span></label>
+              <input type="text" name="booking_no" class="input input-bordered w-full" required>
+          </div>
+
+          <div class="mb-4">
+              <label class="label"><span class="label-text">Transaction Type *</span></label>
+              <select name="transaction_type" class="select select-bordered w-full" required>
+                  <option value="rent">Rent</option>
+                  <option value="bk_advance_payments">BK Advance Payments</option>
+                  <option value="security_deposit">Security Deposit</option>
+                  <option value="subsidy">Subsidy</option>
+                  <option value="deposit_withdrawal">Deposit / Withdrawal</option>
+              </select>
+          </div>
+
+          <div class="mb-4 hidden">
+              <label class="label"><span class="label-text">Property *</span></label>
+              <input type="hidden" name="property" value="{{ property.id }}">
+              <input type="text" class="input input-bordered w-full" value="{{ property.name }}" disabled>
+          </div>
+
+          <div class="mb-4">
+              <label class="label"><span class="label-text">Lease *</span></label>
+              <select name="lease" class="select select-bordered w-full" required>
+                  <option value="" disabled selected>Select Lease</option>
+                  {% for lease in property.leases.all %}
+                  <option value="{{ lease.id }}">{{ lease }}</option>
+                  {% endfor %}
+              </select>
+          </div>
+
+          <div class="mb-4">
+              <label class="label"><span class="label-text">Frequency</span></label>
+              <select name="frequency" class="select select-bordered w-full">
+                  <option value="">-- None --</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="yearly">Yearly</option>
+              </select>
+          </div>
+
+          <div class="mb-4">
+              <label class="label"><span class="label-text">Amount</span></label>
+              <input type="number" name="amount" step="0.01" class="input input-bordered w-full" >
+          </div>
+
+          <div class="mb-4">
+              <label class="label"><span class="label-text">Date </span></label>
+              <input type="date" name="date" class="input input-bordered w-full" >
+          </div>
+
+          <div class="mb-4">
+              <label class="label cursor-pointer"><span class="label-text">Recurring</span></label>
+              <input type="checkbox" name="recurring" class="checkbox">
+          </div>
+
+          <div class="modal-action">
+              <button type="submit" class="btn btn-outline">Add</button>
+              <button type="button" class="btn btn-outline btn-error" onclick="add_income_modal.close()">Cancel</button>
+          </div>
+      </form>
+  </div>
+</dialog>
+
+<!-- Add Expense Modal -->
+<dialog id="add_expense_modal_2" class="modal">
+<div class="modal-box bg-base-100 text-base-content">
+    <form method="post" action="{% url 'add_expense_profile' %}">
+        {% csrf_token %}
+        <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_expense_modal.close()">✕</button>
+        <h1 class="text-lg font-bold mb-4">Add Expense Profile</h1>
+        <div class="mb-4">
+            <label class="label"><span class="label-text">Profile Name *</span></label>
+            <input type="text" name="profile_name" class="input input-bordered w-full" placeholder="Profile Name" required>
+        </div>
+        <div class="mb-4">
+            <label class="label"><span class="label-text">Account Name *</span></label>
+            <input type="text" id="account_name_expense"name="account_name" class="input input-bordered w-full" placeholder="Account Name" required>
+        </div>
+        <div class="mb-4">
+            <label class="label"><span class="label-text">Booking No (BN) *</span></label>
+            <input type="text" name="booking_no" class="input input-bordered w-full" placeholder="Booking Number" required>
+        </div>
+        <div class="mb-4">
+            <label class="label"><span class="label-text">Transaction Type *</span></label>
+            <select name="transaction_type" class="select select-bordered w-full" required>
+                <option value="">-- Select a GGkto --</option>
+                <option value="bk_back_payments">BK Back Payments</option>
+                <option value="bk_general_electricity">BK General Electricity</option>
+                <option value="bk_insurance">BK Insurance</option>
+                <option value="bk_heating_costs">BK Heating Costs</option>
+                <option value="other_non_bk">Other Non-BK</option>
+                <option value="BK-Aufzugsanlage">BK Elevator System</option>
+                <option value="IH-direkt">Maintenance Direct</option>
+                <option value="BK-Wasser">BK Water</option>
+                <option value="BK-Entwässerung">BK Drainage</option>
+                <option value="BK-Hausmeister/-reinigung">BK Caretaker / Cleaning</option>
+                <option value="BK-Grundsteuern">BK Property Taxes</option>
+                <option value="BK-Müllabfuhr">BK Waste Disposal</option>
+                <option value="BK-Heizkosten gem. ISTA">BK Heating Costs per ISTA</option>
+                <option value="Zinsen">Interest</option>
+                <option value="IH-Aktivierung">Maintenance Activation</option>
+                <option value="BK-direkt">BK Direct</option>
+                <option value="BK-Sonstige">BK Miscellaneous</option>
+                <option value="Inv-Miete">Investment Rent</option>
+                <option value="Einlage / Entnahme">Deposit / Withdrawal</option>
+            </select>
+        </div>
+        <!-- Hidden Property Field -->
+        <div class="mb-4 hidden">
+            <label class="label"><span class="label-text">Property *</span></label>
+            <input type="hidden" name="property" value="{{ property.id }}">
+            <input type="text" class="input input-bordered w-full" value="{{ property.name }}" disabled>
+        </div>
+        <div class="mb-4">
+            <label class="label"><span class="label-text">Lease (Optional)</span></label>
+            <select name="lease" class="select select-bordered w-full">
+                <option value="">-- Select Lease --</option>
+                {% for lease in property.leases.all %}
+                    <option value="{{ lease.id }}">{{ lease }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-4">
+            <label class="label"><span class="label-text">Frequency</span></label>
+            <select name="frequency" class="select select-bordered w-full">
+                <option value="">-- None --</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+            </select>
+        </div>
+        <div class="mb-4">
+            <label class="label"><span class="label-text">Amount</span></label>
+            <input type="number" step="0.01" name="amount" class="input input-bordered w-full" placeholder="Amount">
+        </div>
+        <div class="mb-4">
+            <label class="label"><span class="label-text">Date</span></label>
+            <input type="date" name="date" class="input input-bordered w-full">
+        </div>
+        <div class="mb-4">
+            <label class="label cursor-pointer"><span class="label-text">Recurring</span></label>
+            <input type="checkbox" name="recurring" class="checkbox">
+        </div>
+        <div class="modal-action">
+            <button type="submit" class="btn btn-outline">Add</button>
+            <button type="button" class="btn btn-outline btn-error" onclick="add_expense_modal.close()">Cancel</button>
+        </div>
+    </form>
+</div>
+</dialog>
 
 <script>
   // Check the URL for the "tab" query parameter
@@ -193,6 +362,9 @@
       openTab('dashboard_tab');
     }
   }
+
+
+
 </script>
 
 {% endblock %}

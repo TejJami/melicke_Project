@@ -1,7 +1,4 @@
 <div class="card bg-base-100 shadow-md p-5 w-full max-w-4xl mx-auto">
-    <!-- Dashboard Header -->
-    <h1 class="text-2xl font-bold mb-5">Dashboard for {{ property.name }}</h1>
-
     <!-- Upload Bank Statement Button -->
     <button class="btn btn-outline mb-5" onclick="upload_modal.showModal()">Upload Bank Statement</button>
 
@@ -88,18 +85,18 @@
                 </tr>
             </thead>
             <tbody>
-                {% for transaction in parsed %}
+                {% for transaction in parsed_transactions %}
                 <tr>
                     <td>{{ transaction.booking_no }}</td>
                     <td>{{ transaction.date }}</td>
                     <td>{{ transaction.transaction_type }}</td>
                     <td>{{ transaction.property_name }}</td>
                     <td>{{ transaction.unit_name }}</td>
-                    <td class="{% if transaction.betrag_brutto > 0 %}text-primary{% else %}text-error{% endif %}">
+                    <td class="{% if transaction.betrag_brutto > 0 %}text-sucess{% else %}text-error{% endif %}">
                         {{ transaction.betrag_brutto }}
                     </td>
                     <td>{{ transaction.ust }}</td>
-                    <td class="{% if transaction.betrag_netto > 0 %}text-primary{% else %}text-error{% endif %}">
+                    <td class="{% if transaction.betrag_netto > 0 %}text-error{% else %}text-error{% endif %}">
                         {{ transaction.betrag_netto }}
                     </td>
                 </tr>
@@ -111,16 +108,43 @@
             </tbody>
         </table>
     </div>
+
+
 </div>
+
 
 <script>
     function openIncomeModal(accountName) {
-        document.getElementById('income_account_name').value = accountName;
-        document.getElementById('add_income_modal').showModal();
+      const input = document.getElementById('account_name_income');
+      const modal = document.getElementById('add_income_modal_2');
+
+      if (modal) {
+          modal.showModal(); // Show the modal
+          if (input) {
+              input.value = accountName; // Set the account name in the input field
+          } else {
+              console.error('Account name input not found');
+          }
+      } else {
+          console.error('Account name input or modal not found');
+      }
     }
 
-    function openExpenseModal(accountName) {
-        document.getElementById('expense_account_name').value = accountName;
-        document.getElementById('add_expense_modal').showModal();
-    }
+  function openExpenseModal(accountName) {
+      const input = document.getElementById('account_name_expense');
+      const modal = document.getElementById('add_expense_modal_2');
+
+      if (modal) {
+          modal.showModal(); // Show the modal
+          if (input) {
+              input.value = accountName; // Set the account name in the input field
+          } else {
+              console.error('Account name input not found');
+          }
+      } else {
+          console.error('Account name input or modal not found');
+      }
+  }
+
+
 </script>
