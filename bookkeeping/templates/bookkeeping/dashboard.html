@@ -5,11 +5,16 @@
     <!-- Upload Modal -->
     <dialog id="upload_modal" class="modal">
         <div class="modal-box bg-base-100 text-base-content">
-            <form method="post" enctype="multipart/form-data" action="{% url 'upload_bank_statement' property.id %}">
+            <form id="upload_form" method="post" enctype="multipart/form-data" action="{% url 'upload_bank_statement' property.id %}" onsubmit="showSpinner(event)">
 
                 {% csrf_token %}
                 <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="upload_modal.close()">✕</button>
                 <h1 class="text-lg font-bold mb-4">Upload Bank Statement</h1>
+
+                <!-- Spinner Animation -->
+                <div id="spinner" class="hidden flex justify-center items-center mb-4">
+                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                </div>
 
                 <!-- File Input -->
                 <div class="mb-4">
@@ -76,12 +81,15 @@
                 <tr>
                     <th>BN</th>
                     <th>Date</th>
-                    <th>Transaction Type</th>
-                    <th>Property Name</th>
-                    <th>Unit Name</th>
-                    <th>Gross Amount</th>
-                    <th>UST</th>
+                    <th>Account name</th>
+                    <th>Unit </th>
                     <th>Net Amount</th>
+                    <th>UST</th>
+                    <th>Gross Amount</th>
+                    <th>Transaction Type</th>
+                    <th>Property </th>
+                    <th>Lease </th>
+
                 </tr>
             </thead>
             <tbody>
@@ -89,16 +97,18 @@
                 <tr>
                     <td>{{ transaction.booking_no }}</td>
                     <td>{{ transaction.date }}</td>
-                    <td>{{ transaction.transaction_type }}</td>
-                    <td>{{ transaction.property_name }}</td>
+                    <td>{{ transaction.account_name }}</td>
                     <td>{{ transaction.unit_name }}</td>
-                    <td class="{% if transaction.betrag_brutto > 0 %}text-sucess{% else %}text-error{% endif %}">
-                        {{ transaction.betrag_brutto }}
-                    </td>
-                    <td>{{ transaction.ust }}</td>
-                    <td class="{% if transaction.betrag_netto > 0 %}text-error{% else %}text-error{% endif %}">
+                    <td class="{% if transaction.is_income %}text-success{% else %}text-error{% endif %}">
                         {{ transaction.betrag_netto }}
                     </td>
+                    <td>{{ transaction.ust }}</td>
+                    <td class="{% if transaction.is_income %}text-success{% else %}text-error{% endif %}">
+                        {{ transaction.betrag_brutto }}
+                    </td>
+                    <td>{{ transaction.transaction_type }}</td>
+                    <td>{{ transaction.property_name }}</td>
+                    <td>{{ transaction.tenant }}</td>
                 </tr>
                 {% empty %}
                 <tr>
@@ -108,43 +118,51 @@
             </tbody>
         </table>
     </div>
-
-
 </div>
 
-
 <script>
-    function openIncomeModal(accountName) {
-      const input = document.getElementById('account_name_income');
-      const modal = document.getElementById('add_income_modal_2');
+    function showSpinner(event) {
+        event.preventDefault(); // Prevent the default form submission
+        const spinner = document.getElementById('spinner');
+        if (spinner) {
+            spinner.classList.remove('hidden'); // Show the spinner
+        }
 
-      if (modal) {
-          modal.showModal(); // Show the modal
-          if (input) {
-              input.value = accountName; // Set the account name in the input field
-          } else {
-              console.error('Account name input not found');
-          }
-      } else {
-          console.error('Account name input or modal not found');
-      }
+        // Optionally, you can delay form submission to simulate upload
+        setTimeout(() => {
+            event.target.submit(); // Submit the form after showing spinner
+        }, 500); // Adjust the delay as needed
     }
 
-  function openExpenseModal(accountName) {
-      const input = document.getElementById('account_name_expense');
-      const modal = document.getElementById('add_expense_modal_2');
+    function openIncomeModal(accountName) {
+        const input = document.getElementById('account_name_income');
+        const modal = document.getElementById('add_income_modal_2');
 
-      if (modal) {
-          modal.showModal(); // Show the modal
-          if (input) {
-              input.value = accountName; // Set the account name in the input field
-          } else {
-              console.error('Account name input not found');
-          }
-      } else {
-          console.error('Account name input or modal not found');
-      }
-  }
+        if (modal) {
+            modal.showModal(); // Show the modal
+            if (input) {
+                input.value = accountName; // Set the account name in the input field
+            } else {
+                console.error('Account name input not found');
+            }
+        } else {
+            console.error('Account name input or modal not found');
+        }
+    }
 
+    function openExpenseModal(accountName) {
+        const input = document.getElementById('account_name_expense');
+        const modal = document.getElementById('add_expense_modal_2');
 
+        if (modal) {
+            modal.showModal(); // Show the modal
+            if (input) {
+                input.value = accountName; // Set the account name in the input field
+            } else {
+                console.error('Account name input not found');
+            }
+        } else {
+            console.error('Account name input or modal not found');
+        }
+    }
 </script>

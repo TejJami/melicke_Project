@@ -73,7 +73,9 @@ class ParsedTransaction(models.Model):
     unit_name = models.CharField(max_length=255, null=True, blank=True)  # Unit name, if applicable
     ust_type = models.IntegerField(choices=[(0, '0%'), (7, '7%'), (19, '19%')], default=19)  # UST type
     betrag_brutto = models.FloatField(null=True, blank=True)  # Gross amount
-
+    is_income = models.BooleanField()
+    tenant = models.CharField(max_length=255, null=True, blank=True)  # Tenant name
+    
     def __str__(self):
         return f"{self.date} | {self.account_name} | {self.transaction_type} | {self.betrag_brutto}"
 

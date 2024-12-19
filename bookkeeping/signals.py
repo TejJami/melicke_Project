@@ -22,6 +22,8 @@ def process_earmarked_transaction(sender, instance, created, **kwargs):
                     unit_name=expense_profile.lease.unit.unit_name if expense_profile.lease else None,
                     ust_type=expense_profile.ust,
                     betrag_brutto=instance.amount,
+                    is_income = instance.is_income,
+                    tenant = expense_profile.lease.tenant,
                 )
                 parsed_txn.save()
                 instance.delete()
@@ -37,6 +39,8 @@ def process_earmarked_transaction(sender, instance, created, **kwargs):
                     unit_name=income_profile.lease.unit.unit_name if income_profile.lease else None,
                     ust_type=income_profile.ust,
                     betrag_brutto=instance.amount,
+                    is_income = instance.is_income,
+                    tenant = income_profile.lease.tenant,
                 )
                 parsed_txn.save()
                 instance.delete()
@@ -51,6 +55,7 @@ def match_earmarked_transactions_for_expense(sender, instance, created, **kwargs
     if created:
         print(f"Processing new ExpenseProfile: {instance.id}")
         earmarked_transactions = EarmarkedTransaction.objects.filter(account_name=instance.account_name)
+        expense_profile = ExpenseProfile.objects.filter(account_name=instance.account_name).first()
 
         for txn in earmarked_transactions:
             try:
@@ -64,6 +69,8 @@ def match_earmarked_transactions_for_expense(sender, instance, created, **kwargs
                     unit_name=instance.lease.unit.unit_name if instance.lease else None,
                     ust_type=instance.ust,
                     betrag_brutto=txn.amount,
+                    is_income=txn.is_income,
+                    tenant= expense_profile.lease.tenant,
                 )
                 parsed_txn.save()
                 txn.delete()
@@ -75,7 +82,7 @@ def match_earmarked_transactions_for_income(sender, instance, created, **kwargs)
     if created:
         print(f"Processing new IncomeProfile: {instance.id}")
         earmarked_transactions = EarmarkedTransaction.objects.filter(account_name=instance.account_name)
-
+        incomeProfile = IncomeProfile.objects.filter(account_name=instance.account_name).first()
         for txn in earmarked_transactions:
             try:
                 print(f"Processing EarmarkedTransaction: {txn.id} for IncomeProfile: {instance.id}")
@@ -88,6 +95,8 @@ def match_earmarked_transactions_for_income(sender, instance, created, **kwargs)
                     unit_name=instance.lease.unit.unit_name if instance.lease else None,
                     ust_type=instance.ust,
                     betrag_brutto=txn.amount,
+                    is_income=txn.is_income,
+                    tenant= incomeProfile.lease.tenant,
                 )
                 parsed_txn.save()
                 txn.delete()

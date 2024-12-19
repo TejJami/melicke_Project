@@ -47,7 +47,7 @@
                     <label class="label"><span class="label-text">Lease *</span></label>
                     <select name="lease" class="select select-bordered w-full" required>
                         <option value="" disabled selected>Select Lease</option>
-                        {% for lease in properties.leases.all %}
+                        {% for lease in property.leases.all %}
                         <option value="{{ lease.id }}">{{ lease }}</option>
                         {% endfor %}
                     </select>
