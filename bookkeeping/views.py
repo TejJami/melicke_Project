@@ -37,7 +37,9 @@ def dashboard(request):
     })
 
 # Upload Bank Statement
-def upload_bank_statement(request , property_id):
+def upload_bank_statement(request, property_id=None):
+    property_obj = get_object_or_404(Property, id=property_id)  # Ensure property exists
+
     if request.method == 'POST' and request.FILES.get('statement'):
         statement = request.FILES['statement']
         earmarked_transactions = []
@@ -146,6 +148,7 @@ def upload_bank_statement(request , property_id):
                                     amount=current_transaction['amount'],
                                     is_income=current_transaction['is_income'],
                                     description=current_transaction['description'],
+                                    property=property_obj,  # Assign the property
                                 )
                                 earmarked_transactions.append(txn)
                             except Exception as e:
@@ -187,23 +190,20 @@ def upload_bank_statement(request , property_id):
                         amount=current_transaction['amount'],
                         is_income=current_transaction['is_income'],
                         description=current_transaction['description'],
+                        property=property_obj,  # Assign the property
                     )
                     earmarked_transactions.append(txn)
                 except Exception as e:
                     print(f"Error saving last transaction on page {page_number + 1}: {e}")
 
         # Save all transactions to the database
-        # try:
-        #     EarmarkedTransaction.objects.bulk_create(earmarked_transactions)
-        # except Exception as e:
-        #     print(f"Error during bulk_create: {e}")
         for txn in earmarked_transactions:
             txn.save()  # This will trigger the `post_save` signal
 
+        # Redirect to the property detail view with the dashboard tab
+        return redirect(f"{reverse('property_detail', args=[property_id])}?tab=dashboard")
 
-        return redirect('dashboard')
-
-    return render(request, 'bookkeeping/upload_statement.html')
+    return render(request, 'bookkeeping/upload_statement.html', {'property': property_obj})
 
 #################################################################
 
@@ -1013,7 +1013,10 @@ def property_detail(request, property_id):
     income_profiles = IncomeProfile.objects.filter(property=property_obj)
     expense_profiles = ExpenseProfile.objects.filter(property=property_obj)
     tenants = Tenant.objects.all()
+    earmarked_transactions = EarmarkedTransaction.objects.filter(property=property_obj)
+    parsed_transactions= ParsedTransaction.objects.all()
 
+    
     context = {
         'property': property_obj,
         'units': units,
@@ -1021,6 +1024,8 @@ def property_detail(request, property_id):
         'income_profiles': income_profiles,
         'expense_profiles': expense_profiles,
         'tenants': tenants,
+        'earmarked_transactions': earmarked_transactions,
+        'parsed_transactions': parsed_transactions,
     }
     return render(request, 'bookkeeping/property_detail.html', context)
 
