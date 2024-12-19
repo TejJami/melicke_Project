@@ -1,9 +1,4 @@
-{% extends 'bookkeeping/base.html' %}
-
-{% block title %}Units{% endblock %}
-
-{% block content %}
-<div class="card bg-base-100 shadow-md p-5 h-screen">
+<div class="card bg-base-100 shadow-md p-5 w-full">
 
     <!-- Trigger Button -->
     <button class="btn btn-outline mb-5" onclick="add_unit_modal.showModal()">Add Unit</button>
@@ -15,15 +10,12 @@
                 {% csrf_token %}
                 <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_unit_modal.close()">✕</button>
                 <h1 class="text-lg font-bold mb-4">Add Unit</h1>
-                <div class="mb-4">
+                <div class="mb-4 hidden">
                     <label class="label">
                         <span class="label-text">Property</span>
                     </label>
-                    <select name="property" class="select select-bordered w-full" required>
-                        {% for property in properties %}
-                        <option value="{{ property.id }}">{{ property.name }}</option>
-                        {% endfor %}
-                    </select>
+                    <input type="hidden" name="property" value="{{ property.id }}" />
+                    <input type="text" class="input input-bordered w-full" value="{{ property.name }}" disabled />
                 </div>
                 <div class="mb-4">
                     <label class="label">
@@ -63,68 +55,12 @@
         </div>
     </dialog>
 
-    <!-- Edit Unit Modal -->
-    <dialog id="edit_unit_modal" class="modal">
-        <div class="modal-box bg-base-100 text-base-content">
-            <form method="post" id="edit_unit_form">
-                {% csrf_token %}
-                <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="edit_unit_modal.close()">✕</button>
-                <h1 class="text-lg font-bold mb-4">Edit Unit</h1>
-                <div class="mb-4">
-                    <label class="label">
-                        <span class="label-text">Property</span>
-                    </label>
-                    <select name="property" id="edit_property" class="select select-bordered w-full" required>
-                        {% for property in properties %}
-                        <option value="{{ property.id }}">{{ property.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="mb-4">
-                    <label class="label">
-                        <span class="label-text">Unit Name</span>
-                    </label>
-                    <input type="text" name="unit_name" id="edit_unit_name" class="input input-bordered w-full" required>
-                </div>
-                <div class="mb-4">
-                    <label class="label">
-                        <span class="label-text">Floor Area (sq.M.)</span>
-                    </label>
-                    <input type="number" name="floor_area" id="edit_floor_area" step="0.1" class="input input-bordered w-full" required>
-                </div>
-                <div class="mb-4">
-                    <label class="label">
-                        <span class="label-text">Number of Rooms</span>
-                    </label>
-                    <input type="number" name="rooms" id="edit_rooms" class="input input-bordered w-full" required>
-                </div>
-                <div class="mb-4">
-                    <label class="label">
-                        <span class="label-text">Number of Bathrooms</span>
-                    </label>
-                    <input type="number" name="baths" id="edit_baths" class="input input-bordered w-full" required>
-                </div>
-                <div class="mb-4">
-                    <label class="label">
-                        <span class="label-text">Market Rent</span>
-                    </label>
-                    <input type="number" name="market_rent" id="edit_market_rent" step="0.01" class="input input-bordered w-full" required>
-                </div>
-                <div class="modal-action">
-                    <button type="submit" class="btn btn-outline">Save</button>
-                    <button type="button" class="btn btn-outline btn-error" onclick="edit_unit_modal.close()">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </dialog>
-
     <!-- Unit List -->
     <div class="overflow-x-auto">
-        <h2 class="text-xl font-semibold mb-3">All Units</h2>
-        <table class="table w-full text-left bg-base-100 text-base-content">
+        <h2 class="text-xl font-semibold mb-3">Units for {{ property.name }}</h2>
+        <table class="table w-3/5 text-left bg-base-100 text-base-content">
             <thead>
                 <tr class="border-b border-base-200">
-                    <th>Property</th>
                     <th>Unit Name</th>
                     <th>Floor Area</th>
                     <th>Rooms</th>
@@ -134,30 +70,19 @@
                 </tr>
             </thead>
             <tbody>
-                {% regroup units by property as grouped_units %}
-                {% for group in grouped_units %}
-                    <!-- Property Header -->
-                    <tr class="bg-base-200">
-                        <td colspan="7" class="font-normal text-md">
-                            {{ group.grouper }}
-                        </td>
-                    </tr>
-                    <!-- Units for this Property -->
-                    {% for unit in group.list %}
-                    <tr>
-                        <td></td> <!-- Leave this blank, as Property is already shown in header -->
-                        <td>{{ unit.unit_name }}</td>
-                        <td>{{ unit.floor_area }}</td>
-                        <td>{{ unit.rooms }}</td>
-                        <td>{{ unit.baths }}</td>
-                        <td>{{ unit.market_rent }}</td>
-                        <td>
-                            <!-- Edit Button -->
-                            <button 
+                {% for unit in units %}
+                <tr>
+                    <td>{{ unit.unit_name }}</td>
+                    <td>{{ unit.floor_area }}</td>
+                    <td>{{ unit.rooms }}</td>
+                    <td>{{ unit.baths }}</td>
+                    <td>{{ unit.market_rent }}</td>
+                    <td>
+                        <!-- Edit Button -->
+                        <button 
                             class="btn btn-sm btn-outline" 
-                            onclick="openEditModal(
+                            onclick="openunitEditModal(
                                 {{ unit.id }}, 
-                                {{ unit.property.id }}, 
                                 '{{ unit.unit_name|escapejs }}', 
                                 '{{ unit.floor_area|floatformat:"1" }}', 
                                 {{ unit.rooms }}, 
@@ -165,42 +90,33 @@
                                 '{{ unit.market_rent|floatformat:"2" }}'
                             )">
                             Edit
-                        </button>                                     
-                            <!-- Delete Button -->
-                            <form method="post" action="{% url 'delete_unit' unit.id %}" class="inline">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-outline btn-error btn-sm">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
+                        </button>
+                        <!-- Delete Button -->
+                        <form method="post" action="{% url 'delete_unit' unit.id %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline btn-error btn-sm">Delete</button>
+                        </form>
+                    </td>
+                </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="text-center text-base-content/50">No units available.</td>
+                    <td colspan="6" class="text-center text-base-content/50">No units available.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-    
 </div>
 
 <script>
-    function openEditModal(id, propertyId, unitName, floorArea, rooms, baths, marketRent) {
-        // Set form action URL dynamically
+    function openunitEditModal(id, unitName, floorArea, rooms, baths, marketRent) {
+        console.log(id, unitName, floorArea, rooms, baths, marketRent);
         document.getElementById('edit_unit_form').action = `/edit_unit/${id}/`;
-
-        // Populate form fields with appropriate types
-        document.getElementById('edit_property').value = propertyId;
         document.getElementById('edit_unit_name').value = unitName;
         document.getElementById('edit_floor_area').value = floorArea ? parseFloat(floorArea).toFixed(1) : '';
         document.getElementById('edit_rooms').value = rooms ? parseInt(rooms, 10) : 0;
         document.getElementById('edit_baths').value = baths ? parseInt(baths, 10) : 0;
         document.getElementById('edit_market_rent').value = marketRent ? parseFloat(marketRent).toFixed(2) : '';
-
-        // Open the modal
         document.getElementById('edit_unit_modal').showModal();
     }
-
 </script>
-{% endblock %}

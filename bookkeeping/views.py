@@ -18,6 +18,7 @@ from django.forms import model_to_dict
 from django.http import JsonResponse
 from decimal import Decimal
 from datetime import datetime
+from django.urls import reverse
 
 
 # Dashboard: Displays Earmarked and Parsed Transactions
@@ -209,10 +210,12 @@ def upload_bank_statement(request):
 # Properties
 def properties(request):
     properties = Property.objects.all()
-    landlords = Landlord.objects.all()  # Fetch all landlords for the dropdown
+    landlords = Landlord.objects.all()
+    tenants = Tenant.objects.all()
     return render(request, 'bookkeeping/properties.html', {
         'properties': properties,
         'landlords': landlords,
+        'tenants': tenants,
     })
 
 # Add Property
@@ -441,41 +444,45 @@ def expense_profiles(request):
         'properties': properties,
     })
 
-# Add Expense Profile
 def add_expense_profile(request):
     if request.method == 'POST':
         lease_id = request.POST.get('lease')
         property_id = request.POST.get('property')
         amount = request.POST.get('amount')
         date = request.POST.get('date')
+
+        # Log the request data for debugging
+        print("Request POST data:", request.POST)
+
+        # Validate Property ID
+        if not property_id:
+            return HttpResponse("Property ID is missing", status=400)
         
-        # Validate at least one of property or lease is selected
-        if not lease_id and not property_id:
-            return render(request, 'bookkeeping/add_expense_profile.html', {
-                'error': "You must select either a Property or a Lease.",
-                'leases': Lease.objects.all(),
-                'properties': Property.objects.all(),
-            })
+        try:
+            property_obj = get_object_or_404(Property, id=property_id)
+        except Exception as e:
+            print(f"Error fetching property: {e}")
+            return HttpResponse("Invalid Property ID", status=404)
 
-        # Fetch Lease and Property
+        # Fetch Lease if provided
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
-        property_obj = Property.objects.filter(id=property_id).first() if property_id else None
 
-        # Determine UST
+        # Determine UST dynamically
         ust = 0
         if lease and lease.ust_type:
             ust = {'Voll': 19, 'Teilw': 7, 'Nicht': 0}.get(lease.ust_type, 0)
 
-        # Handle optional fields safely
+        # Safely parse optional fields
         try:
             amount = Decimal(amount) if amount else None
-        except Exception as e:
+        except Exception:
             amount = None
         try:
             date = datetime.strptime(date, "%Y-%m-%d").date() if date else None
-        except Exception as e:
+        except Exception:
             date = None
 
+        # Create Expense Profile
         ExpenseProfile.objects.create(
             lease=lease,
             property=property_obj,
@@ -489,16 +496,14 @@ def add_expense_profile(request):
             ust=ust,
             booking_no=request.POST.get('booking_no'),
         )
-        return redirect('expense_profiles')
+        return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=expense")
 
-    return render(request, 'bookkeeping/add_expense_profile.html', {
-        'leases': Lease.objects.all(),
-        'properties': Property.objects.all(),
-    })
+    return redirect('dashboard')  # Default fallback
 
 # Edit Expense Profile
 def edit_expense_profile(request, pk):
     expense = get_object_or_404(ExpenseProfile, id=pk)
+    property_obj = expense.property
 
     if request.method == 'POST':
         lease_id = request.POST.get('lease')
@@ -508,21 +513,20 @@ def edit_expense_profile(request, pk):
 
         # Fetch Lease and Property
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
-        property_obj = Property.objects.filter(id=property_id).first() if property_id else None
 
-        # Determine UST
+        # Determine UST dynamically
         ust = 0
         if lease and lease.ust_type:
             ust = {'Voll': 19, 'Teilw': 7, 'Nicht': 0}.get(lease.ust_type, 0)
 
-        # Safely handle optional fields
+        # Safely parse optional fields
         try:
             expense.amount = Decimal(amount) if amount else None
-        except Exception as e:
+        except Exception:
             expense.amount = None
         try:
             expense.date = datetime.strptime(date, "%Y-%m-%d").date() if date else None
-        except Exception as e:
+        except Exception:
             expense.date = None
 
         # Update fields
@@ -537,20 +541,20 @@ def edit_expense_profile(request, pk):
         expense.booking_no = request.POST.get('booking_no')
 
         expense.save()
-        return redirect('expense_profiles')
+        return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=expense")
 
-    return render(request, 'bookkeeping/edit_expense_profile.html', {
-        'expense': expense,
-        'leases': Lease.objects.all(),
-        'properties': Property.objects.all(),
-    })
+    return redirect('dashboard')  # Default fallback
 
 # Delete Expense Profile
 def delete_expense_profile(request, pk):
+    expense_profile = get_object_or_404(ExpenseProfile, id=pk)
+    property_obj = expense_profile.property
+
     if request.method == 'POST':
-        expense = get_object_or_404(ExpenseProfile, pk=pk)
-        expense.delete()
-        return redirect('expense_profiles')  # Redirect back to the expenses page
+        expense_profile.delete()
+        return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=expense")
+
+    return redirect('dashboard')  # Default fallback
 
 #################################################################
 
@@ -586,32 +590,37 @@ def add_unit(request):
             baths=baths,
             market_rent=market_rent,
         )
-        return redirect('units')
+
+        # Redirect to property detail view
+        return redirect('property_detail', property_id=property_obj.id)
 
     # Fetch properties for the dropdown
     properties = Property.objects.all()
     return render(request, 'bookkeeping/add_unit.html', {'properties': properties})
 
-
 # Edit Unit
 def edit_unit(request, pk):
-    unit = get_object_or_404(Unit, id=pk)
+    unit = get_object_or_404(Unit, id=pk)  # Fetch the unit using the primary key
 
     if request.method == 'POST':
-        property_id = request.POST.get('property')
+        # Update unit details from the form data
         unit.unit_name = request.POST.get('unit_name')
         unit.floor_area = request.POST.get('floor_area')
         unit.rooms = request.POST.get('rooms')
         unit.baths = request.POST.get('baths')
         unit.market_rent = request.POST.get('market_rent')
 
-        # Ensure the property exists and update
+        # Retrieve the property using the unit's property relationship
+        property_id = unit.property.id  # Fetch the associated property ID
         unit.property = get_object_or_404(Property, id=property_id)
+
+        # Save the updated unit
         unit.save()
 
-        return redirect('units')
+        # Redirect to the associated property's detail view
+        return redirect('property_detail', property_id=property_id)
 
-    # Fetch properties for the dropdown
+    # Fetch all properties for the dropdown (if needed, though it's redundant in this case)
     properties = Property.objects.all()
     return render(request, 'bookkeeping/edit_unit.html', {
         'unit': unit,
@@ -621,10 +630,12 @@ def edit_unit(request, pk):
 # Delete Unit
 def delete_unit(request, pk):
     unit = get_object_or_404(Unit, id=pk)
+    property_id = unit.property.id  # Store the property ID before deletion
 
     if request.method == 'POST':
         unit.delete()
-        return redirect('units')
+        # Redirect to property detail view after deleting the unit
+        return redirect('property_detail', property_id=property_id)
 
     return render(request, 'bookkeeping/delete_unit.html', {'unit': unit})
 
@@ -748,7 +759,6 @@ def leases(request):
         'landlords': landlords,
     })
 
-
 # Add Lease
 def add_lease(request):
     if request.method == 'POST':
@@ -757,13 +767,13 @@ def add_lease(request):
         start_date = request.POST.get('start_date') or None
         end_date = request.POST.get('end_date') or None
         ust_type = request.POST.get('ust_type')
-        deposit_amount = request.POST.get('deposit_amount') or decimal.Decimal(0)   
+        deposit_amount = request.POST.get('deposit_amount') or Decimal(0)
 
         # Fetch the unit and its associated property, landlords, and rent
         unit_obj = get_object_or_404(Unit, id=unit_id)
         property_obj = unit_obj.property
         landlords = property_obj.landlords.all()
-        rent = unit_obj.market_rent  # Assume the Unit model has a rent field
+        rent = unit_obj.market_rent
 
         # Fetch tenant and related data
         tenant_obj = get_object_or_404(Tenant, id=tenant_id)
@@ -786,8 +796,10 @@ def add_lease(request):
         lease.landlords.set(landlords)
         lease.save()
 
-        return redirect('leases')
-
+        # Redirect to property detail view
+        return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=leases")
+    
+    # Fetch data for dropdowns if needed
     properties = Property.objects.all()
     units = Unit.objects.all()
     tenants = Tenant.objects.all()
@@ -802,7 +814,6 @@ def edit_lease(request, pk):
     lease = get_object_or_404(Lease, id=pk)
 
     if request.method == 'POST':
-        lease.property = get_object_or_404(Property, id=request.POST.get('property'))
         lease.unit = get_object_or_404(Unit, id=request.POST.get('unit'))
         lease.tenant = get_object_or_404(Tenant, id=request.POST.get('tenant'))
         lease.start_date = request.POST.get('start_date') or None
@@ -810,13 +821,17 @@ def edit_lease(request, pk):
         lease.ust_type = request.POST.get('ust_type')
         lease.deposit_amount = request.POST.get('deposit_amount')
 
-        # Update landlords
+        # Save updated landlords
         landlord_ids = request.POST.getlist('landlords')
         lease.landlords.set(landlord_ids)
 
+        # Save the updated lease
         lease.save()
-        return redirect('leases')
 
+        # Redirect to property detail view
+        return redirect(f"{reverse('property_detail', args=[lease.property.id])}?tab=leases")
+    
+    # Fetch data for dropdowns
     properties = Property.objects.all()
     units = Unit.objects.all()
     tenants = Tenant.objects.all()
@@ -832,10 +847,13 @@ def edit_lease(request, pk):
 # Delete Lease
 def delete_lease(request, pk):
     lease = get_object_or_404(Lease, id=pk)
+    property_id = lease.property.id  # Store the associated property ID before deletion
 
     if request.method == 'POST':
         lease.delete()
-        return redirect('leases')
+
+        # Redirect to property detail view
+        return redirect(f"{reverse('property_detail', args=[lease.property.id])}?tab=leases")
 
     return render(request, 'bookkeeping/delete_lease.html', {'lease': lease})
 
@@ -854,33 +872,26 @@ def add_income_profile(request):
         amount = request.POST.get('amount')
         date = request.POST.get('date')
 
-        # Validate at least one of property or lease is selected
-        if not lease_id and not property_id:
-            return render(request, 'bookkeeping/add_income_profile.html', {
-                'error': "You must select either a Property or a Lease.",
-                'leases': Lease.objects.all(),
-                'properties': Property.objects.all(),
-            })
-
         # Fetch Lease and Property
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
-        property_obj = Property.objects.filter(id=property_id).first() if property_id else None
+        property_obj = get_object_or_404(Property, id=property_id)
 
-        # Determine UST
+        # Determine UST dynamically
         ust = 0
         if lease and lease.ust_type:
             ust = {'Voll': 19, 'Teilw': 7, 'Nicht': 0}.get(lease.ust_type, 0)
 
-        # Safely handle optional fields
+        # Safely parse optional fields
         try:
             amount = Decimal(amount) if amount else None
-        except Exception as e:
+        except Exception:
             amount = None
         try:
             date = datetime.strptime(date, "%Y-%m-%d").date() if date else None
-        except Exception as e:
+        except Exception:
             date = None
 
+        # Create Income Profile
         IncomeProfile.objects.create(
             lease=lease,
             property=property_obj,
@@ -894,16 +905,15 @@ def add_income_profile(request):
             ust=ust,
             booking_no=request.POST.get('booking_no'),
         )
-        return redirect('income_profiles')
+        return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=income")
 
-    return render(request, 'bookkeeping/add_income_profile.html', {
-        'leases': Lease.objects.all(),
-        'properties': Property.objects.all(),
-    })
+    return redirect('dashboard')  # Default fallback
+
 
 # Edit Income Profile
 def edit_income_profile(request, pk):
     income = get_object_or_404(IncomeProfile, id=pk)
+    property_obj = income.property
 
     if request.method == 'POST':
         lease_id = request.POST.get('lease')
@@ -913,21 +923,20 @@ def edit_income_profile(request, pk):
 
         # Fetch Lease and Property
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
-        property_obj = Property.objects.filter(id=property_id).first() if property_id else None
 
         # Determine UST dynamically
         ust = 0
         if lease and lease.ust_type:
             ust = {'Voll': 19, 'Teilw': 7, 'Nicht': 0}.get(lease.ust_type, 0)
 
-        # Safely parse and handle optional fields
+        # Safely parse optional fields
         try:
             income.amount = Decimal(amount) if amount else None
-        except Exception as e:
+        except Exception:
             income.amount = None
         try:
             income.date = datetime.strptime(date, "%Y-%m-%d").date() if date else None
-        except Exception as e:
+        except Exception:
             income.date = None
 
         # Update fields
@@ -942,24 +951,21 @@ def edit_income_profile(request, pk):
         income.booking_no = request.POST.get('booking_no')
 
         income.save()
-        return redirect('income_profiles')
+        return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=income")
 
-    # Render the edit template
-    return render(request, 'bookkeeping/edit_income_profile.html', {
-        'income': income,
-        'leases': Lease.objects.all(),
-        'properties': Property.objects.all(),
-    })
+    return redirect('dashboard')  # Default fallback
+
 
 # Delete Income Profile
 def delete_income_profile(request, pk):
     income_profile = get_object_or_404(IncomeProfile, id=pk)
+    property_obj = income_profile.property
 
     if request.method == 'POST':
         income_profile.delete()
-        return redirect('income_profiles')
+        return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=income")
 
-    return render(request, 'bookkeeping/delete_income_profile.html', {'income_profile': income_profile})
+    return redirect('dashboard')  # Default fallback
 
 #################################################################
 
@@ -996,3 +1002,39 @@ def lease_profiles(request, lease_id):
         'income_profiles': income_profiles,
         'expense_profiles': expense_profiles,
     })
+
+def property_detail(request, property_id):
+    """
+    View for property-specific detail page with tabs.
+    """
+    property_obj = get_object_or_404(Property, id=property_id)
+    units = property_obj.units.all()
+    leases = property_obj.leases.all()
+    income_profiles = IncomeProfile.objects.filter(property=property_obj)
+    expense_profiles = ExpenseProfile.objects.filter(property=property_obj)
+    tenants = Tenant.objects.all()
+
+    context = {
+        'property': property_obj,
+        'units': units,
+        'leases': leases,
+        'income_profiles': income_profiles,
+        'expense_profiles': expense_profiles,
+        'tenants': tenants,
+    }
+    return render(request, 'bookkeeping/property_detail.html', context)
+
+def upload_property_bank_statement(request, property_id):
+    property_obj = get_object_or_404(Property, id=property_id)
+
+    if request.method == 'POST' and request.FILES.get('statement'):
+        statement = request.FILES['statement']
+
+        # Parsing Logic (Update to tag transactions with the selected property)
+        earmarked_transactions = parse_bank_statement(statement, property_obj)
+        EarmarkedTransaction.objects.bulk_create(earmarked_transactions)
+
+        return redirect('property_detail', property_id=property_obj.id)
+
+    return render(request, 'bookkeeping/upload_statement.html', {'property': property_obj})
+

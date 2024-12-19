@@ -37,24 +37,14 @@
           </a>
           <div data-simplebar class="h-[calc(100vh-64px)] lg:h-[calc(100vh-230px)]">
             <ul class="menu mb-6">
-              <!--  Start: Dashboard -->
-              <li class="mb-0.5">
-                <a class="hover:bg-base-content/15" href="{% url 'dashboard' %}">
-                  <div class="flex items-center gap-2">
-                    <iconify-icon icon="lucide:airplay" height="18"></iconify-icon>
-                    Dashboard
-                  </div>
-                </a>
-              </li>
-              <!--  End: Dashboard -->
               <!--  Start: Apps -->
               <li class="menu-title font-semibold">Apps</li>
               <li class="mb-0.5">
                 <details open>
                   <summary>
                     <div class="flex items-center gap-2">
-                      <iconify-icon icon="lucide:store" height="18"></iconify-icon>
-                      Real Estate
+                      <iconify-icon icon="lucide:user" height="16"></iconify-icon>
+                        Real Estate
                     </div>
                   </summary>
                   <ul>
@@ -65,46 +55,6 @@
                         </div>
                       </a>
                     </li>
-                    <li class="mb-0.5">
-                      <a class="hover:bg-base-content/15" href="{% url 'units' %}">
-                        <div class="flex items-center gap-2">
-                          Units
-                        </div>
-                      </a>
-                    </li>
-                    <li class="mb-0.5">
-                      <a class="hover:bg-base-content/15" href="{% url 'leases' %}">
-                        <div class="flex items-center gap-2">
-                          Leases
-                        </div>
-                      </a>
-                    </li>
-                    <li class="mb-0.5">
-                      <a class="hover:bg-base-content/15" href="{% url 'expense_profiles' %}">
-                        <div class="flex items-center gap-2">
-                          Expense Profiles
-                        </div>
-                      </a>
-                    </li>
-                    <li class="mb-0.5">
-                      <a class="hover:bg-base-content/15" href="{% url 'income_profiles' %}">
-                        <div class="flex items-center gap-2">
-                          Income Profiles
-                        </div>
-                      </a>
-                    </li>
-                  </ul>
-                </details>
-              </li>
-              <li class="mb-0.5">
-                <details open>
-                  <summary>
-                    <div class="flex items-center gap-2">
-                      <iconify-icon icon="lucide:user" height="16"></iconify-icon>
-                        People
-                    </div>
-                  </summary>
-                  <ul>
                     <li class="mb-0.5">
                       <a class="hover:bg-base-content/15" href="{% url 'tenants' %}">
                         <div class="flex items-center gap-2">

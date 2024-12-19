@@ -2,6 +2,17 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+
+     # Landing Page
+    path('', views.properties, name='properties'),  # Default landing page
+
+    # Property Detail Page
+    path('property/<int:property_id>/', views.property_detail, name='property_detail'),
+
+    # Units, Leases, Income, Expense already exist - no need to change those URLs
+    # Add functionality for Uploading bank statement for a specific property
+    path('property/<int:property_id>/upload_statement/', views.upload_property_bank_statement, name='upload_property_bank_statement'),
+
     # Dashboard
     path('', views.dashboard, name='dashboard'),
 
