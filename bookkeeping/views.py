@@ -1013,7 +1013,7 @@ def property_detail(request, property_id):
     income_profiles = IncomeProfile.objects.filter(property=property_obj)
     expense_profiles = ExpenseProfile.objects.filter(property=property_obj)
     tenants = Tenant.objects.all()
-    earmarked_transactions = EarmarkedTransaction.objects.filter(property=property_obj)
+    earmarked_transactions = EarmarkedTransaction.objects.filter(property=property_obj).order_by('date')
     parsed_transactions= ParsedTransaction.objects.all()
 
     
