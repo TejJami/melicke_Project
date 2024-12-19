@@ -24,6 +24,7 @@ def process_earmarked_transaction(sender, instance, created, **kwargs):
                     betrag_brutto=instance.amount,
                     is_income = instance.is_income,
                     tenant = expense_profile.lease.tenant,
+                    related_property= instance.property ,
                 )
                 parsed_txn.save()
                 instance.delete()
@@ -41,6 +42,7 @@ def process_earmarked_transaction(sender, instance, created, **kwargs):
                     betrag_brutto=instance.amount,
                     is_income = instance.is_income,
                     tenant = income_profile.lease.tenant,
+                    related_property= instance.property ,
                 )
                 parsed_txn.save()
                 instance.delete()
@@ -71,6 +73,7 @@ def match_earmarked_transactions_for_expense(sender, instance, created, **kwargs
                     betrag_brutto=txn.amount,
                     is_income=txn.is_income,
                     tenant= expense_profile.lease.tenant,
+                    related_property= txn.property,
                 )
                 parsed_txn.save()
                 txn.delete()
@@ -97,6 +100,7 @@ def match_earmarked_transactions_for_income(sender, instance, created, **kwargs)
                     betrag_brutto=txn.amount,
                     is_income=txn.is_income,
                     tenant= incomeProfile.lease.tenant,
+                    related_property= txn.property
                 )
                 parsed_txn.save()
                 txn.delete()

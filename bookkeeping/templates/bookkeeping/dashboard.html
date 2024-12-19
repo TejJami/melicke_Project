@@ -13,7 +13,7 @@
 
                 <!-- Spinner Animation -->
                 <div id="spinner" class="hidden flex justify-center items-center mb-4">
-                    <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                    <span class="loading loading-dots loading-xs"></span>
                 </div>
 
                 <!-- File Input -->
@@ -32,7 +32,7 @@
 
     <!-- Earmarked Transactions Table -->
     <div class="overflow-x-auto h-60 mb-10">
-        <h2 class="text-xl font-semibold mb-3">Earmarked Transactions for {{ property.name }}</h2>
+        <h2 class="text-xl font-light mb-3">Earmarked Transactions for {{ property.name }}</h2>
         <table class="table w-full text-left bg-base-100 text-base-content">
             <thead>
                 <tr>
@@ -75,7 +75,7 @@
 
     <!-- Parsed Transactions Table -->
     <div class="overflow-x-auto h-60">
-        <h2 class="text-xl font-semibold mb-3">Parsed Transactions for {{ property.name }}</h2>
+        <h2 class="text-xl font-light mb-3">Parsed Transactions for {{ property.name }}</h2>
         <table class="table w-full text-left bg-base-100 text-base-content">
             <thead>
                 <tr>

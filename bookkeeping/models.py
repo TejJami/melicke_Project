@@ -70,6 +70,7 @@ class ParsedTransaction(models.Model):
     booking_no = models.CharField(max_length=100, null=True, blank=True)  # Booking number
     transaction_type = models.CharField(max_length=255, null=True, blank=True)  # Transaction type (renamed from gggkto)
     property_name = models.CharField(max_length=255, null=True, blank=True)  # Property name, if applicable
+    related_property = models.ForeignKey(Property, on_delete=models.CASCADE, null=True, blank=True)  # Link to property
     unit_name = models.CharField(max_length=255, null=True, blank=True)  # Unit name, if applicable
     ust_type = models.IntegerField(choices=[(0, '0%'), (7, '7%'), (19, '19%')], default=19)  # UST type
     betrag_brutto = models.FloatField(null=True, blank=True)  # Gross amount

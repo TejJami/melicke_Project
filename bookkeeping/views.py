@@ -344,7 +344,7 @@ def edit_property(request, pk):
                     market_rent=market_rent,
                 )
 
-        return redirect('properties')  # Redirect to properties list after saving
+        return redirect('property_detail', property_id=pk)
 
     # Prepopulate the formsets for existing units
     landlords = Landlord.objects.all()
@@ -1014,7 +1014,7 @@ def property_detail(request, property_id):
     expense_profiles = ExpenseProfile.objects.filter(property=property_obj)
     tenants = Tenant.objects.all()
     earmarked_transactions = EarmarkedTransaction.objects.filter(property=property_obj).order_by('date')
-    parsed_transactions= ParsedTransaction.objects.all()
+    parsed_transactions= ParsedTransaction.objects.filter(related_property=property_obj).order_by('booking_no')
 
     
     context = {
