@@ -1,5 +1,7 @@
 from django.urls import path
 from . import views
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
 
@@ -65,4 +67,4 @@ urlpatterns = [
 
     # Fetch unit tenant data
     path('fetch_unit_tenant_data/', views.fetch_unit_tenant_data, name='fetch_unit_tenant_data'),
-]
+]  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

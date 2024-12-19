@@ -1,21 +1,30 @@
 {% extends 'bookkeeping/base.html' %}
+{% load static %}
+
 {% block title %}Properties{% endblock %}
 
 {% block content %}
 <div class="grid grid-cols-3 gap-6">
     {% for property in properties %}
-    <div class="card shadow-lg p-5">
-        {% if property.image_url %}
-        <img src="{{ property.image_url }}" alt="Property Image" class="w-full h-32 object-cover mb-4 rounded">
-        {% endif %}
-        <h2 class="text-xl font-bold">{{ property.name }}</h2>
-        <p>{{ property.street }}, {{ property.city }}</p>
-        <div class="mt-4">
-            <a href="{% url 'property_detail' property.id %}" class="btn btn-outline btn-sm">View Details</a>
+    <div class="card bg-base-100 image-full shadow-xl w-80 h-48"> <!-- Fixed card size -->
+        <figure class="h-48 w-full overflow-hidden"> <!-- Constrain the image size -->
+            {% if property.image %}
+            <img src="{{ property.image.url }}" alt="Property Image" class="object-cover h-full w-full" /> <!-- Fit image -->
+            {% else %}
+            <img src="{% static 'property_images/default_image.jpg' %}" alt="Default Property Image" class="object-cover h-full w-full" /> <!-- Fit default image -->
+            {% endif %}
+        </figure>
+        <div class="card-body">
+            <h2 class="card-title">{{ property.name }}</h2>
+            <p>{{ property.street }}, {{ property.city }}</p>
+            <div class="card-actions justify-end">
+                <a href="{% url 'property_detail' property.id %}" class="btn btn-primary btn-sm">View Details</a>
+            </div>
         </div>
     </div>
     {% empty %}
     <p>No properties available.</p>
     {% endfor %}
 </div>
+
 {% endblock %}
