@@ -1,7 +1,7 @@
 <div class="card bg-base-100 shadow-md p-5 w-full max-w-6xl mx-auto">
 
     <!-- Upload Bank Statement Button -->
-    <button class="btn btn-outline mb-5" onclick="upload_modal.showModal()">Upload Bank Statement</button>
+    <button class="btn w-64 btn-sm btn-outline mb-5" onclick="upload_modal.showModal()">Upload Bank Statement</button>
 
     <!-- Upload Modal -->
     <dialog id="upload_modal" class="modal">
@@ -118,6 +118,11 @@
                 {% endfor %}
             </tbody>
         </table>
+        <div class="flex justify-end mb-3">
+            <a href="{% url 'export_parsed_transactions' %}" class="btn btn-sm btn-outline">
+                Download as Excel
+            </a>
+        </div>
     </div>
 </div>
 
