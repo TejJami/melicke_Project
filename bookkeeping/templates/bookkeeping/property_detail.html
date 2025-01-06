@@ -13,8 +13,31 @@
     <h1 class="text-xl font-light">{{ property.name }}</h1>
 </div>
 
-    <!-- Edit Property Modal -->
-    <button class="btn btn-outline mb-5" onclick="edit_property_modal.showModal()">Edit Property</button>
+<!-- Edit Property and Delete Button Section -->
+<div class="flex gap-4 mb-5">
+  <button class="btn btn-outline" onclick="edit_property_modal.showModal()">Edit Property</button>
+  
+  <!-- Delete Button -->
+  <button class="btn btn-outline btn-error" onclick="delete_property_modal.showModal()">Delete Property</button>
+</div>
+
+<!-- Delete Property Modal -->
+<dialog id="delete_property_modal" class="modal">
+  <div class="modal-box bg-base-100 text-base-content">
+      <form method="post" action="{% url 'delete_property' property.id %}">
+          {% csrf_token %}
+          <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="delete_property_modal.close()">✕</button>
+          <h1 class="text-lg font-bold mb-4">Delete Property</h1>
+          <p class="mb-4">Are you sure you want to delete <strong>{{ property.name }}</strong>? This action cannot be undone.</p>
+          
+          <div class="modal-action">
+              <button type="submit" class="btn btn-outline btn-error">Delete</button>
+              <button type="button" class="btn btn-outline" onclick="delete_property_modal.close()">Cancel</button>
+          </div>
+      </form>
+  </div>
+</dialog>
+
 
     <dialog id="edit_property_modal" class="modal">
         <div class="modal-box bg-base-100 text-base-content">

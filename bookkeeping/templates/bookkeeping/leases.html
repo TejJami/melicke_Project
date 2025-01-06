@@ -117,19 +117,12 @@
                     <th>Actions</th>
                 </tr>
             </thead>
-
             <tbody>
                 {% for lease in leases %}
                 <tr>
-                    <td>{{ lease.unit.unit_name }}</td>
-                    <td>{{ lease.tenant.name }}</td>
-                    <td>{{ lease.start_date|date:'Y-m-d' }}</td>
-                    <td>{{ lease.end_date|date:'Y-m-d' }}</td>
-                    <td>{{ lease.ust_type }}</td>
-                    <td>{{ lease.rent|floatformat:2 }}</td>
-                    <td>{{ lease.deposit_amount|floatformat:2 }}</td>
                     <td>
-                        <button class="btn btn-sm btn-outline" onclick="openEditLeaseModal(
+                        <a href="#" class="font-semibold hover:text-primary hover:underline transition-all"
+                        onclick="openEditLeaseModal(
                             {{ lease.id }}, 
                             {{ lease.unit.id }}, 
                             {{ lease.tenant.id }}, 
@@ -138,11 +131,25 @@
                             '{{ lease.deposit_amount|floatformat:2 }}', 
                             '{{ lease.rent|floatformat:2 }}', 
                             '{{ lease.ust_type }}')">
-                            Edit
-                        </button>
-                        <form method="post" action="{% url 'delete_lease' lease.id %}" class="inline">
+                            {{ lease.unit.unit_name }}
+                        </a>
+                    </td>
+                    <td>{{ lease.tenant.name }}</td>
+                    <td>{{ lease.start_date|date:'Y-m-d' }}</td>
+                    <td>{{ lease.end_date|date:'Y-m-d'|default:"-" }}</td>
+                    <td>{{ lease.ust_type }}</td>
+                    <td>€{{ lease.rent|floatformat:2 }}</td>
+                    <td>€{{ lease.deposit_amount|floatformat:2 }}</td>
+                    <td>
+                        <!-- Delete Form with Circular Button -->
+                        <form method="post" action="{% url 'delete_lease' lease.id %}" class="inline"
+                            onsubmit="return confirm('Are you sure you want to delete this lease?');">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-outline btn-error btn-sm">Delete</button>
+                            <button type="submit" 
+                                    class="btn btn-circle btn-outline btn-error btn-sm hover:bg-error hover:text-white hover:border-transparent transition-all" 
+                                    aria-label="Delete Lease">
+                                ✕
+                            </button>
                         </form>
                     </td>
                 </tr>
@@ -154,6 +161,7 @@
             </tbody>
         </table>
     </div>
+
 </div>
 
 <script>
