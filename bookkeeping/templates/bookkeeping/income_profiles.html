@@ -1,5 +1,4 @@
-<div class="card bg-base-100 shadow-md p-5 w-full max-w-6xl mx-auto">
-
+<div class="card bg-transparent p-5 w-full max-w-6xl mx-auto">
 
     <!-- Trigger Button -->
     <button class="btn w-64 btn-sm btn-outline mb-5" onclick="add_income_modal.showModal()">Add Income Profile</button>
@@ -224,7 +223,7 @@
 
         document.getElementById('edit_profile_name').value = profileName;
         document.getElementById('edit_transaction_type').value = transactionType;
-        document.getElementById('edit_amount').value = amount || '';
+        document.getElementById('edit_amount').value = amount ? parseFloat(amount).toFixed(2) : '';
         document.getElementById('edit_date').value = date || '';
         document.getElementById('edit_recurring').checked = recurring === "True";
         document.getElementById('edit_lease').value = leaseId || '';

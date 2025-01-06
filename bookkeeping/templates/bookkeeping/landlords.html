@@ -214,6 +214,9 @@
 
 <script>
     function openEditLandlordModal(id, name, phone, email, address, iban, bic, taxId, companyName, notes) {
+        const form = document.getElementById('edit_landlord_form');
+        form.action = `/edit_landlord/${id}/`;
+        
         document.getElementById('edit_landlord_id').value = id;
         document.getElementById('edit_landlord_name').value = name;
         document.getElementById('edit_landlord_phone').value = phone;

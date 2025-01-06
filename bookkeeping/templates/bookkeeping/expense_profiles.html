@@ -1,4 +1,4 @@
-<div class="card bg-base-100 shadow-md p-5 w-full max-w-6xl mx-auto">
+<div class="card bg-transparent p-5 w-full max-w-6xl mx-auto">
 
     <!-- Add Expense Profile Button -->
     <button class="btn w-64 btn-sm btn-outline mb-5" onclick="add_expense_modal.showModal()">Add Expense Profile</button>
@@ -252,22 +252,22 @@
 
             <div class="mb-4">
                 <label class="label"><span class="label-text">Profile Name *</span></label>
-                <input type="text" name="profile_name" id="edit_profile_name" class="input input-bordered w-full" required>
+                <input type="text" name="profile_name" id="edit_profile_name_1" class="input input-bordered w-full" required>
             </div>
 
             <div class="mb-4">
                 <label class="label"><span class="label-text">Account Name *</span></label>
-                <input type="text" name="account_name" id="edit_account_name" class="input input-bordered w-full" required>
+                <input type="text" name="account_name" id="edit_account_name_1" class="input input-bordered w-full" required>
             </div>
 
             <div class="mb-4">
                 <label class="label"><span class="label-text">Booking No *</span></label>
-                <input type="text" name="booking_no" id="edit_booking_no" class="input input-bordered w-full" required>
+                <input type="text" name="booking_no" id="edit_booking_no_1" class="input input-bordered w-full" required>
             </div>
 
             <div class="mb-4">
                 <label class="label"><span class="label-text">Transaction Type *</span></label>
-                <select name="transaction_type" id="edit_transaction_type" class="select select-bordered w-full" required>
+                <select name="transaction_type" id="edit_transaction_type_1" class="select select-bordered w-full" required>
                     <option value="">-- Select a GGkto --</option>
                     <option value="bk_back_payments">BK Back Payments</option>
                     <option value="bk_general_electricity">BK General Electricity</option>
@@ -293,7 +293,7 @@
 
             <div class="mb-4">
                 <label class="label"><span class="label-text">Frequency</span></label>
-                <select name="frequency" id="edit_frequency" class="select select-bordered w-full">
+                <select name="frequency" id="edit_frequency_1" class="select select-bordered w-full">
                     <option value="">-- None --</option>
                     <option value="monthly">Monthly</option>
                     <option value="yearly">Yearly</option>
@@ -303,7 +303,7 @@
             <!-- optional lease -->
             <div class="mb-4">
                 <label class="label"><span class="label-text">Lease (Optional)</span></label>
-                <select name="lease" id="edit_lease" class="select select-bordered w-full">
+                <select name="lease" id="edit_lease_1" class="select select-bordered w-full">
                     <option value="">-- Select Lease --</option>
                     {% for lease in property.leases.all %}
                         <option value="{{ lease.id }}">{{ lease }}</option>
@@ -313,24 +313,24 @@
 
             <div class="mb-4">
                 <label class="label"><span class="label-text">Amount</span></label>
-                <input type="number" name="amount" id="edit_amount" class="input input-bordered w-full" step="0.01">
+                <input type="number" name="amount" id="edit_amount_1" class="input input-bordered w-full" step="0.01">
             </div>
 
             <div class="mb-4">
                 <label class="label"><span class="label-text">Date</span></label>
-                <input type="date" name="date" id="edit_date" class="input input-bordered w-full">
+                <input type="date" name="date" id="edit_date_1" class="input input-bordered w-full">
             </div>
 
             <div class="mb-4 hidden">
                 <label class="label"><span class="label-text">Property *</span></label>
-                <input type="hidden" name="property" id="edit_property" value="{{ property.id }}">
+                <input type="hidden" name="property" id="edit_property_1" value="{{ property.id }}">
                 <input type="text" class="input input-bordered w-full" value="{{ property.name }}" disabled>
             </div>
             
 
             <div class="mb-4">
                 <label class="label cursor-pointer"><span class="label-text">Recurring</span></label>
-                <input type="checkbox" name="recurring" id="edit_recurring" class="checkbox">
+                <input type="checkbox" name="recurring" id="edit_recurring_1" class="checkbox">
             </div>
 
             <div class="modal-action">
@@ -344,36 +344,34 @@
 
 <script>
 function openEditExpenseModal(id, profileName, transactionType, amount, date, recurring, frequency, propertyId, leaseId, accountName, bookingNo) {
-    console.log("Edit Expense Modal Data:", {
-        id, profileName, transactionType, amount, date, recurring, frequency, propertyId, leaseId, accountName, bookingNo
-    });
 
     const form = document.getElementById('edit_expense_form');
     form.action = `/edit_expense_profile/${id}/`;
 
     // Populate fields
-    document.getElementById('edit_profile_name').value = profileName;
-    document.getElementById('edit_transaction_type').value = transactionType;
-    document.getElementById('edit_amount').value = amount || '';
-    document.getElementById('edit_date').value = date || '';
-    document.getElementById('edit_recurring').checked = recurring === "True";
-    document.getElementById('edit_frequency').value = frequency || '';
+    document.getElementById('edit_profile_name_1').value = profileName;
+    document.getElementById('edit_transaction_type_1').value = transactionType;
+    document.getElementById('edit_amount_1').value = amount ? parseFloat(amount).toFixed(2) : '';
+    const dt = new Date(date);
+    const formattedDate = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+    document.getElementById('edit_date_1').value = formattedDate;
+
+    document.getElementById('edit_recurring_1').checked = recurring === "True";
+    document.getElementById('edit_frequency_1').value = frequency || '';
 
     // Handle dropdowns
-    const propertySelect = document.getElementById('edit_property');
+    const propertySelect = document.getElementById('edit_property_1');
     if (propertySelect) {
         propertySelect.value = propertyId || '';
-        console.log("Property dropdown value set to:", propertyId);
     }
 
-    const leaseSelect = document.getElementById('edit_lease');
+    const leaseSelect = document.getElementById('edit_lease_1');
     if (leaseSelect) {
         leaseSelect.value = leaseId || '';
-        console.log("Lease dropdown value set to:", leaseId);
     }
 
-    document.getElementById('edit_account_name').value = accountName || '';
-    document.getElementById('edit_booking_no').value = bookingNo || '';
+    document.getElementById('edit_account_name_1').value = accountName || '';
+    document.getElementById('edit_booking_no_1').value = bookingNo || '';
 
     // Show modal
     document.getElementById('edit_expense_modal').showModal();

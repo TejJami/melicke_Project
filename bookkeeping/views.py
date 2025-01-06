@@ -221,7 +221,6 @@ def properties(request):
         'landlords': landlords,
     })
 
-
 # Add Property
 def add_property(request):
     if request.method == 'POST':

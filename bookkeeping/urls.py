@@ -33,7 +33,7 @@ urlpatterns = [
     # Landlords
     path('landlords/', views.landlords, name='landlords'),
     path('add_landlord/', views.add_landlord, name='add_landlord'),
-    path('edit_landlord/', views.edit_landlord, name='edit_landlord'),
+    path('edit_landlord/<int:pk>/', views.edit_landlord, name='edit_landlord'),
     path('delete_landlord/<int:pk>/', views.delete_landlord, name='delete_landlord'),
 
     # Tenants
