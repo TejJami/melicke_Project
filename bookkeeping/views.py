@@ -19,7 +19,7 @@ from django.http import JsonResponse
 from decimal import Decimal
 from datetime import datetime
 from django.urls import reverse
-
+from django.core.paginator import Paginator
 
 # Dashboard: Displays Earmarked and Parsed Transactions
 def dashboard(request):
@@ -209,15 +209,16 @@ def upload_bank_statement(request, property_id=None):
 
 # Properties
 def properties(request):
-    query = request.GET.get('q', '')  # Get the search query
-    if query:
-        properties = Property.objects.filter(name__icontains=query)  # Case-insensitive search
-    else:
-        properties = Property.objects.all()
+    query = request.GET.get('q', '')
+    properties = Property.objects.filter(name__icontains=query) if query else Property.objects.all()
     
+    paginator = Paginator(properties, 6)  # Display 6 properties per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     landlords = Landlord.objects.all()
     return render(request, 'bookkeeping/properties.html', {
-        'properties': properties,
+        'page_obj': page_obj,
         'landlords': landlords,
     })
 

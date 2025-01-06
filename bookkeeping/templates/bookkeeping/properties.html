@@ -121,7 +121,7 @@
 
 <!-- Property Cards -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for property in properties %}
+    {% for property in page_obj %}
     <a href="{% url 'property_detail' property.id %}" class="block">
         <div class="card bg-base-100 image-full shadow-xl w-full h-48 cursor-pointer transform transition-transform duration-150 hover:scale-105 hover:shadow-2xl">
             <figure class="h-48 w-full overflow-hidden">
@@ -141,5 +141,25 @@
     <p>No properties available.</p>
     {% endfor %}
 </div>
+
+<!-- Pagination Component -->
+<div class="flex justify-center mt-6">
+    <div class="join">
+        {% if page_obj.has_previous %}
+            <a href="?page=1" class="join-item btn btn-sm">First</a>
+            <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn btn-sm">Previous</a>
+        {% endif %}
+
+        <span class="join-item btn btn-sm btn-active">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="join-item btn btn-sm">Next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}" class="join-item btn btn-sm">Last</a>
+        {% endif %}
+    </div>
+</div>
+
 
 {% endblock %}
