@@ -35,6 +35,8 @@ In the second terminal run:
 cd setup_django_tailwind_daisyui
 python manage.py runserver
 ```
+python manage.py test bookkeeping
+
 
 As prompted, open the page http://127.0.0.1:8000/ and enjoy 🚀
 
