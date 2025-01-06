@@ -50,7 +50,7 @@
                     <td>{{ transaction.account_name }}</td>
                     <td>{{ transaction.date }}</td>
                     <td class="{% if transaction.is_income %}text-success{% else %}text-error{% endif %}">
-                        {{ transaction.amount }}
+                        €{{ transaction.amount }}
                     </td>
                     <td>{{ transaction.description }}</td>
                     <td>
@@ -101,11 +101,11 @@
                     <td>{{ transaction.account_name }}</td>
                     <td>{{ transaction.unit_name }}</td>
                     <td class="{% if transaction.is_income %}text-success{% else %}text-error{% endif %}">
-                        {{ transaction.betrag_netto }}
+                        €{{ transaction.betrag_netto }}
                     </td>
-                    <td>{{ transaction.ust }}</td>
+                    <td>€{{ transaction.ust }}</td>
                     <td class="{% if transaction.is_income %}text-success{% else %}text-error{% endif %}">
-                        {{ transaction.betrag_brutto }}
+                        €{{ transaction.betrag_brutto }}
                     </td>
                     <td>{{ transaction.transaction_type }}</td>
                     <td>{{ transaction.property_name }}</td>

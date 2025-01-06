@@ -524,7 +524,7 @@
 
           <div class="modal-action">
               <button type="submit" class="btn btn-outline">Add</button>
-              <button type="button" class="btn btn-outline btn-error" onclick="add_income_modal.close()">Cancel</button>
+              <button type="button" class="btn btn-outline btn-error" onclick="add_income_modal_2.close()">Cancel</button>
           </div>
       </form>
   </div>
@@ -535,7 +535,7 @@
 <div class="modal-box bg-base-100 text-base-content">
     <form method="post" action="{% url 'add_expense_profile' %}">
         {% csrf_token %}
-        <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_expense_modal.close()">✕</button>
+        <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_expense_modal_2.close()">✕</button>
         <h1 class="text-lg font-bold mb-4">Add Expense Profile</h1>
         <div class="mb-4">
             <label class="label"><span class="label-text">Profile Name *</span></label>
@@ -611,7 +611,7 @@
         </div>
         <div class="modal-action">
             <button type="submit" class="btn btn-outline">Add</button>
-            <button type="button" class="btn btn-outline btn-error" onclick="add_expense_modal.close()">Cancel</button>
+            <button type="button" class="btn btn-outline btn-error" onclick="add_expense_modal_2.close()">Cancel</button>
         </div>
     </form>
 </div>
