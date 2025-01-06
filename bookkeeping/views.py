@@ -209,14 +209,18 @@ def upload_bank_statement(request, property_id=None):
 
 # Properties
 def properties(request):
-    properties = Property.objects.all()
+    query = request.GET.get('q', '')  # Get the search query
+    if query:
+        properties = Property.objects.filter(name__icontains=query)  # Case-insensitive search
+    else:
+        properties = Property.objects.all()
+    
     landlords = Landlord.objects.all()
-    tenants = Tenant.objects.all()
     return render(request, 'bookkeeping/properties.html', {
         'properties': properties,
         'landlords': landlords,
-        'tenants': tenants,
     })
+
 
 # Add Property
 def add_property(request):

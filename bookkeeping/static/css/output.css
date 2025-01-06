@@ -3655,6 +3655,10 @@ details.collapse summary::-webkit-details-marker {
   top: 0.5rem;
 }
 
+.right-12 {
+  right: 3rem;
+}
+
 .z-10 {
   z-index: 10;
 }
@@ -3752,6 +3756,14 @@ details.collapse summary::-webkit-details-marker {
 
 .mt-8 {
   margin-top: 2rem;
+}
+
+.mt-3 {
+  margin-top: 0.75rem;
+}
+
+.mt-5 {
+  margin-top: 1.25rem;
 }
 
 .line-clamp-2 {
@@ -4384,6 +4396,11 @@ details.collapse summary::-webkit-details-marker {
 
 .hover\:bg-error\/20:hover {
   background-color: var(--fallback-er,oklch(var(--er)/0.2));
+}
+
+.hover\:text-error:hover {
+  --tw-text-opacity: 1;
+  color: var(--fallback-er,oklch(var(--er)/var(--tw-text-opacity)));
 }
 
 .hover\:shadow-2xl:hover {

@@ -6,9 +6,64 @@
 {% block content %}
 <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-semibold">Properties</h1>
-    <!-- Add Property Button -->
-    <button class="btn btn-glass btn-outline btn-sm" onclick="add_property_modal.showModal()">+ Add Property</button>
+    <div class="flex items-center gap-3">
+        <button
+          aria-label="Search button"
+          onclick="search_modal.showModal()"
+          class="btn btn-outline btn-sm h-9 w-48 items-center justify-start gap-3 border-base-content/20 hover:border-transparent hover:bg-base-content/20">
+          <iconify-icon icon="lucide:search" height="16" class="text-base-content/60"></iconify-icon>
+          <span class="text-base-content/60">
+              {% if request.GET.q %}
+                Searching: "{{ request.GET.q }}"
+              {% else %}
+                Search
+              {% endif %}
+          </span>
+        </button>
+        <button class="btn btn-glass btn-outline btn-sm" onclick="add_property_modal.showModal()">+ Add Property</button>
+    </div>
 </div>
+
+
+
+<!-- Search Modal -->
+<dialog aria-label="Modal" class="modal" id="search_modal">
+    <div class="modal-box p-0">
+        <form method="get" action="{% url 'properties' %}">
+            <div class="form-control flex-row items-center rounded-box p-2 px-5">
+                <iconify-icon
+                icon="lucide:search"
+                height="18"
+                class="text-base-content/70"></iconify-icon>
+                <input
+                name="q"
+                placeholder="Search properties"
+                value="{{ request.GET.q|default:'' }}"
+                class="input input-sm w-full text-base focus:border-transparent focus:outline-0 focus:outline-offset-0" />
+                
+               <!-- Clear Button -->
+               {% if request.GET.q %}
+               <a href="{% url 'properties' %}" class="btn btn-circle btn-ghost btn-sm gap-2">
+                   <iconify-icon icon="lucide:x" height="16"></iconify-icon>
+               </a>
+                {% endif %}
+
+                <button type="submit" class="btn btn-circle btn-ghost btn-sm gap-2">
+                    <iconify-icon icon="lucide:search" height="16"></iconify-icon>
+                </button>
+                
+
+            </div>
+        </form>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</dialog>
+
+
+
+
 
 <!-- Add Property Modal -->
 <dialog id="add_property_modal" class="modal">
@@ -92,7 +147,5 @@
     <p>No properties available.</p>
     {% endfor %}
 </div>
-
-
 
 {% endblock %}
