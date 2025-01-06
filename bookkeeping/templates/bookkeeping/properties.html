@@ -71,27 +71,28 @@
 </dialog>
 
 <!-- Property Cards -->
-<div class="grid grid-cols-3 gap-6">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
     {% for property in properties %}
-    <div class="card bg-base-100 image-full shadow-xl w-80 h-48">
-        <figure class="h-48 w-full overflow-hidden">
-            {% if property.image %}
-            <img src="{{ property.image.url }}" alt="Property Image" class="object-cover h-full w-full" />
-            {% else %}
-            <img src="{% static 'property_images/default_image.png' %}" alt="Default Property Image" class="object-cover h-full w-full" />
-            {% endif %}
-        </figure>
-        <div class="card-body">
-            <h2 class="card-title">{{ property.name }}</h2>
-            <p>{{ property.street }}, {{ property.city }}</p>
-            <div class="card-actions justify-end">
-                <a href="{% url 'property_detail' property.id %}" class="btn btn-glass btn-sm">View Details</a>
+    <a href="{% url 'property_detail' property.id %}" class="block">
+        <div class="card bg-base-100 image-full shadow-xl w-full h-48 cursor-pointer transform transition-transform duration-150 hover:scale-105 hover:shadow-2xl">
+            <figure class="h-48 w-full overflow-hidden">
+                {% if property.image %}
+                <img src="{{ property.image.url }}" alt="Property Image" class="object-cover h-full w-full" />
+                {% else %}
+                <img src="{% static 'property_images/default_image.png' %}" alt="Default Property Image" class="object-cover h-full w-full" />
+                {% endif %}
+            </figure>
+            <div class="card-body">
+                <h2 class="card-title">{{ property.name }}</h2>
+                <p>{{ property.street }}, {{ property.city }}</p>
             </div>
         </div>
-    </div>
+    </a>
     {% empty %}
     <p>No properties available.</p>
     {% endfor %}
 </div>
+
+
 
 {% endblock %}
