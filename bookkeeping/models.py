@@ -34,8 +34,8 @@ class Landlord(models.Model):
 # Property Model (Building)
 class Property(models.Model):
     PROPERTY_TYPE_CHOICES = [
-        ('residential', 'Residential'),
-        ('commercial', 'Commercial'),
+        ('Residential', 'Residential'),
+        ('Commercial', 'Commercial'),
     ]
 
     # Property Details
