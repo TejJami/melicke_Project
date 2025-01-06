@@ -3,9 +3,51 @@
 {% block title %}Tenants{% endblock %}
 
 {% block content %}
-<div class="card bg-base-100 shadow-md p-5 h-screen">
-    <!-- Add Tenant Button -->
-    <button class="btn btn-outline mb-5" onclick="add_tenant_modal.showModal()">Add Tenant</button>
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-semibold">Tenants</h1>
+        <div class="flex items-center gap-3">
+            <button
+              aria-label="Search button"
+              onclick="search_modal.showModal()"
+              class="btn btn-outline btn-sm h-9 w-48 items-center justify-start gap-3 border-base-content/20 hover:border-transparent hover:bg-base-content/20">
+              <iconify-icon icon="lucide:search" height="16" class="text-base-content/60"></iconify-icon>
+              <span class="text-base-content/60">
+                  {% if request.GET.q %}
+                    Searching: "{{ request.GET.q }}"
+                  {% else %}
+                    Search
+                  {% endif %}
+              </span>
+            </button>
+            <button class="btn btn-glass btn-outline btn-sm" onclick="add_tenant_modal.showModal()">+ Add Tenant</button>
+        </div>
+    </div>
+    
+    <!-- Search Modal -->
+    <dialog aria-label="Modal" class="modal" id="search_modal">
+        <div class="modal-box p-0">
+            <form method="get" action="{% url 'tenants' %}">
+                <div class="form-control flex-row items-center rounded-box p-2 px-5">
+                    <iconify-icon icon="lucide:search" height="18" class="text-base-content/70"></iconify-icon>
+                    <input
+                    name="q"
+                    placeholder="Search tenants"
+                    value="{{ request.GET.q|default:'' }}"
+                    class="input input-sm w-full text-base focus:border-transparent focus:outline-0 focus:outline-offset-0" />
+                    
+                   {% if request.GET.q %}
+                   <a href="{% url 'tenants' %}" class="btn btn-circle btn-ghost btn-sm gap-2">
+                       <iconify-icon icon="lucide:x" height="16"></iconify-icon>
+                   </a>
+                    {% endif %}
+                    
+                    <button type="submit" class="btn btn-circle btn-ghost btn-sm gap-2">
+                        <iconify-icon icon="lucide:search" height="16"></iconify-icon>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </dialog>
 
     <!-- Add Tenant Modal -->
     <dialog id="add_tenant_modal" class="modal">
@@ -73,7 +115,6 @@
 
     <!-- Tenants Table -->
     <div class="overflow-x-auto">
-        <h2 class="text-xl font-semibold mb-3">All Tenants</h2>
         <table class="table w-full text-left bg-base-100 text-base-content">
             <thead>
                 <tr class="border-b border-base-200">
@@ -121,7 +162,7 @@
             </tbody>
         </table>
     </div>
-</div>
+
 
 <!-- Edit Tenant Modal -->
 <dialog id="edit_tenant_modal" class="modal">

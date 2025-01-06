@@ -374,14 +374,15 @@ def delete_property(request, pk):
 
 # Tenants
 def tenants(request):
+    query = request.GET.get('q', '')
     tenants = Tenant.objects.all()
-    properties = Property.objects.all() 
 
-    return render(request, 'bookkeeping/tenants.html', 
-    {'tenants': tenants,
-    'properties': properties
-    }
-    )
+    if query:
+        tenants = tenants.filter(name__icontains=query)  # Filter tenants by name
+
+    return render(request, 'bookkeeping/tenants.html', {
+        'tenants': tenants,
+    })
 
 # Add Tenant
 def add_tenant(request):
@@ -645,11 +646,18 @@ def delete_unit(request, pk):
 
 #################################################################
 
-# Landlords
+# Landlords View
 def landlords(request):
+    query = request.GET.get('q', '')
     landlords = Landlord.objects.all()
-    return render(request, 'bookkeeping/landlords.html', {'landlords': landlords})
 
+    if query:
+        landlords = landlords.filter(name__icontains=query)  # Filter landlords by name
+
+    return render(request, 'bookkeeping/landlords.html', {
+        'landlords': landlords,
+    })
+    
 # Add Landlord
 def add_landlord(request):
     if request.method == 'POST':
