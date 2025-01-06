@@ -130,8 +130,14 @@
     function showSpinner(event) {
         event.preventDefault(); // Prevent the default form submission
         const spinner = document.getElementById('spinner');
+        const uploadButton = event.target.querySelector('button[type="submit"]');
+
         if (spinner) {
             spinner.classList.remove('hidden'); // Show the spinner
+        }
+        
+        if (uploadButton) {
+            uploadButton.disabled = true; // Disable the upload button
         }
 
         // Optionally, you can delay form submission to simulate upload
