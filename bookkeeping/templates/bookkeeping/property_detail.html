@@ -136,6 +136,13 @@
         {% include 'bookkeeping/dashboard.html' with dashboard=dashboard %}
       </div>
 
+      <!-- Journal Tab -->
+      <input type="radio" name="property_tabs" id="journal_tab" role="tab" class="tab" aria-label="Journal">
+      <div role="tabpanel" class="tab-content">
+          {% include 'bookkeeping/journal.html' with parsed_transactions=parsed_transactions %}
+      </div>
+
+
         <!-- Overview Tab -->
         <input type="radio" name="property_tabs" id="overview_tab" role="tab" class="tab" aria-label="Overview">
         <div role="tabpanel" class="tab-content">
