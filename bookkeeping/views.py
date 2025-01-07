@@ -235,6 +235,8 @@ def add_property(request):
         country = request.POST.get('country')
         landlord_ids = request.POST.getlist('landlords')
 
+        ust_type = request.POST.get('ust_type')
+
         # Create the Property object
         property_obj = Property.objects.create(
             property_type=property_type,
@@ -244,6 +246,7 @@ def add_property(request):
             city=city,
             zip=zip_code,
             country=country,
+            ust_type=ust_type,
         )
         property_obj.landlords.set(landlord_ids)  # Set landlords for the property
 
@@ -294,6 +297,8 @@ def edit_property(request, pk):
         property_obj.city = request.POST.get('city')
         property_obj.zip = request.POST.get('zip')
         property_obj.country = request.POST.get('country')
+
+        property_obj.ust_type = request.POST.get('ust_type')
 
         # Update landlords
         landlord_ids = request.POST.getlist('landlords')
@@ -451,105 +456,116 @@ def expense_profiles(request):
 
 def add_expense_profile(request):
     if request.method == 'POST':
-        lease_id = request.POST.get('lease')
-        property_id = request.POST.get('property')
-        amount = request.POST.get('amount')
-        date = request.POST.get('date')
+        data = request.POST
+        lease_id = data.get('lease')
+        property_id = data.get('property')
+        amount = data.get('amount')
+        date = data.get('date')
+        recurring = data.get('recurring') == 'on'
 
         # Log the request data for debugging
-        print("Request POST data:", request.POST)
+        print("Request POST data:", data)
 
         # Validate Property ID
-        if not property_id:
-            return HttpResponse("Property ID is missing", status=400)
-        
-        try:
-            property_obj = get_object_or_404(Property, id=property_id)
-        except Exception as e:
-            print(f"Error fetching property: {e}")
-            return HttpResponse("Invalid Property ID", status=404)
+        property_obj = get_object_or_404(Property, id=property_id)
 
         # Fetch Lease if provided
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
 
         # Determine UST dynamically
-        ust = 0
-        if lease and lease.ust_type:
-            ust = {'Voll': 19, 'Teilw': 7, 'Nicht': 0}.get(lease.ust_type, 0)
+        ust = get_ust_from_lease_or_property(lease, property_obj)
 
         # Safely parse optional fields
-        try:
-            amount = Decimal(amount) if amount else None
-        except Exception:
-            amount = None
-        try:
-            date = datetime.strptime(date, "%Y-%m-%d").date() if date else None
-        except Exception:
-            date = None
+        amount = safe_decimal(amount)
+        date = safe_date(date)
 
         # Create Expense Profile
         ExpenseProfile.objects.create(
             lease=lease,
             property=property_obj,
-            profile_name=request.POST.get('profile_name'),
-            transaction_type=request.POST.get('transaction_type'),
+            profile_name=data.get('profile_name'),
+            transaction_type=data.get('transaction_type'),
             amount=amount,
             date=date,
-            recurring=request.POST.get('recurring') == 'on',
-            frequency=request.POST.get('frequency'),
-            account_name=request.POST.get('account_name'),
+            recurring=recurring,
+            frequency=data.get('frequency'),
+            account_name=data.get('account_name'),
             ust=ust,
-            booking_no=request.POST.get('booking_no'),
+            booking_no=data.get('booking_no'),
         )
         return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=expense")
 
     return redirect('dashboard')  # Default fallback
 
-# Edit Expense Profile
+
 def edit_expense_profile(request, pk):
     expense = get_object_or_404(ExpenseProfile, id=pk)
     property_obj = expense.property
 
     if request.method == 'POST':
-        lease_id = request.POST.get('lease')
-        property_id = request.POST.get('property')
-        amount = request.POST.get('amount')
-        date = request.POST.get('date')
+        data = request.POST
+        lease_id = data.get('lease')
+        amount = data.get('amount')
+        date = data.get('date')
+        recurring = data.get('recurring') == 'on'
 
-        # Fetch Lease and Property
+        # Fetch Lease if provided
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
 
         # Determine UST dynamically
-        ust = 0
-        if lease and lease.ust_type:
-            ust = {'Voll': 19, 'Teilw': 7, 'Nicht': 0}.get(lease.ust_type, 0)
+        ust = get_ust_from_lease_or_property(lease, property_obj)
 
-        # Safely parse optional fields
-        try:
-            expense.amount = Decimal(amount) if amount else None
-        except Exception:
-            expense.amount = None
-        try:
-            expense.date = datetime.strptime(date, "%Y-%m-%d").date() if date else None
-        except Exception:
-            expense.date = None
-
-        # Update fields
+        # Update Expense Profile fields
         expense.lease = lease
-        expense.property = property_obj
-        expense.profile_name = request.POST.get('profile_name')
-        expense.transaction_type = request.POST.get('transaction_type')
-        expense.recurring = request.POST.get('recurring') == 'on'
-        expense.frequency = request.POST.get('frequency') if expense.recurring else None
-        expense.account_name = request.POST.get('account_name')
+        expense.profile_name = data.get('profile_name')
+        expense.transaction_type = data.get('transaction_type')
+        expense.recurring = recurring
+        expense.frequency = data.get('frequency') if recurring else None
+        expense.account_name = data.get('account_name')
         expense.ust = ust
-        expense.booking_no = request.POST.get('booking_no')
+        expense.booking_no = data.get('booking_no')
+        
+        # Safely parse optional fields
+        expense.amount = safe_decimal(amount)
+        expense.date = safe_date(date)
 
         expense.save()
         return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=expense")
 
     return redirect('dashboard')  # Default fallback
 
+
+# Helper Functions
+
+def get_ust_from_lease_or_property(lease, property_obj):
+    """
+    Determines UST based on lease if available, otherwise defaults to the property UST.
+    """
+    ust_mapping = {'Voll': 19, 'Teilw': 7, 'Nicht': 0}
+    if lease and lease.ust_type:
+        return ust_mapping.get(lease.ust_type, 0)
+    return ust_mapping.get(property_obj.ust_type, 0)
+
+
+def safe_decimal(value):
+    """
+    Safely converts a value to Decimal. Returns None if conversion fails.
+    """
+    try:
+        return Decimal(value) if value else None
+    except (ValueError, TypeError, Decimal.InvalidOperation):
+        return None
+
+
+def safe_date(value):
+    """
+    Safely parses a date string into a datetime object. Returns None if parsing fails.
+    """
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date() if value else None
+    except (ValueError, TypeError):
+        return None
+        
 # Delete Expense Profile
 def delete_expense_profile(request, pk):
     expense_profile = get_object_or_404(ExpenseProfile, id=pk)
@@ -1027,7 +1043,8 @@ def property_detail(request, property_id):
     tenants = Tenant.objects.all()
     earmarked_transactions = EarmarkedTransaction.objects.filter(property=property_obj).order_by('date')
     parsed_transactions= ParsedTransaction.objects.filter(related_property=property_obj).order_by('booking_no')
-
+    landlords = Landlord.objects.all()
+    property_landlords = property_obj.landlords.all()
     
     context = {
         'property': property_obj,
@@ -1038,6 +1055,8 @@ def property_detail(request, property_id):
         'tenants': tenants,
         'earmarked_transactions': earmarked_transactions,
         'parsed_transactions': parsed_transactions,
+        'landlords': landlords,
+        'property_landlords': property_landlords, 
     }
     return render(request, 'bookkeeping/property_detail.html', context)
 

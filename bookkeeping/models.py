@@ -48,6 +48,12 @@ class Property(models.Model):
     country = models.CharField(max_length=100)
     landlords = models.ManyToManyField(Landlord, related_name='owned_properties')  # Multiple landlords can own a property
 
+    ust_type = models.CharField(
+        max_length=10,
+        choices=[('Nicht', '0'), ('Voll', '19'), ('Teilw', '7')],
+        default='Voll'
+    )
+    
     # New Image Field
     image = models.ImageField(
         upload_to='property_images/',
