@@ -108,7 +108,7 @@
                         €{{ transaction.betrag_brutto }}
                     </td>
                     <td>{{ transaction.transaction_type }}</td>
-                    <td>{{ transaction.property_name }}</td>
+                    <td>{{ transaction.related_property }}</td>
                     <td>{{ transaction.tenant }}</td>
                 </tr>
                 {% empty %}
@@ -181,4 +181,5 @@
             console.error('Account name input or modal not found');
         }
     }
+
 </script>
