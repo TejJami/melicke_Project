@@ -1,5 +1,5 @@
 from django.test import TestCase
-from .models import Tenant, Property, Lease, ExpenseProfile, IncomeProfile, Landlord, Unit
+from .models import Tenant, Property, Lease, ExpenseProfile, IncomeProfile, Landlord, Unit , EarmarkedTransaction, ParsedTransaction
 from datetime import date
 from django.urls import reverse
 
@@ -103,3 +103,17 @@ class ViewTests(TestCase):
     def test_properties_view(self):
         response = self.client.get(reverse("properties"))
         self.assertEqual(response.status_code, 200)
+
+class test_earmarked_transaction_signal(TestCase):
+    def setUp(self):
+        self.property = Property.objects.create(name="Test Property")
+        self.transaction = EarmarkedTransaction.objects.create(
+            property=self.property,
+            date="2025-01-01",
+            amount=100,
+            is_income=True,
+            account_name="Test Account"
+        )
+
+    def test_earmarked_transaction_signal(self):
+        self.assertEqual(ParsedTransaction.objects.count(), 1)
