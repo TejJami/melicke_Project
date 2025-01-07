@@ -32,7 +32,7 @@
     </dialog>
 
     <!-- Earmarked Transactions Table -->
-    <div class="overflow-x-auto h-60 mb-10">
+    <div class="overflow-x-auto h-96 mb-10">
         <h2 class="text-xl font-light mb-3">Earmarked Transactions for {{ property.name }}</h2>
         <table class="table w-full text-left bg-base-100 text-base-content">
             <thead>
@@ -74,7 +74,7 @@
         </table>
     </div>
 
-    <!-- Parsed Transactions Table -->
+    <!-- Parsed Transactions Table
     <div class="overflow-x-auto h-60">
         <h2 class="text-xl font-light mb-3">Parsed Transactions for {{ property.name }}</h2>
         <table class="table w-full text-left bg-base-100 text-base-content">
@@ -123,7 +123,7 @@
                 Download as Excel
             </a>
         </div>
-    </div>
+    </div> -->
 </div>
 
 <script>
@@ -155,7 +155,10 @@
             modal.showModal(); // Show the modal
             if (input) {
                 input.value = accountName; // Set the account name in the input field
-                amountInput.value = amount ? parseFloat(amount).toFixed(2) : '' ; // Set the amount in the input field
+                amountInput.value = amount
+                    ? parseFloat(amount.replace(/\./g, '').replace(',', '.')).toFixed(2)
+                    : ''; // Set the amount in the input field
+
             } else {
                 console.error('Account name input not found');
             }
@@ -173,7 +176,9 @@
             modal.showModal(); // Show the modal
             if (input) {
                 input.value = accountName; // Set the account name in the input field
-                amountInput.value = amount ? parseFloat(amount).toFixed(2) : '' ; // Set the amount in the input field  
+                amountInput.value = amount
+                    ? parseFloat(amount.replace(/\./g, '').replace(',', '.')).toFixed(2)
+                    : ''; // Set the amount in the input field 
             } else {
                 console.error('Account name input not found');
             }

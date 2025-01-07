@@ -182,7 +182,7 @@ class ExpenseProfile(models.Model):
     )
     account_name = models.CharField(max_length=255)
     ust = models.IntegerField(choices=[(0, '0%'), (7, '7%'), (19, '19%')], default=19)
-    booking_no = models.CharField(max_length=100, unique=True)
+    booking_no = models.CharField(max_length=100, unique=False)
 
     def __str__(self):
         if self.lease:
@@ -219,7 +219,7 @@ class IncomeProfile(models.Model):
     )
     account_name = models.CharField(max_length=255)
     ust = models.IntegerField(choices=[(0, '0%'), (7, '7%'), (19, '19%')], default=19)
-    booking_no = models.CharField(max_length=100, unique=True)
+    booking_no = models.CharField(max_length=100, unique=False)
 
     def __str__(self):
         if self.lease:
