@@ -1,45 +1,186 @@
-# Minimal template to set-up a Django project with TailwindCSS and daisyUI
+# Bookkeeping App
 
-As described, this code will set-up a Django Project with tailwindCSS and daisyUI. The auto-reload feature is also included.
+This is a Django-based project for managing bookkeeping, properties, tenants, leases, income, and expense profiles. The project is integrated with TailwindCSS and daisyUI for frontend styling.
 
-The code for this was vastly inspired from a stackoverflow answer on [How to use TailwindCSS with Django?](https://stackoverflow.com/questions/63392426/how-to-use-tailwindcss-with-django#63392427). You can have a look ay my [blog post](https://blog.kenshuri.com/posts/001_setup_django_tailwind_daisyui.md) for some details.
+## Overview
+This project enables users to manage:
+- Real estate properties
+- Tenants and landlords
+- Leases for units within properties
+- Income and expense profiles
+- Bank transactions through PDF uploads and parsing
 
-## Set-up the project
+## Key Technologies
+- **Backend**: Django 4.x
+- **Frontend**: TailwindCSS, daisyUI
+- **Database**: PostgreSQL
+- **PDF Parsing**: PyPDF2, pdfplumber, PyMuPDF
+- **JavaScript**: Custom logic and dashboard interactions
 
-To set-up the project from scratch, run the following commands in your terminal.
+## Prerequisites
+- Python 3.8+
+- Node.js 14+
+- npm (Node Package Manager)
+- PostgreSQL
+- virtualenv (optional but recommended)
 
-```shell
-git clone https://github.com/kenshuri/setup_django_tailwind_daisyui.git
-cd setup_django_tailwind_daisyui
-python -m virtualenv venv
+---
+
+## Project Setup
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/username/repository-name.git
+cd repository-name
+```
+
+### 2. Create and Activate Virtual Environment
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+```
+
+### 3. Install Python Requirements
+```bash
 pip install -r requirements.txt
+```
+
+### 4. Set Up Environment Variables
+Create a `.env` file in the root directory with the following template:
+
+```env
+DJANGO_SECRET_KEY=your-secret-key
+DJANGO_DEBUG=True
+ALLOWED_HOSTS=127.0.0.1,localhost
+DB_NAME=your-db-name
+DB_USER=your-db-user
+DB_PASSWORD=your-db-password
+DB_HOST=localhost
+DB_PORT=5432
+```
+
+### 5. Apply Migrations and Create Superuser
+```bash
+python manage.py makemigrations
+python manage.py migrate
+python manage.py createsuperuser
+```
+
+### 6. Install JavaScript Dependencies
+```bash
 cd jstoolchains
 npm install
 ```
 
-You're good to go my friend!
+---
 
-## Start your project 
+## Running the Project
 
-To see your project in action, open 2 terminals.
+### 1. Start the Django Development Server
+```bash
+python manage.py runserver
+```
+- Open http://127.0.0.1:8000 in your browser to access the application.
 
-In the first terminal run:
-```shell
-cd setup_django_tailwind_daisyui
+### 2. Run TailwindCSS in Watch Mode
+In a separate terminal, run the following to compile TailwindCSS:
+```bash
 cd jstoolchains
 npm run tailwind-watch
 ```
+- This command watches for changes in CSS and recompiles automatically.
 
-In the second terminal run:
-```
-cd setup_django_tailwind_daisyui
-python manage.py runserver
-```
+---
+
+## Testing
+Run unit tests to ensure models and views are working as expected:
+```bash
 python manage.py test bookkeeping
+```
 
+---
 
-As prompted, open the page http://127.0.0.1:8000/ and enjoy 🚀
+## Uploading Bank Statements (PDF Parsing)
+1. Navigate to the **Dashboard** section.
+2. Upload the bank statement PDF by clicking "Upload Bank Statement".
+3. Parsed transactions will appear under **Earmarked Transactions**.
 
-Note that changes in your html template `blogApp\templates\blogApp\index.html` automatically updates what you see in your browser.
+---
 
+## Common Management Commands
+- **Apply Migrations**:
+  ```bash
+  python manage.py migrate
+  ```
+- **Create Migration**:
+  ```bash
+  python manage.py makemigrations
+  ```
+- **Run Tests**:
+  ```bash
+  python manage.py test
+  ```
+- **Collect Static Files**:
+  ```bash
+  python manage.py collectstatic
+  ```
+
+---
+
+## Structure Overview
+```
+repository-name/
+├── README.md
+├── manage.py
+├── requirements.txt
+├── blogProject/
+│   ├── settings.py
+│   └── urls.py
+├── bookkeeping/
+│   ├── models.py
+│   ├── views.py
+│   ├── templates/
+│   ├── static/
+│   └── signals.py
+├── jstoolchains/
+│   ├── package.json
+│   └── tailwind.config.js
+└── media/
+    └── property_images/
+```
+
+- **bookkeeping/**: Core application for managing properties, tenants, and leases.
+- **static/**: JavaScript and CSS files, including Tailwind output.
+- **templates/**: HTML templates for frontend rendering.
+- **media/**: Property images uploaded by users.
+- **jstoolchains/**: TailwindCSS and npm configuration.
+
+---
+
+## Notes
+- Ensure PostgreSQL is running before starting the Django server.
+- Always activate the virtual environment before running any management commands.
+- Run migrations regularly to keep the database schema updated.
+
+---
+
+## Troubleshooting
+- **Django Not Found Error**:
+  ```bash
+  source venv/bin/activate  # or venv\Scripts\activate on Windows
+  ```
+- **Static Files Not Loading**:
+  ```bash
+  python manage.py collectstatic
+  ```
+- **Database Connection Issues**:
+  - Verify `.env` database credentials.
+  - Ensure PostgreSQL service is running.
+
+---
+
+## Author
+- **Name**: [Your Name]
+- **Email**: [Your Email]
+- **GitHub**: [GitHub Profile Link]
 
