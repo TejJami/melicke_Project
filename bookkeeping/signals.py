@@ -88,7 +88,13 @@ def match_earmarked_transactions_for_expense(sender, instance, created, **kwargs
 
         for txn in earmarked_transactions:
             try:
-                if txn.amount == instance.amount:
+                expense_profile, _ = find_matching_profile(
+                    txn.account_name,
+                    txn.amount,
+                    txn.property
+                )
+
+                if expense_profile and expense_profile.id == instance.id:
                     logger.info(f"Matching EarmarkedTransaction {txn.id} with ExpenseProfile {instance.id}")
                     parsed_txn = ParsedTransaction(
                         date=txn.date,
@@ -120,7 +126,13 @@ def match_earmarked_transactions_for_income(sender, instance, created, **kwargs)
 
         for txn in earmarked_transactions:
             try:
-                if txn.amount == instance.amount:
+                _, income_profile = find_matching_profile(
+                    txn.account_name,
+                    txn.amount,
+                    txn.property
+                )
+
+                if income_profile and income_profile.id == instance.id:
                     logger.info(f"Matching EarmarkedTransaction {txn.id} with IncomeProfile {instance.id}")
                     parsed_txn = ParsedTransaction(
                         date=txn.date,

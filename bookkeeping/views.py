@@ -1042,7 +1042,7 @@ def property_detail(request, property_id):
     expense_profiles = ExpenseProfile.objects.filter(property=property_obj)
     tenants = Tenant.objects.all()
     earmarked_transactions = EarmarkedTransaction.objects.filter(property=property_obj).order_by('date')
-    parsed_transactions= ParsedTransaction.objects.filter(related_property=property_obj).order_by('booking_no')
+    parsed_transactions= ParsedTransaction.objects.filter(related_property=property_obj).order_by('date')
     landlords = Landlord.objects.all()
     property_landlords = property_obj.landlords.all()
     
