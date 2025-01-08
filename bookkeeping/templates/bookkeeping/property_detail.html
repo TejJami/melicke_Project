@@ -498,10 +498,6 @@
           <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_income_modal_2.close()">✕</button>
           <h1 class="text-lg font-bold mb-4">Add Income Profile</h1>
 
-          <div class="mb-4">
-              <label class="label"><span class="label-text">Profile Name *</span></label>
-              <input type="text" name="profile_name" class="input input-bordered w-full" required>
-          </div>
 
           <div class="mb-4">
               <label class="label"><span class="label-text">Account Name *</span></label>
@@ -579,10 +575,8 @@
         {% csrf_token %}
         <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_expense_modal_2.close()">✕</button>
         <h1 class="text-lg font-bold mb-4">Add Expense Profile</h1>
-        <div class="mb-4">
-            <label class="label"><span class="label-text">Profile Name *</span></label>
-            <input type="text" name="profile_name" class="input input-bordered w-full" placeholder="Profile Name" required>
-        </div>
+
+        
         <div class="mb-4">
             <label class="label"><span class="label-text">Account Name *</span></label>
             <input type="text" id="account_name_expense"name="account_name" class="input input-bordered w-full" placeholder="Account Name" required>

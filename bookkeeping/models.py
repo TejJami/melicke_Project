@@ -170,7 +170,7 @@ class ExpenseProfile(models.Model):
     lease = models.ForeignKey(
         Lease, related_name='expense_profiles', on_delete=models.CASCADE, null=True, blank=True
     )
-    profile_name = models.CharField(max_length=255)
+    # profile_name = models.CharField(max_length=255)
     transaction_type = models.CharField(
         max_length=50, choices=TRANSACTION_TYPES, default='other_non_bk'
     )
@@ -186,9 +186,9 @@ class ExpenseProfile(models.Model):
 
     def __str__(self):
         if self.lease:
-            return f"{self.profile_name} ({self.lease.property.name} - {self.lease.unit.unit_name})"
+            return f"({self.lease.property.name} - {self.lease.unit.unit_name})"
         elif self.property:
-            return f"{self.profile_name} ({self.property.name})"
+            return f"({self.property.name})"
         return self.profile_name
 
 # Model to represent income categories
@@ -207,7 +207,7 @@ class IncomeProfile(models.Model):
     lease = models.ForeignKey(
         Lease, related_name='income_profiles', on_delete=models.CASCADE, null=True, blank=True
     )
-    profile_name = models.CharField(max_length=255)
+    # profile_name = models.CharField(max_length=255)
     transaction_type = models.CharField(
         max_length=30, choices=TRANSACTION_TYPES, default='rent'
     )
@@ -223,7 +223,7 @@ class IncomeProfile(models.Model):
 
     def __str__(self):
         if self.lease:
-            return f"{self.profile_name} ({self.lease.property.name} - {self.lease.unit.unit_name})"
+            return f" ({self.lease.property.name} - {self.lease.unit.unit_name})"
         elif self.property:
-            return f"{self.profile_name} ({self.property.name})"
+            return f"({self.property.name})"
         return self.profile_name

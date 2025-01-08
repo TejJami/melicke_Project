@@ -483,7 +483,7 @@ def add_expense_profile(request):
         ExpenseProfile.objects.create(
             lease=lease,
             property=property_obj,
-            profile_name=data.get('profile_name'),
+            # profile_name=data.get('profile_name'),
             transaction_type=data.get('transaction_type'),
             amount=amount,
             date=date,
@@ -517,7 +517,7 @@ def edit_expense_profile(request, pk):
 
         # Update Expense Profile fields
         expense.lease = lease
-        expense.profile_name = data.get('profile_name')
+        # expense.profile_name = data.get('profile_name')
         expense.transaction_type = data.get('transaction_type')
         expense.recurring = recurring
         expense.frequency = data.get('frequency') if recurring else None
@@ -923,7 +923,7 @@ def add_income_profile(request):
         IncomeProfile.objects.create(
             lease=lease,
             property=property_obj,
-            profile_name=request.POST.get('profile_name'),
+            # profile_name=request.POST.get('profile_name'),
             transaction_type=request.POST.get('transaction_type'),
             amount=amount,
             date=date,
@@ -970,7 +970,7 @@ def edit_income_profile(request, pk):
         # Update fields
         income.lease = lease
         income.property = property_obj
-        income.profile_name = request.POST.get('profile_name')
+        # income.profile_name = request.POST.get('profile_name')
         income.transaction_type = request.POST.get('transaction_type')
         income.recurring = request.POST.get('recurring') == 'on'
         income.frequency = request.POST.get('frequency') if income.recurring else None

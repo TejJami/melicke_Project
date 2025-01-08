@@ -5,47 +5,49 @@
         </button>
 
         <h2 class="text-xl font-light mb-3">Journal (Parsed Transactions) for {{ property.name }}</h2>
-        <table class="table w-full text-left bg-base-100 text-base-content">
-            <thead>
-                <tr>
-                    <th>BN</th>
-                    <th>Date</th>
-                    <th>Account Name</th>
-                    <th>Unit</th>
-                    <th>Net Amount</th>
-                    <th>UST</th>
-                    <th> UST %</th>
-                    <th>Gross Amount</th>
-                    <th>Transaction Type</th>
-                    <th>Property</th>
-                    <th>Lease</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for transaction in parsed_transactions %}
-                <tr>
-                    <td>{{ transaction.booking_no }}</td>
-                    <td>{{ transaction.date }}</td>
-                    <td>{{ transaction.account_name }}</td>
-                    <td>{{ transaction.unit_name }}</td>
-                    <td class="{% if transaction.is_income %}text-success{% else %}text-error{% endif %}">
-                        €{{ transaction.betrag_netto }}
-                    </td>
-                    <td>€{{ transaction.ust }}</td>
-                    <td>{{ transaction.ust_type }}%</td>
-                    <td class="{% if transaction.is_income %}text-success{% else %}text-error{% endif %}">
-                        €{{ transaction.betrag_brutto }}
-                    </td>
-                    <td>{{ transaction.transaction_type }}</td>
-                    <td>{{ transaction.related_property }}</td>
-                    <td>{{ transaction.tenant }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="10" class="text-center text-base-content/50">No parsed transactions available.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="overflow-x-auto">
+            <table class="table w-full min-w-max text-left bg-base-100 text-base-content">
+                <thead>
+                    <tr>
+                        <th>BN</th>
+                        <th>Date</th>
+                        <th>Account Name</th>
+                        <th>Unit</th>
+                        <th>Net Amount</th>
+                        <th>UST</th>
+                        <th>UST %</th>
+                        <th>Gross Amount</th>
+                        <th>Transaction Type</th>
+                        <th>Property</th>
+                        <th>Lease</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in parsed_transactions %}
+                    <tr>
+                        <td>{{ transaction.booking_no }}</td>
+                        <td>{{ transaction.date }}</td>
+                        <td>{{ transaction.account_name }}</td>
+                        <td>{{ transaction.unit_name }}</td>
+                        <td class="{% if transaction.is_income %}text-success{% else %}text-error{% endif %}">
+                            €{{ transaction.betrag_netto }}
+                        </td>
+                        <td>€{{ transaction.ust }}</td>
+                        <td>{{ transaction.ust_type }}%</td>
+                        <td class="{% if transaction.is_income %}text-success{% else %}text-error{% endif %}">
+                            €{{ transaction.betrag_brutto }}
+                        </td>
+                        <td>{{ transaction.transaction_type }}</td>
+                        <td>{{ transaction.related_property }}</td>
+                        <td>{{ transaction.tenant }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="11" class="text-center text-base-content/50">No parsed transactions available.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>

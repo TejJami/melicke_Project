@@ -11,10 +11,6 @@
                 <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_expense_modal.close()">✕</button>
                 <h1 class="text-lg font-bold mb-4">Add Expense Profile</h1>
 
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Profile Name *</span></label>
-                    <input type="text" name="profile_name" class="input input-bordered w-full" placeholder="Profile Name" required>
-                </div>
 
                 <div class="mb-4">
                     <label class="label"><span class="label-text">Account Name *</span></label>
@@ -111,13 +107,15 @@
             <table class="table w-full text-left bg-base-100 text-base-content">
                 <thead>
                     <tr class="border-b border-base-200">
-                        <th>Profile Name</th>
+                        <th>BN</th>
+
+                        <th>Account Name</th>
                         <th>Transaction Type</th>
                         <th>Amount</th>
+                        <th>UST</th>
                         <th>Date</th>
                         <th>Recurring</th>
-                        <th>Account Name</th>
-                        <th>Booking No</th>
+                        <th>Lease</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -125,11 +123,11 @@
                     {% for expense in property.expense_profiles.all %}
                         {% if not expense.lease %}
                             <tr>
+                                <td>{{ expense.booking_no }}</td>
                                 <td>
                                     <a href="#" class="font-semibold hover:text-primary hover:underline transition-all"
                                     onclick="openEditExpenseModal(
                                         '{{ expense.id }}',
-                                        '{{ expense.profile_name }}',
                                         '{{ expense.transaction_type }}',
                                         '{{ expense.amount }}',
                                         '{{ expense.date }}',
@@ -140,15 +138,16 @@
                                         '{{ expense.account_name }}',
                                         '{{ expense.booking_no }}'
                                     )">
-                                        {{ expense.profile_name }}
+                                        {{ expense.account_name }}
                                     </a>
                                 </td>
                                 <td>{{ expense.get_transaction_type_display }}</td>
                                 <td>€{{ expense.amount|floatformat:2 }}</td>
+                                <td>{{ expense.ust}}%</td>
                                 <td>{{ expense.date }}</td>
                                 <td>{% if expense.recurring %}Yes{% else %}No{% endif %}</td>
-                                <td>{{ expense.account_name }}</td>
-                                <td>{{ expense.booking_no }}</td>
+                               
+                                <td>{{ expense.lease }}</td>
                                 <td>
                                     <!-- Delete Form with Circular Button -->
                                     <form method="post" action="{% url 'delete_expense_profile' expense.id %}" class="inline"
@@ -179,24 +178,26 @@
                 <table class="table w-full text-left bg-base-100 text-base-content">
                     <thead>
                         <tr class="border-b border-base-200">
-                            <th>Profile Name</th>
+                            <th>BN</th>
+                            <th>Account Name</th>
                             <th>Transaction Type</th>
                             <th>Amount</th>
+                            <th>UST</th>
                             <th>Date</th>
                             <th>Recurring</th>
-                            <th>Account Name</th>
-                            <th>Booking No</th>
+                            <th>Lease</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for expense in lease.expense_profiles.all %}
                             <tr>
+                                <td>{{ expense.booking_no }}</td>
                                 <td>
                                     <a href="#" class="font-semibold hover:text-primary hover:underline transition-all"
                                     onclick="openEditExpenseModal(
                                         '{{ expense.id }}',
-                                        '{{ expense.profile_name }}',
+                                        
                                         '{{ expense.transaction_type }}',
                                         '{{ expense.amount }}',
                                         '{{ expense.date }}',
@@ -207,15 +208,16 @@
                                         '{{ expense.account_name }}',
                                         '{{ expense.booking_no }}'
                                     )">
-                                        {{ expense.profile_name }}
+                                        {{ expense.account_name }}
                                     </a>
                                 </td>
                                 <td>{{ expense.get_transaction_type_display }}</td>
                                 <td>${{ expense.amount|floatformat:2 }}</td>
+                                <td>{{ expense.ust}}%</td>
                                 <td>{{ expense.date }}</td>
                                 <td>{% if expense.recurring %}Yes{% else %}No{% endif %}</td>
-                                <td>{{ expense.account_name }}</td>
-                                <td>{{ expense.booking_no }}</td>
+                                
+                                <td>{{ expense.lease }}</td>
                                 <td>
                                     <!-- Delete Form with Circular Button -->
                                     <form method="post" action="{% url 'delete_expense_profile' expense.id %}" class="inline"
@@ -250,10 +252,6 @@
             <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="edit_expense_modal.close()">✕</button>
             <h1 class="text-lg font-bold mb-4">Edit Expense Profile</h1>
 
-            <div class="mb-4">
-                <label class="label"><span class="label-text">Profile Name *</span></label>
-                <input type="text" name="profile_name" id="edit_profile_name_1" class="input input-bordered w-full" required>
-            </div>
 
             <div class="mb-4">
                 <label class="label"><span class="label-text">Account Name *</span></label>
@@ -349,7 +347,7 @@ function openEditExpenseModal(id, profileName, transactionType, amount, date, re
     form.action = `/edit_expense_profile/${id}/`;
 
     // Populate fields
-    document.getElementById('edit_profile_name_1').value = profileName;
+    // document.getElementById('edit_profile_name_1').value = profileName;
     document.getElementById('edit_transaction_type_1').value = transactionType;
     document.getElementById('edit_amount_1').value = amount ? parseFloat(amount).toFixed(2) : '';
     const dt = new Date(date);

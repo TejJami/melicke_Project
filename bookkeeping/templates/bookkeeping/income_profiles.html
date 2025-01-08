@@ -11,10 +11,6 @@
                 <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_income_modal.close()">✕</button>
                 <h1 class="text-lg font-bold mb-4">Add Income Profile</h1>
 
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Profile Name *</span></label>
-                    <input type="text" name="profile_name" class="input input-bordered w-full" required>
-                </div>
 
                 <div class="mb-4">
                     <label class="label"><span class="label-text">Account Name *</span></label>
@@ -91,23 +87,28 @@
         <table class="table w-full text-left bg-base-100 text-base-content">
             <thead>
                 <tr class="border-b border-base-200">
-                    <th>Profile Name</th>
+                    <th>BN</th>
+
                     <th>Account Name</th>
-                    <th>Booking No</th>
                     <th>Transaction Type</th>
-                    <th>Lease</th>
                     <th>Amount</th>
+                    <th>UST</th>
+                    <th>Date</th>
+                    <th>Recurring</th>
+                    <th>Lease</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for income in income_profiles %}
                 <tr>
+                    <td>{{ income.booking_no }}</td>
+
                     <td>
                         <a href="#" class="font-semibold hover:text-primary hover:underline transition-all"
                         onclick="openEditIncomeModal(
                             '{{ income.id }}',
-                            '{{ income.profile_name }}',
+                            // '{{ income.profile_name }}',
                             '{{ income.transaction_type }}',
                             '{{ income.amount|floatformat:2 }}',
                             '{{ income.date|date:'Y-m-d' }}',
@@ -117,14 +118,18 @@
                             '{{ income.account_name }}',
                             '{{ income.booking_no }}'
                         )">
-                            {{ income.profile_name }}
+                            {{ income.account_name }}
                         </a>
                     </td>
-                    <td>{{ income.account_name }}</td>
-                    <td>{{ income.booking_no }}</td>
+                    
                     <td>{{ income.get_transaction_type_display }}</td>
-                    <td>{{ income.lease }}</td>
                     <td>€{{ income.amount|floatformat:2 }}</td>
+                    <td>{{ income.ust}}%</td>
+                    <td>{{ income.date}}</td>
+                    <td>{% if income.recurring %}Yes{% else %}No{% endif %}</td>
+
+                    <td>{{ income.lease }}</td>
+
                     <td>
                         <!-- Delete Form with Circular Button -->
                         <form method="post" action="{% url 'delete_income_profile' income.id %}" class="inline"
@@ -157,10 +162,6 @@
             <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="edit_income_modal.close()">✕</button>
             <h1 class="text-lg font-bold mb-4">Edit Income Profile</h1>
 
-            <div class="mb-4">
-                <label class="label"><span class="label-text">Profile Name *</span></label>
-                <input type="text" name="profile_name" id="edit_profile_name" class="input input-bordered w-full" required>
-            </div>
 
             <div class="mb-4">
                 <label class="label"><span class="label-text">Account Name *</span></label>
@@ -221,7 +222,7 @@
         const form = document.getElementById('edit_income_form');
         form.action = `/edit_income_profile/${id}/`;
 
-        document.getElementById('edit_profile_name').value = profileName;
+        // document.getElementById('edit_profile_name').value = profileName;
         document.getElementById('edit_transaction_type').value = transactionType;
         document.getElementById('edit_amount').value = amount ? parseFloat(amount).toFixed(2) : '';
         document.getElementById('edit_date').value = date || '';
