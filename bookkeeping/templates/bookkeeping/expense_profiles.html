@@ -341,7 +341,7 @@
 
 
 <script>
-function openEditExpenseModal(id, profileName, transactionType, amount, date, recurring, frequency, propertyId, leaseId, accountName, bookingNo) {
+function openEditExpenseModal(id, transactionType, amount, date, recurring, frequency, propertyId, leaseId, accountName, bookingNo) {
 
     const form = document.getElementById('edit_expense_form');
     form.action = `/edit_expense_profile/${id}/`;

@@ -218,7 +218,7 @@
 </dialog>
 
 <script>
-    function openEditIncomeModal(id, profileName, transactionType, amount, date, recurring, frequency, leaseId, accountName, bookingNo) {
+    function openEditIncomeModal(id, transactionType, amount, date, recurring, frequency, leaseId, accountName, bookingNo) {
         const form = document.getElementById('edit_income_form');
         form.action = `/edit_income_profile/${id}/`;
 
