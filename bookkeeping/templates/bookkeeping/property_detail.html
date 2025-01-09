@@ -4,14 +4,42 @@
 {% block content %}
 <div class="w-full max-w-6xl mx-auto">
   <!-- Page Title -->
-  <div class="flex items-center mb-5 mt-2">
-    <a href="{% url 'properties' %}" class="btn btn-circle btn-outline btn-sm mr-3">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <div class="relative bg-cover bg-center bg-no-repeat p-5 rounded-md shadow-md mb-5 mt-2" style="background-image: url('{{ property.image.url }}');">
+    <!-- Image Overlay -->
+    <div class="absolute inset-0 bg-black opacity-25 rounded-md"></div>
+
+    <!-- Content Wrapper -->
+    <div class="relative z-10 flex items-center justify-between">
+      <!-- Left Section: Back Button and Property Name -->
+      <div class="flex items-center space-x-3">
+        <!-- Back Button -->
+        <a href="{% url 'properties' %}" class="btn btn-circle btn-outline btn-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
-    </a>
-    <h1 class="text-xl font-bold">{{ property.name }}</h1>
+          </svg>
+        </a>
+        <!-- Property Name -->
+        <h1 class="text-2xl font-extrabold text-white">{{ property.name }}</h1>
+      </div>
+
+      <!-- Right Section: Property Details -->
+      <div class="text-right text-white">
+        <p><span class="font-semibold">UST Type:</span> {{ property.ust_type }}</p>
+        <p>
+          <span class="font-semibold">Address:</span> {{ property.street }}, {{ property.city }}
+        </p>
+        <p>
+          <span class="font-semibold">Landlords:</span>
+          {% for landlord in property_landlords %}
+              {{ landlord.name }}{% if not forloop.last %}, {% endif %}
+          {% endfor %}
+        </p>
+      </div>
+    </div>
+  </div>
 </div>
+
+
 
 <!-- Edit Property and Delete Button Section -->
 <div class="flex gap-4 mb-5">
