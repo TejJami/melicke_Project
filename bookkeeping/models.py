@@ -91,10 +91,19 @@ class ParsedTransaction(models.Model):
     betrag_brutto = models.FloatField(null=True, blank=True)  # Gross amount
     is_income = models.BooleanField()
     tenant = models.CharField(max_length=255, null=True, blank=True)  # Tenant name
+    invoice = models.FileField(upload_to='invoices/', null=True, blank=True, help_text="Invoice PDF from Expense Profile")
     
     def __str__(self):
         return f"{self.date} | {self.account_name} | {self.transaction_type} | {self.betrag_brutto}"
 
+    def save(self, *args, **kwargs):
+        if not self.invoice and self.booking_no:
+            # Fetch the matching ExpenseProfile and copy the invoice path
+            expense_profile = ExpenseProfile.objects.filter(booking_no=self.booking_no).first()
+            if expense_profile and expense_profile.invoice:
+                self.invoice = expense_profile.invoice
+        super().save(*args, **kwargs)
+        
     @property
     def ust(self):
         """Calculate UST dynamically based on the UST type."""
@@ -183,6 +192,7 @@ class ExpenseProfile(models.Model):
     account_name = models.CharField(max_length=255)
     ust = models.IntegerField(choices=[(0, '0%'), (7, '7%'), (19, '19%')], default=19)
     booking_no = models.CharField(max_length=100, unique=False)
+    invoice = models.FileField(upload_to='invoices/', null=True, blank=True, help_text="Attach invoice PDF")
 
     def __str__(self):
         if self.lease:

@@ -14,15 +14,17 @@
                     <tr>
                         <th>BN</th>
                         <th>Date</th>
-                        <th>Account Name</th>
+                        <th>AccountName</th>
                         <th>Unit</th>
-                        <th>Net Amount</th>
+                        <th>Net Amt</th>
                         <th>UST</th>
                         <th>UST %</th>
-                        <th>Gross Amount</th>
-                        <th>Transaction Type</th>
+                        <th>Gross Amt</th>
+                        <th>Transc Type</th>
                         <th>Property</th>
                         <th>Lease</th>
+                        <th>Invoice</th>
+
                     </tr>
                 </thead>
                 <tbody>
@@ -43,6 +45,13 @@
                         <td>{{ transaction.transaction_type }}</td>
                         <td>{{ transaction.related_property }}</td>
                         <td>{{ transaction.tenant }}</td>
+                        <td>
+                            {% if transaction.invoice %}
+                            <a href="{{ transaction.invoice.url }}" target="_blank">View Invoice</a>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>

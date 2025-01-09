@@ -51,6 +51,7 @@ def process_earmarked_transaction(sender, instance, created, **kwargs):
                     betrag_brutto=instance.amount,
                     is_income=instance.is_income,
                     tenant=expense_profile.lease.tenant.name if expense_profile.lease and expense_profile.lease.tenant else None,
+                    invoice=expense_profile.invoice  # Copy the invoice                
                 )
                 parsed_txn.save()
                 instance.delete()
@@ -108,6 +109,7 @@ def match_earmarked_transactions_for_expense(sender, instance, created, **kwargs
                         betrag_brutto=txn.amount,
                         is_income=txn.is_income,
                         tenant=instance.lease.tenant.name if instance.lease and instance.lease.tenant else None,
+                        invoice = instance.invoice                    
                     )
                     parsed_txn.save()
                     txn.delete()

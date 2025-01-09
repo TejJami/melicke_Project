@@ -454,45 +454,52 @@ def expense_profiles(request):
         'properties': properties,
     })
 
+from django.core.exceptions import ValidationError
+
 def add_expense_profile(request):
     if request.method == 'POST':
         data = request.POST
-        lease_id = data.get('lease')
-        property_id = data.get('property')
-        amount = data.get('amount')
-        date = data.get('date')
-        recurring = data.get('recurring') == 'on'
-
-        # Log the request data for debugging
-        print("Request POST data:", data)
+        invoice_file = request.FILES.get('invoice')  # Get uploaded file
+        print(invoice_file)
 
         # Validate Property ID
+        property_id = data.get('property')
+        if not property_id:
+            return redirect('dashboard')  # Redirect if property is missing
+
         property_obj = get_object_or_404(Property, id=property_id)
 
         # Fetch Lease if provided
+        lease_id = data.get('lease')
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
 
-        # Determine UST dynamically
-        ust = get_ust_from_lease_or_property(lease, property_obj)
-
         # Safely parse optional fields
-        amount = safe_decimal(amount)
-        date = safe_date(date)
+        amount = safe_decimal(data.get('amount'))
+        date = safe_date(data.get('date'))
 
-        # Create Expense Profile
-        ExpenseProfile.objects.create(
-            lease=lease,
-            property=property_obj,
-            # profile_name=data.get('profile_name'),
-            transaction_type=data.get('transaction_type'),
-            amount=amount,
-            date=date,
-            recurring=recurring,
-            frequency=data.get('frequency'),
-            account_name=data.get('account_name'),
-            ust=ust,
-            booking_no=data.get('booking_no'),
-        )
+        # Validate mandatory fields
+        if not data.get('transaction_type') or not data.get('account_name'):
+            return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=expense")
+
+        try:
+            # Create Expense Profile
+            ExpenseProfile.objects.create(
+                lease=lease,
+                property=property_obj,
+                transaction_type=data.get('transaction_type'),
+                account_name=data.get('account_name'),
+                booking_no=data.get('booking_no'),
+                amount=amount,
+                date=date,
+                recurring=data.get('recurring') == 'on',
+                frequency=data.get('frequency'),
+                ust=get_ust_from_lease_or_property(lease, property_obj),
+                invoice=invoice_file  # Attach invoice if provided
+            )
+        except ValidationError as e:
+            print(f"Validation Error: {e}")  # Log error
+            return redirect('dashboard')  # Redirect on error
+
         return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=expense")
 
     return redirect('dashboard')  # Default fallback
