@@ -234,8 +234,10 @@ def add_property(request):
         zip_code = request.POST.get('zip')
         country = request.POST.get('country')
         landlord_ids = request.POST.getlist('landlords')
-
         ust_type = request.POST.get('ust_type')
+
+        # Get property image from request.FILES
+        image = request.FILES.get('image')  # Extract the uploaded image file
 
         # Create the Property object
         property_obj = Property.objects.create(
@@ -247,6 +249,7 @@ def add_property(request):
             zip=zip_code,
             country=country,
             ust_type=ust_type,
+            image=image,  # Assign the uploaded image to the property
         )
         property_obj.landlords.set(landlord_ids)  # Set landlords for the property
 
@@ -282,7 +285,6 @@ def add_property(request):
     return render(request, 'bookkeeping/add_property.html', {
         'landlords': landlords,
     })
-
 # Edit Property
 def edit_property(request, pk):
     property_obj = get_object_or_404(Property, id=pk)
