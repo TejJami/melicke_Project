@@ -1031,32 +1031,64 @@ def lease_profiles(request, lease_id):
         'expense_profiles': expense_profiles,
     })
 
+from django.db.models import Sum, Avg
+from django.utils.timezone import now, timedelta
+
 def property_detail(request, property_id):
-    """
-    View for property-specific detail page with tabs.
-    """
     property_obj = get_object_or_404(Property, id=property_id)
-    units = property_obj.units.all()
     leases = property_obj.leases.all()
     income_profiles = IncomeProfile.objects.filter(property=property_obj)
     expense_profiles = ExpenseProfile.objects.filter(property=property_obj)
-    tenants = Tenant.objects.all()
-    earmarked_transactions = EarmarkedTransaction.objects.filter(property=property_obj).order_by('date')
-    parsed_transactions= ParsedTransaction.objects.filter(related_property=property_obj).order_by('date')
-    landlords = Landlord.objects.all()
-    property_landlords = property_obj.landlords.all()
-    
+    earmarked_transactions = EarmarkedTransaction.objects.filter(property=property_obj).order_by('-date')
+    parsed_transactions = ParsedTransaction.objects.filter(related_property=property_obj).order_by('-date')
+
+    # Financial Overview
+    total_revenue = income_profiles.aggregate(total=Sum('amount'))['total'] or 0
+    total_expenses = expense_profiles.aggregate(total=Sum('amount'))['total'] or 0
+    net_income = total_revenue - total_expenses
+
+    # Unit Statistics
+    total_units = property_obj.units.count()
+    leased_units = leases.count()
+    occupancy_rate = (leased_units / total_units) * 100 if total_units else 0
+    avg_rent = leases.aggregate(average=Avg('rent'))['average'] or 0
+
+    # Example: Last 6 months data
+    chart_data = {
+        "labels": [],  # Months or other periods
+        "revenue": [],
+        "expenses": []
+    }
+
+    current_date = now()
+    for i in range(6):
+        month = (current_date - timedelta(days=30 * i)).strftime("%B %Y")
+        revenue = income_profiles.filter(date__month=(current_date - timedelta(days=30 * i)).month).aggregate(total=Sum('amount'))['total'] or 0
+        expense = expense_profiles.filter(date__month=(current_date - timedelta(days=30 * i)).month).aggregate(total=Sum('amount'))['total'] or 0
+        chart_data["labels"].append(month)
+        chart_data["revenue"].append(revenue)
+        chart_data["expenses"].append(expense)
+
     context = {
         'property': property_obj,
-        'units': units,
+        'units': property_obj.units.all(),
         'leases': leases,
         'income_profiles': income_profiles,
         'expense_profiles': expense_profiles,
-        'tenants': tenants,
         'earmarked_transactions': earmarked_transactions,
         'parsed_transactions': parsed_transactions,
-        'landlords': landlords,
-        'property_landlords': property_landlords, 
+        'financial_overview': {
+            'total_revenue': total_revenue,
+            'total_expenses': total_expenses,
+            'net_income': net_income,
+        },
+        'unit_stats': {
+            'total_units': total_units,
+            'leased_units': leased_units,
+            'occupancy_rate': occupancy_rate,
+            'avg_rent': avg_rent,
+        },
+        "chart_data": chart_data,
     }
-    return render(request, 'bookkeeping/property_detail.html', context)
 
+    return render(request, 'bookkeeping/property_detail.html', context)

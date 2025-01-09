@@ -209,190 +209,109 @@
         <!-- Overview Tab -->
         <input type="radio" name="property_tabs" id="overview_tab" role="tab" class="tab" aria-label="Overview">
         <div role="tabpanel" class="tab-content">
-        <!-- add dashboard here -->
-        <div class="content-wrapper">
-            <div>
-              <div class="flex items-center justify-between">
-                <h3 class="text-lg font-medium">Business Overview</h3>
-              </div>
-              <div class="mt-6">
-                <!--  Start: Dashboard Counter Widget -->
-
-                <div class="grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
-                  <div aria-label="Card" class="card bg-base-100 shadow">
-                    <div class="card-body gap-2">
-                      <div class="flex items-start justify-between gap-2 text-sm">
-                        <div>
-                          <p class="font-medium text-base-content/70">Revenue</p>
-                          <div class="mt-4 flex items-center gap-2">
-                            <h5 class="inline text-2xl/none font-semibold">$587.54</h5>
-                            <div
-                              aria-label="Badge"
-                              class="badge badge-sm gap-1 border-0 bg-success/10 py-3 text-xs font-semibold text-success">
-                              <iconify-icon icon="lucide:arrow-up" height="14"></iconify-icon>
-                              10.8%
-                            </div>
-                          </div>
-                        </div>
-                        <div class="rounded bg-base-200 p-2">
-                          <iconify-icon
-                            icon="lucide:circle-dollar-sign"
-                            height="20"
-                            class="text-base-content/80"></iconify-icon>
-                        </div>
-                      </div>
-                      <p class="text-sm font-medium">
-                        <span class="text-success">+$112.58</span>
-                        <span class="ms-1.5 text-base-content/60">than past week</span>
-                      </p>
+            <!-- Overview Content -->
+            <div class="content-wrapper">
+                <div>
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-medium">Business Overview</h3>
                     </div>
-                  </div>
-                  <div aria-label="Card" class="card bg-base-100 shadow">
-                    <div class="card-body gap-2">
-                      <div class="flex items-start justify-between gap-2 text-sm">
-                        <div>
-                          <p class="font-medium text-base-content/70">Sales</p>
-                          <div class="mt-4 flex items-center gap-2">
-                            <h5 class="inline text-2xl/none font-semibold">4500</h5>
-                            <div
-                              aria-label="Badge"
-                              class="badge badge-sm gap-1 border-0 bg-success/10 py-3 text-xs font-semibold text-success">
-                              <iconify-icon icon="lucide:arrow-up" height="14"></iconify-icon>
-
-                              21.2%
+                    <div class="mt-6">
+                        <!-- Dashboard Counter Widget -->
+                        <div class="grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
+                            <!-- Total Revenue -->
+                            <div aria-label="Card" class="card bg-base-100 shadow">
+                                <div class="card-body gap-2">
+                                    <p class="font-medium text-base-content/70">Revenue</p>
+                                    <h5 class="mt-4 text-2xl font-semibold text-sucess">
+                                        €{{ financial_overview.total_revenue|floatformat:2 }}
+                                    </h5>
+                                    <p class="text-sm font-medium">
+                                        Net income: €{{ financial_overview.net_income|floatformat:2 }}
+                                    </p>
+                                </div>
                             </div>
-                          </div>
+
+                            <!-- Total Expenses -->
+                            <div aria-label="Card" class="card bg-base-100 shadow">
+                                <div class="card-body gap-2">
+                                    <p class="font-medium text-base-content/70">Expenses</p>
+                                    <h5 class="mt-4 text-2xl font-semibold">
+                                        €{{ financial_overview.total_expenses|floatformat:2 }}
+                                    </h5>
+                                    <p class="text-sm font-medium">
+                                        Updated recently
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Total Units -->
+                            <div aria-label="Card" class="card bg-base-100 shadow">
+                                <div class="card-body gap-2">
+                                    <p class="font-medium text-base-content/70">Total Units</p>
+                                    <h5 class="mt-4 text-2xl font-semibold">
+                                        {{ unit_stats.total_units }}
+                                    </h5>
+                                    <p class="text-sm font-medium">
+                                        Occupied: {{ unit_stats.leased_units }} ({{ unit_stats.occupancy_rate|floatformat:2 }}%)
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Average Rent -->
+                            <div aria-label="Card" class="card bg-base-100 shadow">
+                                <div class="card-body gap-2">
+                                    <p class="font-medium text-base-content/70">Average Rent</p>
+                                    <h5 class="mt-4 text-2xl font-semibold">
+                                        €{{ unit_stats.avg_rent|floatformat:2 }}
+                                    </h5>
+                                    <p class="text-sm font-medium">
+                                        Across all units
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="rounded bg-base-200 p-2">
-                          <iconify-icon
-                            icon="lucide:package"
-                            height="20"
-                            class="text-base-content/80"></iconify-icon>
+
+                        <div class="mt-6 grid gap-6 xl:grid-cols-12">
+                            <!-- Revenue Statistics Chart -->
+                            <div class="xl:col-span-7">
+                              <div aria-label="Card" class="card card-bordered bg-base-100">
+                                <div class="card-body px-0 pb-0">
+                                    <div class="px-6">
+                                        <span class="font-medium">Revenue vs Expenses</span>
+                                    </div>
+                                    <div id="revenue_expenses_chart" class="mt-4"></div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <!-- Recent Transactions -->
+                            <div class="xl:col-span-5">
+                                <div aria-label="Card" class="card card-bordered bg-base-100">
+                                    <div class="card-body p-5">
+                                        <span class="font-medium">Recent Transactions</span>
+                                        <ul class="mt-4 space-y-2">
+                                            {% for txn in parsed_transactions|slice:":5" %}
+                                            <li class="flex justify-between">
+                                                <span class="text-sm">
+                                                    {{ txn.date }}: {{ txn.description }}
+                                                </span>
+                                                <span class="text-sm {% if txn.is_income %}text-success{% else %}text-error{% endif %}">
+                                                    €{{ txn.betrag_brutto|floatformat:2 }}
+                                                </span>
+                                            </li>
+                                            {% empty %}
+                                            <li>No recent transactions available.</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                      </div>
-                      <p class="text-sm font-medium">
-                        <span class="text-success">+25</span>
-                        <span class="ms-1.5 text-base-content/60">than past week</span>
-                      </p>
                     </div>
-                  </div>
                 </div>
-                <!--  End: Dashboard Counter Widget -->
-                <div class="mt-6 grid gap-6 xl:grid-cols-12">
-                  <div class="xl:col-span-7">
-                    <!--  Start: Revenue Statistic -->
-
-                    <div aria-label="Card" class="card card-bordered bg-base-100">
-                      <div class="card-body px-0 pb-0">
-                        <div class="px-6">
-                          <div class="flex items-center justify-between">
-                            <span class="font-medium">Revenue Statistics</span>
-                            <div
-                              role="tablist"
-                              class="tabs-boxed tabs tabs-sm"
-                              id="revenue_statistics_options">
-                              <input
-                                aria-label="Day"
-                                value="day"
-                                type="radio"
-                                name="revenue_statistics_option"
-                                role="tab"
-                                class="tab checked:!rounded-b-btn" />
-                              <input
-                                aria-label="Month"
-                                value="month"
-                                type="radio"
-                                name="revenue_statistics_option"
-                                role="tab"
-                                class="tab checked:!rounded-b-btn" />
-                              <input
-                                aria-label="Year"
-                                value="year"
-                                checked
-                                type="radio"
-                                name="revenue_statistics_option"
-                                role="tab"
-                                class="tab checked:!rounded-b-btn" />
-                            </div>
-                          </div>
-                          <div class="mt-2 flex items-center gap-3">
-                            <span class="text-4xl/none font-semibold" id="total_income">
-                              $12,547K
-                            </span>
-                            <span
-                              class="text-sm font-medium text-success"
-                              id="total_income_growth_percentage">
-                              +3.24%
-                            </span>
-                          </div>
-                          <span
-                            class="text-sm text-base-content/70"
-                            id="total_income_duration_text">
-                            Total income in this year
-                          </span>
-                        </div>
-                        <div class="overflow-hidden rounded-xl">
-                          <div id="revenue_statistics_chart"></div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!--  End: Revenue Statistic -->
-                  </div>
-                  <div class="xl:col-span-5">
-                    <!--  Start: Customer Acquisition -->
-
-                    <div aria-label="Card" class="card card-bordered bg-base-100">
-                      <div class="card-body p-0">
-                        <div class="flex items-center justify-between px-5 pt-4">
-                          <span class="font-medium">Customer Acquisition</span>
-                        </div>
-                        <div class="mt-2 border-y border-base-content/10 py-2">
-                          <div class="grid grid-cols-3 gap-5 divide-x divide-base-content/10">
-                            <div class="text-center">
-                              <p class="text-base font-medium">Users</p>
-                              <p class="mt-1 text-2xl font-semibold">427</p>
-                              <div class="mt-1 inline-flex items-center gap-1 text-success">
-                                <iconify-icon icon="lucide:arrow-up" height="16"></iconify-icon>
-
-                                <p class="text-sm">3.15%</p>
-                              </div>
-                            </div>
-                            <div class="text-center">
-                              <p class="text-base font-medium">Sessions</p>
-                              <p class="mt-1 text-2xl font-semibold">34</p>
-                              <div class="mt-1 inline-flex items-center gap-1 text-error">
-                                <iconify-icon icon="lucide:arrow-down" height="16"></iconify-icon>
-
-                                <p class="text-sm">-2.78%</p>
-                              </div>
-                            </div>
-                            <div class="text-center">
-                              <p class="text-base font-medium">Bounce Rate</p>
-                              <p class="mt-1 text-2xl font-semibold">40.5%</p>
-                              <div class="mt-1 inline-flex items-center gap-1 text-success">
-                                <iconify-icon icon="lucide:arrow-up" height="16"></iconify-icon>
-
-                                <p class="text-sm">5.14%</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div class="p-5">
-                          <div class="overflow-hidden rounded-lg">
-                            <div id="customer_acquisition_chart"></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!--  End: Customer Acquisition -->
-                  </div>
-                </div>
-              </div>
             </div>
-          </div>
         </div>
+
     </div>
   </div>
 </div>
@@ -686,6 +605,13 @@
 </div>
 </dialog>
 
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        console.log("ApexCharts loaded:", typeof ApexCharts !== "undefined");
+    });
+</script>
+
 <script>
   // Check the URL for the "tab" query parameter
   const urlParams = new URLSearchParams(window.location.search);
@@ -713,9 +639,32 @@
       openTab('dashboard_tab');
     }
   }
+</script>
 
-
-
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const options = {
+            chart: {
+                type: "line",
+                height: 350
+            },
+            series: [
+                {
+                    name: "Revenue",
+                    data: {{ chart_data.revenue|safe }}
+                },
+                {
+                    name: "Expenses",
+                    data: {{ chart_data.expenses|safe }}
+                }
+            ],
+            xaxis: {
+                categories: {{ chart_data.labels|safe }}
+            }
+        };
+        const chart = new ApexCharts(document.querySelector("#revenue_expenses_chart"), options);
+        chart.render();
+    });
 </script>
 
 {% endblock %}

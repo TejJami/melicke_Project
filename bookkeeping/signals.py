@@ -3,6 +3,7 @@ from django.dispatch import receiver
 from .models import EarmarkedTransaction, ParsedTransaction, ExpenseProfile, IncomeProfile
 from decimal import Decimal
 import logging
+from .models import Lease, IncomeProfile
 
 logger = logging.getLogger(__name__)
 
@@ -151,3 +152,41 @@ def match_earmarked_transactions_for_income(sender, instance, created, **kwargs)
 
             except Exception as e:
                 logger.error(f"Error processing EarmarkedTransaction {txn.id} for IncomeProfile {instance.id}: {str(e)}")
+
+@receiver(post_save, sender=Lease)
+def create_income_profiles_for_lease(sender, instance, created, **kwargs):
+    if created:  # Only handle newly created leases
+        # Map UST types (if necessary)
+        ust_mapping = {
+            'Nicht': 0,  # No VAT
+            'Voll': 19,  # Full VAT
+            'Teilw': 7   # Partial VAT
+        }
+
+        # Convert ust_type if it's a string
+        ust_value = ust_mapping.get(instance.ust_type, 19)  # Default to 'Voll' (19%)
+
+        # Create income profile for deposit
+        IncomeProfile.objects.create(
+            lease=instance,
+            property=instance.property,
+            transaction_type='security_deposit',
+            amount=instance.deposit_amount,
+            date=instance.start_date,  # Use the lease's start date or adjust as needed
+            account_name=instance.tenant.name,
+            recurring=False,  # Deposits are not recurring
+            ust=ust_value  # Use the mapped numeric UST value
+        )
+
+        # Create income profile for rent
+        IncomeProfile.objects.create(
+            lease=instance,
+            property=instance.property,
+            transaction_type='rent',
+            amount=instance.rent,
+            date=instance.start_date,  # Adjust as needed
+            account_name=instance.tenant.name,
+            recurring=True,  # Rent is typically recurring
+            frequency='monthly',
+            ust=ust_value  # Use the mapped numeric UST value
+        )
