@@ -139,13 +139,14 @@
                 <img src="{% static 'property_images/default_image.png' %}" alt="Default Property Image" class="object-cover h-full w-full" />
                 {% endif %}
             </figure>
-            <!-- Badge Positioned to Top-Right -->
-            <div class="absolute top-2 right-2">
-                <div class="badge badge-accent">{{ property.property_type }}</div>
-            </div>
+
             <div class="card-body">
                 <h1 class="font-bold text-xl text-white">{{ property.name }}</h1>
                 <p>{{ property.street }}, {{ property.city }}</p>
+                <!-- Badge Positioned to Top-Right -->
+                <div class="absolute top-2 right-2">
+                    <div class="badge badge-accent">{{ property.property_type }}</div>
+                </div>
             </div>
         </div>
     </a>
