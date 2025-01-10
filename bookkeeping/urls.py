@@ -65,6 +65,9 @@ urlpatterns = [
     path('upload_statement/', views.upload_bank_statement, name='upload_statement'),
     path('export_parsed_transactions/', views.export_parsed_transactions, name='export_parsed_transactions'),
 
+
+    path('property/<int:property_id>/ust/', views.ust_view, name='ust'),
+
     # Fetch unit tenant data
     path('fetch_unit_tenant_data/', views.fetch_unit_tenant_data, name='fetch_unit_tenant_data'),
 ]  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

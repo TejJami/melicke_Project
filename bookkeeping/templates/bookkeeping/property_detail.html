@@ -312,6 +312,13 @@
             </div>
         </div>
 
+        <!-- UST Tab -->
+      <input type="radio" name="property_tabs" id="ust_tab" role="tab" class="tab" aria-label="UST" data-property-id="{{ property.id }}">
+      <div role="tabpanel" class="tab-content">
+          <!-- USt content will be dynamically loaded here -->
+          {% include 'bookkeeping/ust.html' with ust=ust%}
+      </div>
+      
     </div>
   </div>
 </div>
@@ -677,5 +684,52 @@
         chart.render();
     });
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const ustTab = document.getElementById("ust_tab");
+        const ustContent = document.querySelector('#ust_tab + .tab-content');
+
+        if (!ustTab || !ustContent) {
+            console.error("USt tab or content container not found.");
+            return;
+        }
+
+        ustTab.addEventListener("change", function () {
+            if (ustTab.checked && !ustContent.dataset.loaded) {
+                console.log("USt tab selected. Fetching data...");
+
+                // Get property ID from the data attribute of the USt tab
+                const propertyId = ustTab.dataset.propertyId;
+                if (!propertyId) {
+                    console.error("Property ID not found in data attribute.");
+                    return;
+                }
+
+                // Fetch the USt data for the selected property
+                fetch(`/property/${propertyId}/ust/`)
+                    .then(response => {
+                        if (!response.ok) {
+                            console.error("Network response was not ok:", response.statusText);
+                            throw new Error("Network response was not ok");
+                        }
+                        return response.text();
+                    })
+                    .then(html => {
+                        console.log("USt data fetched successfully.");
+                        ustContent.innerHTML = html; // Insert fetched HTML into the tab content
+                        ustContent.dataset.loaded = "true"; // Mark the tab as loaded to avoid repeated fetches
+                    })
+                    .catch(error => {
+                        console.error("Error loading USt data:", error);
+                        ustContent.innerHTML = "<p>Error loading USt data. Please try again later.</p>";
+                    });
+            } else {
+                console.log("USt tab not selected or content already loaded.");
+            }
+        });
+    });
+</script>
+
+
 
 {% endblock %}

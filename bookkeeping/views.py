@@ -1103,3 +1103,48 @@ def property_detail(request, property_id):
     }
 
     return render(request, 'bookkeeping/property_detail.html', context)
+
+
+from django.db.models import Sum, F, FloatField
+
+
+def ust_view(request, property_id):
+    # Get the Property object
+    property_instance = get_object_or_404(Property, id=property_id)
+
+    # Filter transactions by related_property and aggregate by month
+    monthly_data = ParsedTransaction.objects.filter(related_property_id=property_id).annotate(
+        month=F('date__month')  # Assuming `date` stores the transaction date
+    ).values(
+        'month'
+    ).annotate(
+        umzu19_netto=Sum(F('betrag_brutto') / (1 + F('ust_type') / 100), output_field=FloatField()),
+        vorsteuer=Sum(
+            (F('betrag_brutto') - (F('betrag_brutto') / (1 + F('ust_type') / 100))),
+            output_field=FloatField()
+        ),
+        saldo_ust=Sum(
+            (F('betrag_brutto') * F('ust_type') / 100) - 
+            (F('betrag_brutto') - (F('betrag_brutto') / (1 + F('ust_type') / 100))),
+            output_field=FloatField()
+        )
+    ).order_by('month')
+
+    # Calculate totals for the summary row
+    totals = monthly_data.aggregate(
+        total_umzu19_netto=Sum('umzu19_netto'),
+        total_vorsteuer=Sum('vorsteuer'),
+        total_saldo_ust=Sum('saldo_ust')
+    )
+
+    # Add 19% calculation
+    total_19_percent = totals['total_umzu19_netto'] * 0.19 if totals['total_umzu19_netto'] else 0
+
+    # Pass data to the context
+    context = {
+        'property': property_instance,
+        'monthly_data': monthly_data,
+        'totals': totals,
+        'total_19_percent': total_19_percent,
+    }
+    return render(request, 'bookkeeping/ust.html', context)

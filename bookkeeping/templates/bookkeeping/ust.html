@@ -1,0 +1,43 @@
+<div class="card bg-transparent p-5 w-full max-w-6xl mx-auto">
+    <div class="overflow-x-auto">
+        <h2 class="text-xl font-light mb-3">USt Overview for {{ property.name }}</h2>
+        <table class="table w-3/5 text-left bg-base-100 text-base-content">
+            <thead>
+                <tr class="border-b border-base-200">
+                    <th>Monat</th>
+                    <th>UmZu19%, Netto</th>
+                    <th>Vorsteuer</th>
+                    <th>SaldoUST</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if monthly_data %}
+                    {% for data in monthly_data %}
+                    <tr>
+                        <td>{{ data.month }}</td>
+                        <td>€{{ data.umzu19_netto|floatformat:2 }}</td>
+                        <td>€{{ data.vorsteuer|floatformat:2 }}</td>
+                        <td>€{{ data.saldo_ust|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="font-bold border-t border-base-200">
+                        <td>Summe</td>
+                        <td>€{{ totals.total_umzu19_netto|floatformat:2 }}</td>
+                        <td>€{{ totals.total_vorsteuer|floatformat:2 }}</td>
+                        <td>€{{ totals.total_saldo_ust|floatformat:2 }}</td>
+                    </tr>
+                    <tr class="font-bold border-t border-base-200 bg-base-200">
+                        <td>19%</td>
+                        <td>€{{ total_19_percent|floatformat:2 }}</td>
+                        <td colspan="2"></td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center text-base-content/50">No USt data available.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+    
+</div>
