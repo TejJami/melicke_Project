@@ -3,7 +3,10 @@ import os
 from dotenv import load_dotenv
 import django_heroku
 import os
+import os
+from pathlib import Path
 
+BASE_DIR = Path(__file__).resolve().parent.parent
 # Activate Django-Heroku.
 django_heroku.settings(locals())
 
