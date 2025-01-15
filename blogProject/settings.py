@@ -7,8 +7,13 @@ import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-# Activate Django-Heroku.
-django_heroku.settings(locals())
+
+# Apply django-heroku settings without modifying middleware
+django_heroku.settings(locals(), test_runner=False)
+
+# Ensure WhiteNoise is added
+if 'whitenoise.middleware.WhiteNoiseMiddleware' not in MIDDLEWARE:
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 # Static files settings for Whitenoise
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
@@ -48,7 +53,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Ensure this is included
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Required for serving static files on Heroku
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -56,6 +61,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
 
 ROOT_URLCONF = 'blogProject.urls'
 
