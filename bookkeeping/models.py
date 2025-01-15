@@ -38,8 +38,7 @@ class Property(models.Model):
         ('Commercial', 'Commercial'),
     ]
 
-    # Property Details
-    property_type = models.CharField(max_length=20, choices=PROPERTY_TYPE_CHOICES, default='residential')
+    property_type = models.CharField(max_length=20, choices=PROPERTY_TYPE_CHOICES, default='Residential')
     name = models.CharField(max_length=255)
     street = models.CharField(max_length=255)
     building_no = models.CharField(max_length=50)
@@ -47,24 +46,41 @@ class Property(models.Model):
     zip = models.CharField(max_length=10)
     country = models.CharField(max_length=100)
     landlords = models.ManyToManyField(Landlord, related_name='owned_properties')  # Multiple landlords can own a property
-
+    image = models.ImageField(upload_to='property_images/', null=True, blank=True)
     ust_type = models.CharField(
         max_length=10,
         choices=[('Nicht', '0'), ('Voll', '19'), ('Teilw', '7')],
         default='Voll'
     )
     
-    # New Image Field
-    image = models.ImageField(
-        upload_to='property_images/',
-        null=True,
-        blank=True,
-        default='property_images/default_image.png',  # Default illustration
-        help_text="Upload a property image"
-    )
+    @staticmethod
+    def get_next_default_image():
+        # List of default images
+        default_images = [
+            'property_images/default1.png',
+            'property_images/default2.jpg',
+            'property_images/default3.jpg',
+            'property_images/default4.jpg',
+            'property_images/default5.jpg',
+            'property_images/default6.jpg',
+        ]
+        # Get the current counter from the database or initialize it
+        from django.core.cache import cache
+        counter = cache.get('default_image_counter', 0)
 
-    def __str__(self):
-        return self.name
+        # Select the next image
+        next_image = default_images[counter]
+
+        # Update the counter
+        counter = (counter + 1) % len(default_images)
+        cache.set('default_image_counter', counter)
+
+        return next_image
+
+    def save(self, *args, **kwargs):
+        if not self.image:
+            self.image = self.get_next_default_image()
+        super().save(*args, **kwargs)
 
 # Unit Model (Part of the Property)
 class Unit(models.Model):
