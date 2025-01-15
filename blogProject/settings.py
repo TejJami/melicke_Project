@@ -8,13 +8,6 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Apply django-heroku settings without modifying middleware
-django_heroku.settings(locals(), test_runner=False)
-
-# Ensure WhiteNoise is added
-if 'whitenoise.middleware.WhiteNoiseMiddleware' not in MIDDLEWARE:
-    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
-
 # Static files settings for Whitenoise
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
@@ -145,3 +138,5 @@ MEDIA_ROOT = BASE_DIR / 'media'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'  # Optional, handled by next_page in the LogoutView
 LOGIN_URL = '/login/'
+
+django_heroku.settings(locals(), test_runner=False)
