@@ -1,1 +1,1 @@
-web: gunicorn bookkeeping.wsgi
+web: gunicorn blogProject.wsgi
