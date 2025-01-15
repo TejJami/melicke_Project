@@ -2,11 +2,15 @@ from django.urls import path
 from . import views
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
 
      # Landing Page
     path('', views.properties, name='properties'),  # Default landing page
+
+    path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
 
     # Property Detail Page
     path('property/<int:property_id>/', views.property_detail, name='property_detail'),
