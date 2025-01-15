@@ -1,6 +1,15 @@
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import django_heroku
+import os
+
+# Activate Django-Heroku.
+django_heroku.settings(locals())
+
+# Static files settings for Whitenoise
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 load_dotenv()  # Load environment variables from .env
 
