@@ -211,6 +211,7 @@
 
 <script>
 function openEditTenantModal(id, name, otherAccountNames, phoneNumber, email, address, iban, bic, notes) {
+    console.log(id, name, otherAccountNames, phoneNumber, email, address, iban, bic, notes);
     const form = document.getElementById('edit_tenant_form');
     form.action = `/edit_tenant/${id}/`;
 
