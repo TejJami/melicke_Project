@@ -1051,6 +1051,8 @@ def property_detail(request, property_id):
     earmarked_transactions = EarmarkedTransaction.objects.filter(property=property_obj).order_by('-date')
     parsed_transactions = ParsedTransaction.objects.filter(related_property=property_obj).order_by('-date')
     landlords = Landlord.objects.all()
+    tenants = Tenant.objects.all()
+    property_landlords = property_obj.landlords.all()
 
     # Financial Overview
     total_revenue = income_profiles.aggregate(total=Sum('amount'))['total'] or 0
@@ -1100,6 +1102,8 @@ def property_detail(request, property_id):
         },
         "chart_data": chart_data,
         'landlords': landlords,
+        'tenants': tenants,
+        'property_landlords': property_landlords,
     }
 
     return render(request, 'bookkeeping/property_detail.html', context)

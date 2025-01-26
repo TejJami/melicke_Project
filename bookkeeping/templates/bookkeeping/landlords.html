@@ -124,17 +124,18 @@
             <tr>
                 <td>
                     <a href="#" class="font-semibold hover:text-primary hover:underline transition-all" 
-                       onclick="openEditLandlordModal(
-                           '{{ landlord.id }}', 
-                           '{{ landlord.name }}', 
-                           '{{ landlord.phone_number }}', 
-                           '{{ landlord.email }}', 
-                           '{{ landlord.address }}', 
-                           '{{ landlord.iban }}', 
-                           '{{ landlord.bic }}', 
-                           '{{ landlord.tax_id }}', 
-                           '{{ landlord.company_name }}', 
-                           '{{ landlord.notes }}')">
+                    onclick="openEditLandlordModal(
+                        '{{ landlord.id|escapejs }}', 
+                        '{{ landlord.name|escapejs }}', 
+                        '{{ landlord.phone_number|escapejs }}', 
+                        '{{ landlord.email|escapejs }}', 
+                        '{{ landlord.address|escapejs }}', 
+                        '{{ landlord.iban|escapejs }}', 
+                        '{{ landlord.bic|escapejs }}', 
+                        '{{ landlord.tax_id|escapejs }}', 
+                        '{{ landlord.company_name|escapejs }}', 
+                        '{{ landlord.notes|escapejs }}'
+                    )">                    
                         {{ landlord.name }}
                     </a>
                 </td>
