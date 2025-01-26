@@ -3,6 +3,7 @@ from . import views
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
+from django.contrib import admin  # Ensure this is imported at the top
 
 urlpatterns = [
 
@@ -71,6 +72,8 @@ urlpatterns = [
 
 
     path('property/<int:property_id>/ust/', views.ust_view, name='ust'),
+
+    path('admin/', admin.site.urls, name="admin"),  # Adds the admin interface at /admin/
 
     # Fetch unit tenant data
     path('fetch_unit_tenant_data/', views.fetch_unit_tenant_data, name='fetch_unit_tenant_data'),

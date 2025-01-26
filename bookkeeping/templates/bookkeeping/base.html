@@ -82,7 +82,7 @@
             <div
               role="navigation"
               aria-label="Navbar"
-              class="topbar-wrapper navbar z-10 border-b border-base-200 px-3">
+              class="topbar-wrapper navbar z-50 border-b border-base-200 px-3">
               <div class="navbar-start gap-3">
                 <button
                   aria-label="Leftmenu toggle"
@@ -120,11 +120,14 @@
                     class="menu dropdown-content mt-4 w-52 rounded-box bg-base-100 p-2 shadow"
                     role="menu">
                     <li>
-                      <div>
-                        <iconify-icon icon="lucide:user" height="16"></iconify-icon>
-                        Mein Profil
-                      </div>
-                    </li>
+                      <a href="/admin/" class="hover:bg-base-content/15"> <!-- Directly hard-code the /admin/ path -->
+                        <div class="flex items-center gap-2">
+                          <iconify-icon icon="lucide:settings" height="16"></iconify-icon>
+                          Admin Panel
+                        </div>
+                      </a>
+                    </li>                    
+                    
                     <li>
                       <div>
                         <iconify-icon icon="mdi:bank" height="16"></iconify-icon>
