@@ -20,8 +20,11 @@ from decimal import Decimal
 from datetime import datetime
 from django.urls import reverse
 from django.core.paginator import Paginator
+from django.contrib.auth.decorators import login_required
+
 
 # Dashboard: Displays Earmarked and Parsed Transactions
+@login_required
 def dashboard(request):
     earmarked = EarmarkedTransaction.objects.all()
     parsed = ParsedTransaction.objects.all()
@@ -208,6 +211,7 @@ def upload_bank_statement(request, property_id=None):
 #################################################################
 
 # Properties
+@login_required
 def properties(request):
     query = request.GET.get('q', '')
     properties = Property.objects.filter(name__icontains=query) if query else Property.objects.all()
@@ -380,6 +384,7 @@ def delete_property(request, pk):
 #################################################################
 
 # Tenants
+@login_required
 def tenants(request):
     query = request.GET.get('q', '')
     tenants = Tenant.objects.all()
@@ -392,6 +397,7 @@ def tenants(request):
     })
 
 # Add Tenant
+@login_required
 def add_tenant(request):
     if request.method == 'POST':
         name = request.POST.get('name')

@@ -136,11 +136,15 @@
                     </li>
                     <hr class="-mx-2 my-1 border-base-content/10" />
                     <li>
-                        <a href="{% url 'logout' %}" class="text-error">
-                          <iconify-icon icon="lucide:log-out" height="16"></iconify-icon>
-                          Logout
-                        </a>
-                    </li>
+                      <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                          {% csrf_token %}
+                          <button type="submit" class="text-error bg-transparent border-0 cursor-pointer">
+                              <iconify-icon icon="lucide:log-out" height="16"></iconify-icon>
+                              Logout
+                          </button>
+                      </form>
+                  </li>
+                  
                   </ul>
                 </div>
               </div>
