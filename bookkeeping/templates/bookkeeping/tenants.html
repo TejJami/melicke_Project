@@ -134,7 +134,18 @@
             <tr>
                 <td>
                     <a href="#" class="font-semibold hover:text-primary hover:underline transition-all" 
-                       onclick="openEditTenantModal('{{ tenant.id }}', '{{ tenant.name }}', '{{ tenant.other_account_names }}', '{{ tenant.phone_number }}', '{{ tenant.email }}', '{{ tenant.address }}', '{{ tenant.iban }}', '{{ tenant.bic }}', '{{ tenant.notes }}')">
+                    onclick="openEditTenantModal(
+                        '{{ tenant.id|escapejs }}',
+                        '{{ tenant.name|escapejs }}',
+                        '{{ tenant.other_account_names|escapejs }}',
+                        '{{ tenant.phone_number|escapejs }}',
+                        '{{ tenant.email|escapejs }}',
+                        '{{ tenant.address|escapejs }}',
+                        '{{ tenant.iban|escapejs }}',
+                        '{{ tenant.bic|escapejs }}',
+                        '{{ tenant.notes|escapejs }}'
+                    )"
+                    >
                         {{ tenant.name }}
                     </a>
                 </td>
@@ -211,7 +222,6 @@
 
 <script>
 function openEditTenantModal(id, name, otherAccountNames, phoneNumber, email, address, iban, bic, notes) {
-    console.log(id, name, otherAccountNames, phoneNumber, email, address, iban, bic, notes);
     const form = document.getElementById('edit_tenant_form');
     form.action = `/edit_tenant/${id}/`;
 
