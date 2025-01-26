@@ -1,8 +1,7 @@
 <div class="card bg-transparent p-5 w-full max-w-6xl mx-auto">
 
-
     <!-- Trigger Button -->
-    <button class="btn w-64 btn-sm btn-outline mb-5" onclick="add_unit_modal.showModal()">Add Unit</button>
+    <button class="btn w-64 btn-sm btn-outline mb-5" onclick="add_unit_modal.showModal()">Einheit hinzufügen</button>
 
     <!-- Add Unit Modal -->
     <dialog id="add_unit_modal" class="modal">
@@ -10,47 +9,47 @@
             <form method="post" action="{% url 'add_unit' %}">
                 {% csrf_token %}
                 <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_unit_modal.close()">✕</button>
-                <h1 class="text-lg font-bold mb-4">Add Unit</h1>
+                <h1 class="text-lg font-bold mb-4">Einheit hinzufügen</h1>
                 <div class="mb-4 hidden">
                     <label class="label">
-                        <span class="label-text">Property</span>
+                        <span class="label-text">Gebäude</span>
                     </label>
                     <input type="hidden" name="property" value="{{ property.id }}" />
                     <input type="text" class="input input-bordered w-full" value="{{ property.name }}" disabled />
                 </div>
                 <div class="mb-4">
                     <label class="label">
-                        <span class="label-text">Unit Name</span>
+                        <span class="label-text">Einheitenname</span>
                     </label>
                     <input type="text" name="unit_name" class="input input-bordered w-full" required>
                 </div>
                 <div class="mb-4">
                     <label class="label">
-                        <span class="label-text">Floor Area (sq.M.)</span>
+                        <span class="label-text">Fläche (m²)</span>
                     </label>
                     <input type="number" name="floor_area" step="0.1" class="input input-bordered w-full" required>
                 </div>
                 <div class="mb-4">
                     <label class="label">
-                        <span class="label-text">Number of Rooms</span>
+                        <span class="label-text">Anzahl der Zimmer</span>
                     </label>
                     <input type="number" name="rooms" class="input input-bordered w-full" required>
                 </div>
                 <div class="mb-4">
                     <label class="label">
-                        <span class="label-text">Number of Bathrooms</span>
+                        <span class="label-text">Anzahl der Badezimmer</span>
                     </label>
                     <input type="number" name="baths" class="input input-bordered w-full" required>
                 </div>
                 <div class="mb-4">
                     <label class="label">
-                        <span class="label-text">Market Rent</span>
+                        <span class="label-text">Marktmiete</span>
                     </label>
                     <input type="number" name="market_rent" step="0.01" class="input input-bordered w-full" required>
                 </div>
                 <div class="modal-action">
-                    <button type="submit" class="btn btn-outline">Add</button>
-                    <button type="button" class="btn btn-outline btn-error" onclick="add_unit_modal.close()">Cancel</button>
+                    <button type="submit" class="btn btn-outline">Hinzufügen</button>
+                    <button type="button" class="btn btn-outline btn-error" onclick="add_unit_modal.close()">Abbrechen</button>
                 </div>
             </form>
         </div>
@@ -62,12 +61,12 @@
         <table class="table text-left bg-base-100 text-base-content">
             <thead>
                 <tr class="border-b border-base-200">
-                    <th>Unit Name</th>
-                    <th>Floor Area</th>
-                    <th>Rooms</th>
-                    <th>Baths</th>
-                    <th>Market Rent</th>
-                    <th>Actions</th>
+                    <th>Einheitenname</th>
+                    <th>Fläche</th>
+                    <th>Zimmer</th>
+                    <th>Bäder</th>
+                    <th>Marktmiete</th>
+                    <th>Aktionen</th>
                 </tr>
             </thead>
             <tbody>
@@ -105,7 +104,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center text-base-content/50">No units available.</td>
+                    <td colspan="6" class="text-center text-base-content/50">Keine Einheiten verfügbar.</td>
                 </tr>
                 {% endfor %}
             </tbody>

@@ -1,7 +1,7 @@
 <div class="card bg-transparent p-5 w-full max-w-6xl mx-auto">
 
     <!-- Upload Bank Statement Button -->
-    <button class="btn w-64 btn-sm btn-outline mb-5" onclick="upload_modal.showModal()">Upload Bank Statement</button>
+    <button class="btn w-64 btn-sm btn-outline mb-5" onclick="upload_modal.showModal()">Bankauszug hochladen</button>
 
     <!-- Upload Modal -->
     <dialog id="upload_modal" class="modal">
@@ -10,7 +10,7 @@
 
                 {% csrf_token %}
                 <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="upload_modal.close()">✕</button>
-                <h1 class="text-lg font-bold mb-4">Upload Bank Statement</h1>
+                <h1 class="text-lg font-bold mb-4">Bankauszug hochladen</h1>
 
                 <!-- Spinner Animation -->
                 <div id="spinner" class="hidden flex justify-center items-center mb-4">
@@ -24,8 +24,8 @@
 
                 <!-- Submit and Cancel Buttons -->
                 <div class="flex justify-end">
-                    <button type="submit" class="btn btn-outline">Upload</button>
-                    <button type="button" class="btn btn-outline btn-error" onclick="upload_modal.close()">Cancel</button>
+                    <button type="submit" class="btn btn-outline">Hochladen</button>
+                    <button type="button" class="btn btn-outline btn-error" onclick="upload_modal.close()">Abbrechen</button>
                 </div>
             </form>
         </div>
@@ -33,15 +33,15 @@
 
     <!-- Earmarked Transactions Table -->
     <div class="overflow-x-auto h-96 mb-10">
-        <h2 class="text-xl font-light mb-3">Earmarked Transactions for {{ property.name }}</h2>
+        <h2 class="text-xl font-light mb-3">Vorgemerkte Transaktionen für {{ property.name }}</h2>
         <table class="table w-full text-left bg-base-100 text-base-content">
             <thead>
                 <tr>
-                    <th>Account Name</th>
-                    <th>Date</th>
-                    <th>Amount</th>
-                    <th>Description</th>
-                    <th>Actions</th>
+                    <th>Kontoname</th>
+                    <th>Datum</th>
+                    <th>Betrag</th>
+                    <th>Beschreibung</th>
+                    <th>Aktionen</th>
                 </tr>
             </thead>
             <tbody>
@@ -56,74 +56,24 @@
                     <td>
                         {% if transaction.is_income %}
                         <button class="btn btn-sm btn-outline btn-success" onclick="openIncomeModal('{{ transaction.account_name }}', '{{ transaction.amount }}')">
-                            + Income
+                            + Einnahme
                         </button>
                         {% else %}
                         <button class="btn btn-sm btn-outline btn-error" onclick="openExpenseModal('{{ transaction.account_name }}' , '{{ transaction.amount }}')">
-                            + Expense
+                            + Ausgabe
                         </button>
                         {% endif %}
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="text-center text-base-content/50">No earmarked transactions available.</td>
+                    <td colspan="5" class="text-center text-base-content/50">Keine vorgemerkten Transaktionen verfügbar.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
-    <!-- Parsed Transactions Table
-    <div class="overflow-x-auto h-60">
-        <h2 class="text-xl font-light mb-3">Parsed Transactions for {{ property.name }}</h2>
-        <table class="table w-full text-left bg-base-100 text-base-content">
-            <thead>
-                <tr>
-                    <th>BN</th>
-                    <th>Date</th>
-                    <th>Account name</th>
-                    <th>Unit </th>
-                    <th>Net Amount</th>
-                    <th>UST</th>
-                    <th>Gross Amount</th>
-                    <th>Transaction Type</th>
-                    <th>Property </th>
-                    <th>Lease </th>
-
-                </tr>
-            </thead>
-            <tbody>
-                {% for transaction in parsed_transactions %}
-                <tr>
-                    <td>{{ transaction.booking_no }}</td>
-                    <td>{{ transaction.date }}</td>
-                    <td>{{ transaction.account_name }}</td>
-                    <td>{{ transaction.unit_name }}</td>
-                    <td class="{% if transaction.is_income %}text-success{% else %}text-error{% endif %}">
-                        €{{ transaction.betrag_netto }}
-                    </td>
-                    <td>€{{ transaction.ust }}</td>
-                    <td class="{% if transaction.is_income %}text-success{% else %}text-error{% endif %}">
-                        €{{ transaction.betrag_brutto }}
-                    </td>
-                    <td>{{ transaction.transaction_type }}</td>
-                    <td>{{ transaction.related_property }}</td>
-                    <td>{{ transaction.tenant }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="8" class="text-center text-base-content/50">No parsed transactions available.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <div class="flex justify-end mb-3">
-            <a href="{% url 'export_parsed_transactions' %}" class="btn btn-sm btn-outline">
-                Download as Excel
-            </a>
-        </div>
-    </div> -->
 </div>
 
 <script>
@@ -160,10 +110,10 @@
                     : ''; // Set the amount in the input field
 
             } else {
-                console.error('Account name input not found');
+                console.error('Kontoname-Feld nicht gefunden');
             }
         } else {
-            console.error('Account name input or modal not found');
+            console.error('Kontoname-Feld oder Modal nicht gefunden');
         }
     }
 

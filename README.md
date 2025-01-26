@@ -37,7 +37,9 @@ cd repository-name
 ### 2. Create and Activate Virtual Environment
 ```bash
 python -m venv venv
-source venv/bin/activate  # On Windows use `venv\Scripts\activate.ps1`
+source venv/bin/activate  # On Windows use `
+venv\Scripts\activate.ps1
+`
 ```
 
 ### 3. Install Python Requirements

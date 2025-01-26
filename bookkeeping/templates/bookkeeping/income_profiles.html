@@ -1,7 +1,7 @@
 <div class="card bg-transparent p-5 w-full max-w-6xl mx-auto">
 
     <!-- Trigger Button -->
-    <button class="btn w-64 btn-sm btn-outline mb-5" onclick="add_income_modal.showModal()">Add Income Profile</button>
+    <button class="btn w-64 btn-sm btn-outline mb-5" onclick="add_income_modal.showModal()">Einnahmenprofil hinzufügen</button>
 
     <!-- Add Income Profile Modal -->
     <dialog id="add_income_modal" class="modal">
@@ -9,40 +9,40 @@
             <form method="post" action="{% url 'add_income_profile' %}">
                 {% csrf_token %}
                 <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_income_modal.close()">✕</button>
-                <h1 class="text-lg font-bold mb-4">Add Income Profile</h1>
+                <h1 class="text-lg font-bold mb-4">Einnahmenprofil hinzufügen</h1>
 
 
                 <div class="mb-4">
-                    <label class="label"><span class="label-text">Account Name *</span></label>
+                    <label class="label"><span class="label-text">Kontoname *</span></label>
                     <input type="text" name="account_name" class="input input-bordered w-full" required>
                 </div>
 
                 <div class="mb-4">
-                    <label class="label"><span class="label-text">Booking No (BN) *</span></label>
+                    <label class="label"><span class="label-text">Buchungsnummer (BN) *</span></label>
                     <input type="text" name="booking_no" class="input input-bordered w-full" required>
                 </div>
 
                 <div class="mb-4">
-                    <label class="label"><span class="label-text">Transaction Type *</span></label>
+                    <label class="label"><span class="label-text">Transaktionstyp *</span></label>
                     <select name="transaction_type" class="select select-bordered w-full" required>
-                        <option value="rent">Rent</option>
-                        <option value="bk_advance_payments">BK Advance Payments</option>
-                        <option value="security_deposit">Security Deposit</option>
-                        <option value="subsidy">Subsidy</option>
-                        <option value="deposit_withdrawal">Deposit / Withdrawal</option>
+                        <option value="rent">Miete</option>
+                        <option value="bk_advance_payments">BK Vorauszahlungen</option>
+                        <option value="security_deposit">Kaution</option>
+                        <option value="subsidy">Zuschuss</option>
+                        <option value="deposit_withdrawal">Einzahlung / Abhebung</option>
                     </select>
                 </div>
 
                 <div class="mb-4 hidden">
-                    <label class="label"><span class="label-text">Property *</span></label>
+                    <label class="label"><span class="label-text">Gebäude *</span></label>
                     <input type="hidden" name="property" value="{{ property.id }}">
                     <input type="text" class="input input-bordered w-full" value="{{ property.name }}" disabled>
                 </div>
 
                 <div class="mb-4">
-                    <label class="label"><span class="label-text">Lease *</span></label>
+                    <label class="label"><span class="label-text">Mietvertrag *</span></label>
                     <select name="lease" class="select select-bordered w-full" required>
-                        <option value="" disabled selected>Select Lease</option>
+                        <option value="" disabled selected>Mietvertrag auswählen</option>
                         {% for lease in property.leases.all %}
                         <option value="{{ lease.id }}">{{ lease }}</option>
                         {% endfor %}
@@ -50,31 +50,31 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="label"><span class="label-text">Frequency</span></label>
+                    <label class="label"><span class="label-text">Häufigkeit</span></label>
                     <select name="frequency" class="select select-bordered w-full">
-                        <option value="">-- None --</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="yearly">Yearly</option>
+                        <option value="">-- Keine --</option>
+                        <option value="monthly">Monatlich</option>
+                        <option value="yearly">Jährlich</option>
                     </select>
                 </div>
 
                 <div class="mb-4">
-                    <label class="label"><span class="label-text">Amount</span></label>
+                    <label class="label"><span class="label-text">Betrag</span></label>
                     <input type="number" name="amount" step="0.01" class="input input-bordered w-full" >
                 </div>
 
                 <div class="mb-4">
-                    <label class="label"><span class="label-text">Date </span></label>
+                    <label class="label"><span class="label-text">Datum</span></label>
                     <input type="date" name="date" class="input input-bordered w-full" >
                 </div>
 
                 <div class="mb-4">
-                    <label class="label cursor-pointer"><span class="label-text">Recurring</span></label>
+                    <label class="label cursor-pointer"><span class="label-text">Wiederkehrend</span></label>
                     <input type="checkbox" name="recurring" class="checkbox">
                 </div>
 
                 <div class="modal-action">
-                    <button type="submit" class="btn btn-outline">Add</button>
+                    <button type="submit" class="btn btn-outline">Hinzufügen</button>
                     <button type="button" class="btn btn-outline btn-error" onclick="add_income_modal.close()">Cancel</button>
                 </div>
             </form>
@@ -83,20 +83,19 @@
 
     <!-- Income Profiles Table -->
     <div class="overflow-x-auto">
-        <h2 class="text-xl font-light mb-3">Income Profiles for {{ property.name }}</h2>
+        <h2 class="text-xl font-light mb-3">Einnahmenprofile für {{ property.name }}</h2>
         <table class="table w-full text-left bg-base-100 text-base-content">
             <thead>
                 <tr class="border-b border-base-200">
                     <th>BN</th>
-
-                    <th>Account Name</th>
-                    <th>Transaction Type</th>
-                    <th>Amount</th>
+                    <th>Kontoname</th>
+                    <th>Transaktionstyp</th>
+                    <th>Betrag</th>
                     <th>UST</th>
-                    <th>Date</th>
-                    <th>Recurring</th>
-                    <th>Lease</th>
-                    <th>Actions</th>
+                    <th>Datum</th>
+                    <th>Wiederkehrend</th>
+                    <th>Mietvertrag</th>
+                    <th>Aktionen</th>
                 </tr>
             </thead>
             <tbody>
@@ -133,7 +132,7 @@
                     <td>
                         <!-- Delete Form with Circular Button -->
                         <form method="post" action="{% url 'delete_income_profile' income.id %}" class="inline"
-                            onsubmit="return confirm('Are you sure you want to delete this income profile?');">
+                            onsubmit="return confirm('Sind Sie sicher, dass Sie dieses Einnahmenprofil löschen möchten?');">
                             {% csrf_token %}
                             <button type="submit" 
                                     class="btn btn-circle btn-outline btn-error btn-sm hover:bg-error hover:text-white hover:border-transparent transition-all" 
@@ -145,7 +144,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="text-center text-base-content/50">No income profiles available.</td>
+                    <td colspan="7" class="text-center text-base-content/50">Keine Einnahmenprofile verfügbar.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -160,34 +159,34 @@
         <form method="post" id="edit_income_form">
             {% csrf_token %}
             <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="edit_income_modal.close()">✕</button>
-            <h1 class="text-lg font-bold mb-4">Edit Income Profile</h1>
+            <h1 class="text-lg font-bold mb-4">Einnahmenprofil bearbeiten</h1>
 
 
             <div class="mb-4">
-                <label class="label"><span class="label-text">Account Name *</span></label>
+                <label class="label"><span class="label-text">Kontoname *</span></label>
                 <input type="text" name="account_name" id="edit_account_name" class="input input-bordered w-full" required>
             </div>
 
             <div class="mb-4">
-                <label class="label"><span class="label-text">Booking No *</span></label>
+                <label class="label"><span class="label-text">Buchungsnummer (BN) *</span></label>
                 <input type="text" name="booking_no" id="edit_booking_no" class="input input-bordered w-full" required>
             </div>
 
             <div class="mb-4">
-                <label class="label"><span class="label-text">Transaction Type *</span></label>
+                <label class="label"><span class="label-text">Transaktionstyp *</span></label>
                 <select name="transaction_type" id="edit_transaction_type" class="select select-bordered w-full" required>
-                    <option value="rent">Rent</option>
-                    <option value="bk_advance_payments">BK Advance Payments</option>
-                    <option value="security_deposit">Security Deposit</option>
-                    <option value="subsidy">Subsidy</option>
-                    <option value="deposit_withdrawal">Deposit / Withdrawal</option>
+                    <option value="rent">Miete</option>
+                    <option value="bk_advance_payments">BK Vorauszahlungen</option>
+                    <option value="security_deposit">Kaution</option>
+                    <option value="subsidy">Zuschuss</option>
+                    <option value="deposit_withdrawal">Einzahlung / Abhebung</option>
                 </select>
             </div>
 
             <div class="mb-4">
-                <label class="label"><span class="label-text">Lease *</span></label>
+                <label class="label"><span class="label-text">Mietvertrag *</span></label>
                 <select name="lease" id="edit_lease" class="select select-bordered w-full" required>
-                    <option value="" disabled>Select Lease</option>
+                    <option value="" disabled>Mietvertrag auswählen</option>
                     {% for lease in property.leases.all %}
                     <option value="{{ lease.id }}">{{ lease }}</option>
                     {% endfor %}
@@ -195,23 +194,23 @@
             </div>
 
             <div class="mb-4">
-                <label class="label"><span class="label-text">Amount</span></label>
+                <label class="label"><span class="label-text">Betrag</span></label>
                 <input type="number" name="amount" id="edit_amount" step="0.01" class="input input-bordered w-full" >
             </div>
 
             <div class="mb-4">
-                <label class="label"><span class="label-text">Date</span></label>
+                <label class="label"><span class="label-text">Datum</span></label>
                 <input type="date" name="date" id="edit_date" class="input input-bordered w-full" >
             </div>
 
             <div class="mb-4">
-                <label class="label cursor-pointer"><span class="label-text">Recurring</span></label>
+                <label class="label cursor-pointer"><span class="label-text">Wiederkehrend</span></label>
                 <input type="checkbox" name="recurring" id="edit_recurring" class="checkbox">
             </div>
 
             <div class="modal-action">
-                <button type="submit" class="btn btn-outline">Save</button>
-                <button type="button" class="btn btn-outline btn-error" onclick="edit_income_modal.close()">Cancel</button>
+                <button type="submit" class="btn btn-outline">Speichern</button>
+                <button type="button" class="btn btn-outline btn-error" onclick="edit_income_modal.close()">Abbrechen</button>
             </div>
         </form>
     </div>

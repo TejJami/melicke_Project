@@ -1,29 +1,29 @@
 <div class="card bg-transparent p-5 w-full max-w-6xl mx-auto">
    
     <button class="btn w-64 btn-sm btn-outline mb-5" onclick="window.location.href='{% url 'export_parsed_transactions' %}'">
-        Download as Excel
+        Als Excel herunterladen
     </button>
     
     <div class="overflow-x-auto h-96 mb-10">
 
 
-        <h2 class="text-xl font-light mb-3">Journal (Parsed Transactions) for {{ property.name }}</h2>
+        <h2 class="text-xl font-light mb-3">Journal (Verarbeitete Transaktionen) für {{ property.name }}</h2>
         <div class="overflow-x-auto">
             <table class="table w-full text-left bg-base-100 text-base-content">
                 <thead>
                     <tr>
                         <th>BN</th>
-                        <th>Date</th>
-                        <th>AccountName</th>
-                        <th>Unit</th>
-                        <th>Net Amt</th>
+                        <th>Datum</th>
+                        <th>Kontoname</th>
+                        <th>Einheit</th>
+                        <th>Nettobetrag</th>
                         <th>UST</th>
                         <th>UST %</th>
-                        <th>Gross Amt</th>
-                        <th>Transc Type</th>
-                        <th>Property</th>
-                        <th>Lease</th>
-                        <th>Invoice</th>
+                        <th>Bruttobetrag</th>
+                        <th>Transaktionstyp</th>
+                        <th>Gebäude</th>
+                        <th>Mietvertrag</th>
+                        <th>Rechnung</th>
 
                     </tr>
                 </thead>
@@ -47,7 +47,7 @@
                         <td>{{ transaction.tenant }}</td>
                         <td>
                             {% if transaction.invoice %}
-                            <a href="{{ transaction.invoice.url }}" target="_blank">View Invoice</a>
+                            <a href="{{ transaction.invoice.url }}" target="_blank">Rechnung anzeigen</a>
                             {% else %}
                             -
                             {% endif %}
@@ -55,7 +55,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="11" class="text-center text-base-content/50">No parsed transactions available.</td>
+                        <td colspan="11" class="text-center text-base-content/50">Keine verarbeiteten Transaktionen verfügbar.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

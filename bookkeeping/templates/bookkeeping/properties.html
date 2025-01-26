@@ -5,7 +5,7 @@
 
 {% block content %}
 <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-semibold">Properties</h1>
+    <h1 class="text-2xl font-semibold">Gebäude</h1>
     <div class="flex items-center gap-3">
         <button
           aria-label="Search button"
@@ -14,13 +14,13 @@
           <iconify-icon icon="lucide:search" height="16" class="text-base-content/60"></iconify-icon>
           <span class="text-base-content/60">
               {% if request.GET.q %}
-                Searching: "{{ request.GET.q }}"
+                Suche nach: "{{ request.GET.q }}"
               {% else %}
-                Search
+                Suche
               {% endif %}
           </span>
         </button>
-        <button class="btn btn-glass btn-outline btn-sm" onclick="add_property_modal.showModal()">+ Add Property</button>
+        <button class="btn btn-glass btn-outline btn-sm" onclick="add_property_modal.showModal()">+ Gebäude hinzufügen</button>
     </div>
 </div>
 
@@ -35,27 +35,23 @@
                 class="text-base-content/70"></iconify-icon>
                 <input
                 name="q"
-                placeholder="Search properties"
+                placeholder="Gebäude suchen"
                 value="{{ request.GET.q|default:'' }}"
                 class="input input-sm w-full text-base focus:border-transparent focus:outline-0 focus:outline-offset-0" />
-                
                <!-- Clear Button -->
                {% if request.GET.q %}
                <a href="{% url 'properties' %}" class="btn btn-circle btn-ghost btn-sm gap-2">
                    <iconify-icon icon="lucide:x" height="16"></iconify-icon>
                </a>
                 {% endif %}
-
                 <button type="submit" class="btn btn-circle btn-ghost btn-sm gap-2">
                     <iconify-icon icon="lucide:search" height="16"></iconify-icon>
                 </button>
-                
-
             </div>
         </form>
     </div>
     <form method="dialog" class="modal-backdrop">
-        <button>close</button>
+        <button>Schließen</button>
     </form>
 </dialog>
 
@@ -65,42 +61,42 @@
         <form method="post" enctype="multipart/form-data" action="{% url 'add_property' %}">
             {% csrf_token %}
             <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_property_modal.close()">✕</button>
-            <h2 class="text-lg font-bold mb-4">Add Property</h2>
+            <h2 class="text-lg font-bold mb-4">Gebäude hinzufügen</h2>
 
             <!-- Property Fields -->
             <div class="mb-4">
-                <label class="label"><span class="label-text">Property Name</span></label>
+                <label class="label"><span class="label-text">Gebäudename</span></label>
                 <input type="text" name="name" class="input input-bordered w-full" required>
             </div>
             <div class="mb-4">
-                <label class="label"><span class="label-text">Property Type</span></label>
+                <label class="label"><span class="label-text">Gebäudetyp</span></label>
                 <select name="property_type" class="select select-bordered w-full" required>
-                    <option value="residential">Residential</option>
-                    <option value="commercial">Commercial</option>
+                    <option value="residential">Wohngebäude</option>
+                    <option value="commercial">Gewerbegebäude</option>
                 </select>
             </div>
             <div class="mb-4">
-                <label class="label"><span class="label-text">Street</span></label>
+                <label class="label"><span class="label-text">Straße</span></label>
                 <input type="text" name="street" class="input input-bordered w-full" required>
             </div>
             <div class="mb-4">
-                <label class="label"><span class="label-text">Building No</span></label>
+                <label class="label"><span class="label-text">Hausnummer</span></label>
                 <input type="text" name="building_no" class="input input-bordered w-full" required>
             </div>
             <div class="mb-4">
-                <label class="label"><span class="label-text">City</span></label>
+                <label class="label"><span class="label-text">Stadt</span></label>
                 <input type="text" name="city" class="input input-bordered w-full" required>
             </div>
             <div class="mb-4">
-                <label class="label"><span class="label-text">ZIP</span></label>
+                <label class="label"><span class="label-text">Postleitzahl</span></label>
                 <input type="text" name="zip" class="input input-bordered w-full" required>
             </div>
             <div class="mb-4">
-                <label class="label"><span class="label-text">Country</span></label>
+                <label class="label"><span class="label-text">Land</span></label>
                 <input type="text" name="country" class="input input-bordered w-full" required>
             </div>
             <div class="mb-4">
-                <label class="label"><span class="label-text">Landlords</span></label>
+                <label class="label"><span class="label-text">Vermieter</span></label>
                 <select name="landlords" class="select select-bordered w-full" multiple>
                     {% for landlord in landlords %}
                     <option value="{{ landlord.id }}">{{ landlord.name }}</option>
@@ -108,7 +104,7 @@
                 </select>
             </div>
             <div class="mb-4">
-                <label class="label"><span class="label-text">UST Type</span></label>
+                <label class="label"><span class="label-text">UST Typ</span></label>
                 <select name="ust_type" class="select select-bordered w-full">
                     <option value="0">Nicht (0%)</option>
                     <option value="7">Teilw (7%)</option>
@@ -116,12 +112,12 @@
                 </select>
             </div>            
             <div class="mb-4">
-                <label class="label"><span class="label-text">Property Image</span></label>
+                <label class="label"><span class="label-text">Gebäudebild</span></label>
                 <input type="file" name="image" class="file-input file-input-bordered w-full" accept="image/*">
             </div>
             <div class="modal-action">
-                <button type="submit" class="btn btn-primary">Add Property</button>
-                <button type="button" class="btn btn-outline btn-error" onclick="add_property_modal.close()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Gebäude hinzufügen</button>
+                <button type="button" class="btn btn-outline btn-error" onclick="add_property_modal.close()">Abbrechen</button>
             </div>
         </form>
     </div>
@@ -159,17 +155,17 @@
 <div class="flex justify-center mt-6">
     <div class="join">
         {% if page_obj.has_previous %}
-            <a href="?page=1" class="join-item btn btn-sm">First</a>
-            <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn btn-sm">Previous</a>
+            <a href="?page=1" class="join-item btn btn-sm">Erste</a>
+            <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn btn-sm">Zurück</a>
         {% endif %}
 
         <span class="join-item btn btn-sm btn-active">
-            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            Seite {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
         </span>
 
         {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}" class="join-item btn btn-sm">Next</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}" class="join-item btn btn-sm">Last</a>
+            <a href="?page={{ page_obj.next_page_number }}" class="join-item btn btn-sm">Weiter</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}" class="join-item btn btn-sm">Letzte</a>
         {% endif %}
     </div>
 </div>

@@ -1,10 +1,10 @@
 {% extends 'bookkeeping/base.html' %}
 
-{% block title %}Tenants{% endblock %}
+{% block title %}Mieter{% endblock %}
 
 {% block content %}
 <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-semibold">Tenants</h1>
+        <h1 class="text-2xl font-semibold">Mieter</h1>
         <div class="flex items-center gap-3">
             <button
               aria-label="Search button"
@@ -13,13 +13,13 @@
               <iconify-icon icon="lucide:search" height="16" class="text-base-content/60"></iconify-icon>
               <span class="text-base-content/60">
                   {% if request.GET.q %}
-                    Searching: "{{ request.GET.q }}"
+                  Suche nach"{{ request.GET.q }}"
                   {% else %}
-                    Search
+                  Suche
                   {% endif %}
               </span>
             </button>
-            <button class="btn btn-glass btn-outline btn-sm" onclick="add_tenant_modal.showModal()">+ Add Tenant</button>
+            <button class="btn btn-glass btn-outline btn-sm" onclick="add_tenant_modal.showModal()">+ Mieter hinzufügen</button>
         </div>
 </div>
 
@@ -31,7 +31,7 @@
                     <iconify-icon icon="lucide:search" height="18" class="text-base-content/70"></iconify-icon>
                     <input
                     name="q"
-                    placeholder="Search tenants"
+                    placeholder="Mieter suchen"
                     value="{{ request.GET.q|default:'' }}"
                     class="input input-sm w-full text-base focus:border-transparent focus:outline-0 focus:outline-offset-0" />
                     
@@ -55,7 +55,7 @@
             <form method="post" action="{% url 'add_tenant' %}">
                 {% csrf_token %}
                 <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="add_tenant_modal.close()">✕</button>
-                <h1 class="text-lg font-bold mb-4">Add Tenant</h1>
+                <h1 class="text-lg font-bold mb-4">Mieter hinzufügen</h1>
                 
                 <!-- Name -->
                 <div class="mb-4">
@@ -65,13 +65,13 @@
 
                 <!-- Other Account Names -->
                 <div class="mb-4">
-                    <label class="label"> <span class="label-text">Other Account Names</span> </label>
+                    <label class="label"> <span class="label-text">Andere Kontonamen</span> </label>
                     <input type="text" name="other_account_names" class="input input-bordered w-full" placeholder="Other Account Names">
                 </div>
 
                 <!-- Phone Number -->
                 <div class="mb-4">
-                    <label class="label"> <span class="label-text">Phone Number</span> </label>
+                    <label class="label"> <span class="label-text">Telefonnummer</span> </label>
                     <input type="text" name="phone_number" class="input input-bordered w-full" placeholder="Phone Number">
                 </div>
 
@@ -83,7 +83,7 @@
 
                 <!-- Address -->
                 <div class="mb-4">
-                    <label class="label"> <span class="label-text">Address</span> </label>
+                    <label class="label"> <span class="label-text">Adresse</span> </label>
                     <textarea name="address" class="textarea textarea-bordered w-full" placeholder="Address"></textarea>
                 </div>
 
@@ -101,13 +101,13 @@
 
                 <!-- Notes -->
                 <div class="mb-4">
-                    <label class="label"> <span class="label-text">Notes</span> </label>
+                    <label class="label"> <span class="label-text">Notizen</span> </label>
                     <textarea name="notes" class="textarea textarea-bordered w-full" placeholder="Additional Notes"></textarea>
                 </div>
 
                 <div class="modal-action">
-                    <button type="submit" class="btn btn-outline">Add</button>
-                    <button type="button" class="btn btn-outline btn-error" onclick="add_tenant_modal.close()">Cancel</button>
+                    <button type="submit" class="btn btn-outline">Hinzufügen</button>
+                    <button type="button" class="btn btn-outline btn-error" onclick="add_tenant_modal.close()">Abbrechen</button>
                 </div>
             </form>
         </div>
@@ -119,14 +119,14 @@
         <thead>
             <tr class="border-b border-base-200">
                 <th>Name</th>
-                <th>Other Account Names</th>
-                <th>Phone</th>
+                <th>Andere Kontonamen</th>
+                <th>Telefon</th>
                 <th>Email</th>
-                <th>Address</th>
+                <th>Adresse</th>
                 <th>IBAN</th>
                 <th>BIC</th>
-                <th>Notes</th>
-                <th>Actions</th>
+                <th style="width: 25%;">Notizen</th>
+                <th>Aktionen</th>
             </tr>
         </thead>
         <tbody>
@@ -180,16 +180,16 @@
             <label>Name *</label>
             <input type="text" name="name" id="edit_tenant_name" class="input input-bordered w-full mb-2" required>
 
-            <label>Other Account Names</label>
+            <label>Andere Kontonamen</label>
             <input type="text" name="other_account_names" id="edit_other_account_names" class="input input-bordered w-full mb-2">
 
-            <label>Phone Number</label>
+            <label>Telefon</label>
             <input type="text" name="phone_number" id="edit_phone_number" class="input input-bordered w-full mb-2">
 
             <label>Email</label>
             <input type="email" name="email" id="edit_email" class="input input-bordered w-full mb-2">
 
-            <label>Address</label>
+            <label>Adresse</label>
             <textarea name="address" id="edit_address" class="textarea textarea-bordered w-full mb-2"></textarea>
 
             <label>IBAN</label>
@@ -198,12 +198,12 @@
             <label>BIC</label>
             <input type="text" name="bic" id="edit_bic" class="input input-bordered w-full mb-2">
 
-            <label>Notes</label>
+            <label>Notizen</label>
             <textarea name="notes" id="edit_notes" class="textarea textarea-bordered w-full mb-2"></textarea>
 
             <div class="modal-action">
-                <button type="submit" class="btn btn-outline">Save</button>
-                <button type="button" class="btn btn-outline btn-error" onclick="edit_tenant_modal.close()">Cancel</button>
+                <button type="submit" class="btn btn-outline">Speichern</button>
+                <button type="button" class="btn btn-outline btn-error" onclick="edit_tenant_modal.close()">Abbrechen</button>
             </div>
         </form>
     </div>

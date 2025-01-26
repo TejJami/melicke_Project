@@ -1,7 +1,7 @@
 <!-- Navbar -->
 <div class="navbar bg-base-100 shadow-md">
     <div class="navbar-start">
-        <a class="btn btn-ghost normal-case text-xl">Bookkeeping App</a>
+        <a class="btn btn-ghost normal-case text-xl">Buchhaltungs-App</a>
     </div>
     <div class="navbar-center">
         <ul class="menu menu-horizontal px-1">
@@ -12,31 +12,32 @@
             </li>
             <li>
                 <a href="{% url 'units' %}" class="{% if request.resolver_match.url_name == 'units' %}active{% endif %}">
-                    Units
+                    Einheiten
                 </a>
+            </li>
             <li>
                 <a href="{% url 'properties' %}" class="{% if request.resolver_match.url_name == 'properties' %}active{% endif %}">
-                    Properties
+                    Immobilien
                 </a>
             </li>
             <li>
                 <a href="{% url 'tenants' %}" class="{% if request.resolver_match.url_name == 'tenants' %}active{% endif %}">
-                    Tenants
+                    Mieter
                 </a>
             </li>
             <li>
                 <a href="{% url 'landlords' %}" class="{% if request.resolver_match.url_name == 'landlords' %}active{% endif %}">
-                    Landlords
+                    Vermieter
                 </a>
             </li>
             <li>
                 <a href="{% url 'expenses' %}" class="{% if request.resolver_match.url_name == 'expenses' %}active{% endif %}">
-                    Expenses
+                    Ausgaben
                 </a>
             </li>
         </ul>
     </div>
     <div class="navbar-end">
-        <a class="btn">Logout</a>
+        <a class="btn">Abmelden</a>
     </div>
 </div>
