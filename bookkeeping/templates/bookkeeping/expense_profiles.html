@@ -53,7 +53,16 @@
                     <input type="hidden" name="property" value="{{ property.id }}">
                     <input type="text" class="input input-bordered w-full" value="{{ property.name }}" disabled>
                 </div>
-    
+
+                <div class="mb-4">
+                    <label for="ust">UST Type *</label>
+                    <select name="ust" id="ust"  class="select select-bordered w-full" required>
+                        <option value="0">0%</option>
+                        <option value="7">7%</option>
+                        <option value="19">19%</option>
+                    </select>
+                </div>
+                
                 <div class="mb-4">
                     <label class="label"><span class="label-text">Mietvertrag (Optional)</span></label>
                     <select name="lease" class="select select-bordered w-full">
@@ -142,7 +151,8 @@
                                         '{{ expense.property.id|default:'' }}',
                                         '{{ expense.lease.id|default:'' }}',
                                         '{{ expense.account_name }}',
-                                        '{{ expense.booking_no }}'
+                                        '{{ expense.booking_no }}',
+                                        '{{ expense.ust }}',
                                     )">
                                         {{ expense.account_name }}
                                     </a>
@@ -224,7 +234,9 @@
                                         '{{ expense.property.id|default:'' }}',
                                         '{{ expense.lease.id|default:'' }}',
                                         '{{ expense.account_name }}',
-                                        '{{ expense.booking_no }}'
+                                        '{{ expense.booking_no }}',
+                                        '{{ expense.ust }}'
+
                                     )">
                                         {{ expense.account_name }}
                                     </a>
@@ -308,6 +320,15 @@
             </div>
 
             <div class="mb-4">
+                <label for="ust">UST Type *</label>
+                <select name="ust" id="edit_ust_1"  class="select select-bordered w-full" required>
+                    <option value="0">0%</option>
+                    <option value="7">7%</option>
+                    <option value="19">19%</option>
+                </select>
+            </div>
+            
+            <div class="mb-4">
                 <label class="label"><span class="label-text">Häufigkeit</span></label>
                 <select name="frequency" id="edit_frequency_1" class="select select-bordered w-full">
                     <option value="">-- Keine --</option>
@@ -343,6 +364,8 @@
                 <input type="text" class="input input-bordered w-full" value="{{ property.name }}" disabled>
             </div>
 
+
+
             <div class="mb-4">
                 <label class="label cursor-pointer"><span class="label-text">Wiederkehrend</span></label>
                 <input type="checkbox" name="recurring" id="edit_recurring_1" class="checkbox">
@@ -373,7 +396,7 @@
 
 
 <script>
-function openEditExpenseModal(id, transactionType, amount, date, recurring, frequency, propertyId, leaseId, accountName, bookingNo) {
+function openEditExpenseModal(id, transactionType, amount, date, recurring, frequency, propertyId, leaseId, accountName, bookingNo , ust) {
 
     const form = document.getElementById('edit_expense_form');
     form.action = `/edit_expense_profile/${id}/`;
@@ -385,6 +408,9 @@ function openEditExpenseModal(id, transactionType, amount, date, recurring, freq
     const dt = new Date(date);
     const formattedDate = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
     document.getElementById('edit_date_1').value = formattedDate;
+
+
+    document.getElementById('edit_ust_1').value = ust || '';
 
     document.getElementById('edit_recurring_1').checked = recurring === "True";
     document.getElementById('edit_frequency_1').value = frequency || '';

@@ -36,6 +36,7 @@ class Property(models.Model):
     PROPERTY_TYPE_CHOICES = [
         ('Residential', 'Residential'),
         ('Commercial', 'Commercial'),
+        ('Mixed Use', 'Mixed Use'),
     ]
 
     property_type = models.CharField(max_length=20, choices=PROPERTY_TYPE_CHOICES, default='Residential')
@@ -47,11 +48,11 @@ class Property(models.Model):
     country = models.CharField(max_length=100)
     landlords = models.ManyToManyField(Landlord, related_name='owned_properties')  # Multiple landlords can own a property
     image = models.ImageField(upload_to='property_images/', null=True, blank=True)
-    ust_type = models.CharField(
-        max_length=10,
-        choices=[('Nicht', '0'), ('Voll', '19'), ('Teilw', '7')],
-        default='Voll'
-    )
+    # ust_type = models.CharField(
+    #     max_length=10,
+    #     choices=[('Nicht', '0'), ('Voll', '19'), ('Teilw', '7')],
+    #     default='Voll'
+    # )
     
     @staticmethod
     def get_next_default_image():

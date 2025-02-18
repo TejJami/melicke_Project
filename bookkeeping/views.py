@@ -501,7 +501,7 @@ def add_expense_profile(request):
                 date=date,
                 recurring=data.get('recurring') == 'on',
                 frequency=data.get('frequency'),
-                ust=get_ust_from_lease_or_property(lease, property_obj),
+                ust=data.get('ust'),
                 invoice=invoice_file  # Attach invoice if provided
             )
         except ValidationError as e:

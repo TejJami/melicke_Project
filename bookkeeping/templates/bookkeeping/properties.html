@@ -71,10 +71,12 @@
             <div class="mb-4">
                 <label class="label"><span class="label-text">Gebäudetyp</span></label>
                 <select name="property_type" class="select select-bordered w-full" required>
+                    <option value="" disabled selected>Bitte Gebäudetyp auswählen</option>
                     <option value="residential">Wohngebäude</option>
                     <option value="commercial">Gewerbegebäude</option>
+                    <option value="mixed-use">Mischnutzung</option>
                 </select>
-            </div>
+            </div>            
             <div class="mb-4">
                 <label class="label"><span class="label-text">Straße</span></label>
                 <input type="text" name="street" class="input input-bordered w-full" required>
