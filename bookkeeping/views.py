@@ -1176,10 +1176,12 @@ def authorize_commerzbank(request):
     if not settings.COMMERZBANK_CLIENT_ID or not settings.COMMERZBANK_CLIENT_SECRET:
         return HttpResponse("Commerzbank API credentials are missing. Please check your settings.", status=500)
 
+    redirect_uri = "https://bookkeeping-mei-02eece815857.herokuapp.com/commerzbank/callback/"  # Ensure this matches the Developer Portal
+
     params = {
         "response_type": "code",
         "client_id": settings.COMMERZBANK_CLIENT_ID,
-        "redirect_uri": request.build_absolute_uri("/commerzbank/callback/"),
+        "redirect_uri": redirect_uri,
         "scope": "AIS transactions",  # Ensure this scope matches what is required
     }
 
