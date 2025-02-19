@@ -1174,7 +1174,7 @@ def authorize_commerzbank(request):
     if not settings.COMMERZBANK_CLIENT_ID or not settings.COMMERZBANK_API_BASE:
         return HttpResponse("Commerzbank API credentials are missing. Please check your settings.", status=500)
 
-    auth_url = f"{settings.COMMERZBANK_API_BASE}/oauth/authorize"
+    auth_url = f"{settings.COMMERZBANK_API_BASE}"
     params = {
         "client_id": settings.COMMERZBANK_CLIENT_ID,
         "response_type": "code",
