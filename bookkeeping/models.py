@@ -53,7 +53,7 @@ class Property(models.Model):
     #     choices=[('Nicht', '0'), ('Voll', '19'), ('Teilw', '7')],
     #     default='Voll'
     # )
-    iban = models.CharField(max_length=34, unique=True, null=True, blank=True)
+   
     @staticmethod
     def get_next_default_image():
         # List of default images

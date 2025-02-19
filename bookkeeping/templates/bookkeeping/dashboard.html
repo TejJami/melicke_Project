@@ -7,7 +7,7 @@
 
     <form action="{% url 'fetch_commerzbank_transactions' property.id %}" method="post">
         {% csrf_token %}
-        <button type="submit" class="btn btn-primary">Fetch Transactions from API</button>
+        <button type="submit" class="btn w-64 btn-sm btn-outline mb-5">Fetch Transactions from API</button>
     </form>
 
     
