@@ -5,25 +5,10 @@
     <!-- Upload Bank Statement Button -->
     <button class="btn w-64 btn-sm btn-outline mb-5" onclick="upload_modal.showModal()">Bankauszug hochladen</button>
 
-    <div class="join">
-
-        <!-- Step 1: Login Button -->
-        <form action="{% url 'authorize_commerzbank' %}" method="get">
-            <button type="submit" class="btn btn-primary">Login to Commerzbank</button>
-        </form>
-
-        <!-- Step 2: Fetch Accounts -->
-        <form action="{% url 'fetch_commerzbank_accounts' %}" method="get">
-            <button type="submit" class="btn btn-secondary">Fetch Bank Accounts</button>
-        </form>
-
-        <!-- Step 3: Fetch Transactions -->
-        <form action="{% url 'fetch_commerzbank_transactions' %}" method="post">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-success">Fetch Transactions</button>
-        </form>
-
-    </div>  
+    <form action="{% url 'authorize_commerzbank' %}" method="get">
+        <button type="submit" class="btn btn-primary">Connect to Commerzbank</button>
+    </form>
+   
 
     
     <!-- Upload Modal -->
