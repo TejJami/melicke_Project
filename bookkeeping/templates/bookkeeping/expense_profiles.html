@@ -1,3 +1,5 @@
+{% load custom_filters %}
+
 <div class="card bg-transparent p-5 w-full max-w-6xl mx-auto">
 
     <!-- Add Expense Profile Button -->
@@ -242,7 +244,7 @@
                                     </a>
                                 </td>
                                 <td>{{ expense.get_transaction_type_display }}</td>
-                                <td>${{ expense.amount|floatformat:2 }}</td>
+                                <td>€{{ expense.amount|format_german_number  }}</td>
                                 <td>{{ expense.ust}}%</td>
                                 <td>{{ expense.date }}</td>
                                 <td>{% if expense.recurring %}Yes{% else %}No{% endif %}</td>
