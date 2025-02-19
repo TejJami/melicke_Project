@@ -153,3 +153,8 @@ LOGOUT_REDIRECT_URL = '/login/'  # Optional, handled by next_page in the LogoutV
 LOGIN_URL = '/login/'
 
 django_heroku.settings(locals(), test_runner=False)
+
+
+COMMERZBANK_CLIENT_ID=os.getenv('COMMERZBANK_CLIENT_ID')
+COMMERZBANK_CLIENT_SECRET= os.getenv('COMMERZBANK_CLIENT_SECRET')
+COMMERZBANK_API_BASE=os.getenv('COMMERZBANK_API_BASE')

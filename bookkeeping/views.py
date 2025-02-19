@@ -1158,3 +1158,85 @@ def ust_view(request, property_id):
         'total_19_percent': total_19_percent,
     }
     return render(request, 'bookkeeping/ust.html', context)
+
+
+
+import requests
+import os
+from django.shortcuts import redirect, get_object_or_404
+from django.conf import settings
+from django.contrib import messages
+from .models import EarmarkedTransaction, Property
+
+
+def authorize_commerzbank(request):
+    """ Redirects to Commerzbank OAuth login """
+    print("COMMERZBANK_CLIENT_ID",settings.COMMERZBANK_CLIENT_ID)   
+    print("COMMERZBANK_API_BASE",settings.COMMERZBANK_API_BASE)
+    print("COMMERZBANK_CLIENT_SECRET",settings.COMMERZBANK_CLIENT_SECRET)
+    if not settings.COMMERZBANK_CLIENT_ID :
+        return HttpResponse("Commerzbank API credentials are missing. Please check your settings.", status=500)
+
+    auth_url = f"{settings.COMMERZBANK_API_BASE}/oauth/authorize"
+    params = {
+        "client_id": settings.COMMERZBANK_CLIENT_ID,
+        "response_type": "code",
+        "redirect_uri": request.build_absolute_uri("/commerzbank/callback/"),
+        "scope": "transactions",
+    }
+    return redirect(f"{auth_url}?{requests.compat.urlencode(params)}")
+
+
+def commerzbank_callback(request):
+    """ Handles the OAuth callback and retrieves access token """
+    code = request.GET.get("code")
+    token_url = f"{settings.COMMERZBANK_API_BASE}/oauth/token"
+    
+    response = requests.post(token_url, data={
+        "client_id": os.getenv("COMMERZBANK_CLIENT_ID"),
+        "client_secret": os.getenv("COMMERZBANK_CLIENT_SECRET"),
+        "code": code,
+        "grant_type": "authorization_code",
+        "redirect_uri": request.build_absolute_uri("/commerzbank/callback/"),
+    })
+    
+    if response.status_code == 200:
+        token_data = response.json()
+        request.session["access_token"] = token_data["access_token"]
+        messages.success(request, "Successfully authenticated with Commerzbank!")
+    else:
+        messages.error(request, "Failed to authenticate with Commerzbank.")
+
+    return redirect("dashboard")
+
+def fetch_commerzbank_transactions(request, property_id):
+    """ Fetches transactions for a specific property's IBAN """
+    access_token = request.session.get("access_token")
+    if not access_token:
+        return redirect("authorize_commerzbank")
+
+    property_obj = get_object_or_404(Property, id=property_id)
+    if not property_obj.iban:
+        messages.error(request, "No IBAN found for this property!")
+        return redirect(f"{reverse('property_detail', args=[property_id])}?tab=dashboard")
+
+    transactions_url = f"{settings.COMMERZBANK_API_BASE}/accounts/{property_obj.iban}/transactions"
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = requests.get(transactions_url, headers=headers)
+
+    if response.status_code == 200:
+        transactions = response.json().get("transactions", [])
+        for txn in transactions:
+            EarmarkedTransaction.objects.create(
+                property=property_obj,
+                date=txn["bookingDate"],
+                amount=float(txn["amount"]["value"]),
+                description=txn["remittanceInformation"],
+                is_income=txn["creditDebitIndicator"] == "CRDT",
+                account_name=txn["debtorName"] if txn["creditDebitIndicator"] == "DBIT" else txn["creditorName"],
+            )
+        messages.success(request, f"Fetched {len(transactions)} transactions for {property_obj.name}.")
+    else:
+        messages.error(request, "Failed to fetch transactions from Commerzbank.")
+
+    return redirect(f"{reverse('property_detail', args=[property_id])}?tab=dashboard")
