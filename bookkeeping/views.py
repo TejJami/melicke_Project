@@ -1173,27 +1173,37 @@ AUTHORIZE_URL = f"{AUTH_BASE_URL}/auth"
 
 def authorize_commerzbank(request):
     """ Redirects to Commerzbank OAuth login """
+    print("[authorize_commerzbank] Initiating OAuth authorization...")
+
     if not settings.COMMERZBANK_CLIENT_ID or not settings.COMMERZBANK_CLIENT_SECRET:
+        print("[authorize_commerzbank] Error: Missing API credentials")
         return HttpResponse("Commerzbank API credentials are missing. Please check your settings.", status=500)
 
-    redirect_uri = "https://bookkeeping-mei-02eece815857.herokuapp.com/commerzbank/callback/"  # Ensure this matches the Developer Portal
+    redirect_uri = "https://bookkeeping-mei-02eece815857.herokuapp.com/commerzbank/callback/"
 
     params = {
         "response_type": "code",
         "client_id": settings.COMMERZBANK_CLIENT_ID,
         "redirect_uri": redirect_uri,
-        "scope": "AIS transactions",  # Ensure this scope matches what is required
+        "scope": "AIS transactions",
     }
 
     auth_url = f"{AUTHORIZE_URL}?{requests.compat.urlencode(params)}"
+    print(f"[authorize_commerzbank] Redirecting user to: {auth_url}")
+
     return redirect(auth_url)
 
 def commerzbank_callback(request):
     """ Handles OAuth callback and retrieves access token """
+    print("[commerzbank_callback] Handling OAuth callback...")
+
     code = request.GET.get("code")
     if not code:
+        print("[commerzbank_callback] Error: No authorization code received")
         messages.error(request, "No authorization code received.")
-        return redirect("dashboard")
+        return redirect("properties")
+
+    redirect_uri = "https://bookkeeping-mei-02eece815857.herokuapp.com/commerzbank/callback/"
 
     data = {
         "grant_type": "authorization_code",
@@ -1203,54 +1213,63 @@ def commerzbank_callback(request):
         "client_secret": settings.COMMERZBANK_CLIENT_SECRET,
     }
 
+    print("[commerzbank_callback] Requesting access token...")
     response = requests.post(TOKEN_URL, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
 
     if response.status_code == 200:
         token_data = response.json()
         request.session["access_token"] = token_data.get("access_token")
-        messages.success(request, "✅ Successfully authenticated with Commerzbank!")
+        print("[commerzbank_callback] Authentication successful")
+        messages.success(request, "Successfully authenticated with Commerzbank")
         return redirect("fetch_commerzbank_data")
     else:
         error_message = response.json().get("error_description", "Unknown error")
-        messages.error(request, f"❌ Authentication failed: {error_message}")
-        return redirect("dashboard")
+        print(f"[commerzbank_callback] Error: {error_message}")
+        messages.error(request, f"Authentication failed: {error_message}")
+        return redirect("properties")
 
 def fetch_commerzbank_data(request):
     """ Fetches accounts and transactions from Commerzbank Sandbox API """
+    print("[fetch_commerzbank_data] Fetching bank accounts and transactions...")
+
     access_token = request.session.get("access_token")
     if not access_token:
+        print("[fetch_commerzbank_data] Error: No access token found, redirecting to login")
         return redirect("authorize_commerzbank")
 
     headers = {"Authorization": f"Bearer {access_token}"}
 
-    # 🔹 Fetch Bank Accounts
     accounts_url = "https://api-sandbox.commerzbank.com/api/accounts"
+    print(f"[fetch_commerzbank_data] Requesting accounts from {accounts_url}")
     accounts_response = requests.get(accounts_url, headers=headers)
-    
+
     if accounts_response.status_code == 200:
         accounts = accounts_response.json().get("accounts", [])
         if not accounts:
-            messages.warning(request, "⚠️ No bank accounts found.")
-            return redirect("dashboard")
-        
-        # Store accounts in session
-        request.session["commerzbank_accounts"] = accounts
-        messages.success(request, f"✅ Found {len(accounts)} accounts.")
+            print("[fetch_commerzbank_data] Warning: No accounts found")
+            messages.warning(request, "No bank accounts found.")
+            return redirect("properties")
 
-        # 🔹 Fetch Transactions for First Account
-        account_id = accounts[0].get("accountId")  # Adjust for dynamic selection later
+        request.session["commerzbank_accounts"] = accounts
+        print(f"[fetch_commerzbank_data] {len(accounts)} accounts found")
+
+        account_id = accounts[0].get("accountId")
         transactions_url = f"https://api-sandbox.commerzbank.com/api/accounts/{account_id}/transactions"
+        print(f"[fetch_commerzbank_data] Requesting transactions from {transactions_url}")
         transactions_response = requests.get(transactions_url, headers=headers)
 
         if transactions_response.status_code == 200:
             transactions = transactions_response.json().get("transactions", [])
-            messages.success(request, f"✅ Retrieved {len(transactions)} transactions!")
+            print(f"[fetch_commerzbank_data] {len(transactions)} transactions retrieved")
+            messages.success(request, f"Retrieved {len(transactions)} transactions.")
         else:
             error_message = transactions_response.json().get("error_description", "Unknown error")
-            messages.error(request, f"❌ Failed to fetch transactions: {error_message}")
+            print(f"[fetch_commerzbank_data] Error fetching transactions: {error_message}")
+            messages.error(request, f"Failed to fetch transactions: {error_message}")
 
     else:
         error_message = accounts_response.json().get("error_description", "Unknown error")
-        messages.error(request, f"❌ Failed to fetch accounts: {error_message}")
+        print(f"[fetch_commerzbank_data] Error fetching accounts: {error_message}")
+        messages.error(request, f"Failed to fetch accounts: {error_message}")
 
-    return redirect("dashboard")
+    return redirect("properties")
