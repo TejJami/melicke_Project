@@ -15,6 +15,7 @@
     <!-- Upload Modal -->
     <dialog id="upload_modal" class="modal">
         <div class="modal-box bg-base-100 text-base-content">
+            {% if property %}
             <form id="upload_form" method="post" enctype="multipart/form-data" action="{% url 'upload_bank_statement' property.id %}" onsubmit="showSpinner(event)">
 
                 {% csrf_token %}
@@ -37,6 +38,9 @@
                     <button type="button" class="btn btn-outline btn-error" onclick="upload_modal.close()">Abbrechen</button>
                 </div>
             </form>
+            {% else %}
+            <p>Error: Property not found.</p>
+            {% endif %}
         </div>
     </dialog>
 
