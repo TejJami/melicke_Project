@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commerzbank Sandbox Login</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        .container { width: 300px; margin: auto; }
+        input, button { width: 100%; padding: 10px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Commerzbank Sandbox Login</h2>
+        <form action="{% url 'commerzbank_login' %}" method="POST">
+            {% csrf_token %}
+            <input type="text" name="username" placeholder="Enter Username" required>
+            <input type="password" name="password" placeholder="Enter Password" required>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+</body>
+</html>

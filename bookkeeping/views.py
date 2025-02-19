@@ -1159,17 +1159,17 @@ def ust_view(request, property_id):
     }
     return render(request, 'bookkeeping/ust.html', context)
 
-
 import requests
 import os
-from django.shortcuts import redirect, HttpResponse
+from django.shortcuts import render, redirect, HttpResponse
 from django.conf import settings
 from django.contrib import messages
 
+# 🔹 Step 1: Redirect User to Commerzbank Login (OAuth)
 def authorize_commerzbank(request):
     """ Redirects to Commerzbank OAuth login (Sandbox Mode) """
-    print("COMMERZBANK_CLIENT_ID:", settings.COMMERZBANK_CLIENT_ID)
-    print("COMMERZBANK_API_BASE:", settings.COMMERZBANK_API_BASE)
+    print("🔍 DEBUG: COMMERZBANK_CLIENT_ID:", settings.COMMERZBANK_CLIENT_ID)
+    print("🔍 DEBUG: COMMERZBANK_API_BASE:", settings.COMMERZBANK_API_BASE)
 
     if not settings.COMMERZBANK_CLIENT_ID or not settings.COMMERZBANK_API_BASE:
         return HttpResponse("Commerzbank API credentials are missing. Please check your settings.", status=500)
@@ -1181,17 +1181,19 @@ def authorize_commerzbank(request):
         "redirect_uri": request.build_absolute_uri("/commerzbank/callback/"),
         "scope": "accounts transactions",
     }
+
     return redirect(f"{auth_url}?{requests.compat.urlencode(params)}")
 
+# 🔹 Step 2: Handle OAuth Callback & Get Access Token
 def commerzbank_callback(request):
-    """ Handles the OAuth callback and retrieves access token """
+    """ Handles OAuth callback and retrieves access token """
     code = request.GET.get("code")
     if not code:
         messages.error(request, "No authorization code received.")
         return redirect("dashboard")
 
     token_url = f"{settings.COMMERZBANK_API_BASE}/oauth/token"
-    
+
     response = requests.post(token_url, data={
         "client_id": settings.COMMERZBANK_CLIENT_ID,
         "client_secret": settings.COMMERZBANK_CLIENT_SECRET,
@@ -1203,13 +1205,15 @@ def commerzbank_callback(request):
     if response.status_code == 200:
         token_data = response.json()
         request.session["access_token"] = token_data.get("access_token")
-        messages.success(request, "Successfully authenticated with Commerzbank (Sandbox)!")
+        messages.success(request, "✅ Successfully authenticated with Commerzbank Sandbox!")
+        return redirect("fetch_commerzbank_accounts")
     else:
         error_message = response.json().get("error_description", "Unknown error")
-        messages.error(request, f"Failed to authenticate: {error_message}")
+        messages.error(request, f"❌ Authentication failed: {error_message}")
 
     return redirect("dashboard")
 
+# 🔹 Step 3: Fetch Available Bank Accounts
 def fetch_commerzbank_accounts(request):
     """ Fetches all available bank accounts from Commerzbank Sandbox API """
     access_token = request.session.get("access_token")
@@ -1222,31 +1226,47 @@ def fetch_commerzbank_accounts(request):
     response = requests.get(accounts_url, headers=headers)
 
     if response.status_code == 200:
-        accounts = response.json()
-        messages.success(request, f"Fetched accounts: {accounts}")
+        accounts = response.json().get("accounts", [])
+        if not accounts:
+            messages.warning(request, "⚠️ No bank accounts found in your Commerzbank Sandbox.")
+            return redirect("dashboard")
+
+        # Store account list in session
+        request.session["commerzbank_accounts"] = accounts
+        messages.success(request, f"✅ Fetched {len(accounts)} accounts from Commerzbank!")
+        return redirect("dashboard")
     else:
         error_message = response.json().get("error_description", "Unknown error")
-        messages.error(request, f"Failed to fetch accounts: {error_message}")
+        messages.error(request, f"❌ Failed to fetch accounts: {error_message}")
 
     return redirect("dashboard")
 
+# 🔹 Step 4: Fetch Transactions for a Selected Account
 def fetch_commerzbank_transactions(request):
-    """ Fetches transactions for a test account from Commerzbank Sandbox API """
+    """ Fetches transactions from Commerzbank Sandbox API for the first available account """
     access_token = request.session.get("access_token")
     if not access_token:
         return redirect("authorize_commerzbank")
 
-    test_account_id = "dummy-account-id"  # Replace this with an actual account ID after fetching accounts
-    transactions_url = f"{settings.COMMERZBANK_API_BASE}/accounts/{test_account_id}/transactions"
+    # Retrieve stored accounts
+    accounts = request.session.get("commerzbank_accounts", [])
+    if not accounts:
+        messages.error(request, "⚠️ No accounts available. Fetch accounts first.")
+        return redirect("fetch_commerzbank_accounts")
+
+    # Select the first available account (Modify this later for user selection)
+    account_id = accounts[0].get("accountId")
+    transactions_url = f"{settings.COMMERZBANK_API_BASE}/accounts/{account_id}/transactions"
     headers = {"Authorization": f"Bearer {access_token}"}
 
     response = requests.get(transactions_url, headers=headers)
 
     if response.status_code == 200:
-        transactions = response.json()
-        messages.success(request, f"Fetched transactions: {transactions}")
+        transactions = response.json().get("transactions", [])
+        messages.success(request, f"✅ Retrieved {len(transactions)} transactions!")
+        return redirect("dashboard")
     else:
         error_message = response.json().get("error_description", "Unknown error")
-        messages.error(request, f"Failed to fetch transactions: {error_message}")
+        messages.error(request, f"❌ Failed to fetch transactions: {error_message}")
 
     return redirect("dashboard")
