@@ -1199,7 +1199,7 @@ def commerzbank_callback(request):
         "client_secret": settings.COMMERZBANK_CLIENT_SECRET,
         "code": code,
         "grant_type": "authorization_code",
-        "redirect_uri": request.build_absolute_uri("/commerzbank/callback/"),
+        "redirect_uri": "https://bookkeeping-mei-02eece815857.herokuapp.com",
     })
 
     if response.status_code == 200:
