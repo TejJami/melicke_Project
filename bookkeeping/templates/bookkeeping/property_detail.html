@@ -48,6 +48,10 @@
   <!-- Delete Button -->
   <button class="btn btn-outline btn-error" onclick="delete_property_modal.showModal()">Gebäude löschen</button>
   
+  <form action="{% url 'authorize_commerzbank' %}" method="get">
+    <button type="submit" class="btn w-64 btn-sm btn-outline mb-5">Connect to Commerzbank</button>
+</form>
+
 </div>
 
 
