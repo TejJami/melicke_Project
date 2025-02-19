@@ -5,7 +5,7 @@
     <!-- Upload Bank Statement Button -->
     <button class="btn w-64 btn-sm btn-outline mb-5" onclick="upload_modal.showModal()">Bankauszug hochladen</button>
 
-    <form action="{% url 'fetch_commerzbank_transactions' property.id %}" method="post">
+    <form action="{% url 'fetch_commerzbank_transactions' %}" method="post">
         {% csrf_token %}
         <button type="submit" class="btn w-64 btn-sm btn-outline mb-5">Fetch Transactions from API</button>
     </form>
