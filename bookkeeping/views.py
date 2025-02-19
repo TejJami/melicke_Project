@@ -1198,7 +1198,7 @@ def commerzbank_callback(request):
     data = {
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": request.build_absolute_uri("/commerzbank/callback/"),
+        "redirect_uri": redirect_uri,
         "client_id": settings.COMMERZBANK_CLIENT_ID,
         "client_secret": settings.COMMERZBANK_CLIENT_SECRET,
     }
