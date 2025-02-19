@@ -47,7 +47,15 @@
   
   <!-- Delete Button -->
   <button class="btn btn-outline btn-error" onclick="delete_property_modal.showModal()">Gebäude löschen</button>
+
+  <form action="{% url 'authorize_commerzbank' %}" method="get">
+    <button type="submit" class="btn btn-outline ml-10">Connect to Commerzbank</button>
+</form>
+
 </div>
+
+
+
 
 <!-- Delete Property Modal -->
 <dialog id="delete_property_modal" class="modal">
