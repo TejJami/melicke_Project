@@ -1165,6 +1165,7 @@ import requests
 from django.shortcuts import redirect, HttpResponse
 from django.conf import settings
 from django.contrib import messages
+import json
 
 # Commerzbank API OAuth URLs
 AUTH_BASE_URL = "https://api-sandbox.commerzbank.com/auth/realms/sandbox/protocol/openid-connect"
@@ -1193,6 +1194,7 @@ def authorize_commerzbank(request):
 
     return redirect(auth_url)
 
+
 def commerzbank_callback(request):
     """ Handles OAuth callback and retrieves access token """
     print("[commerzbank_callback] Handling OAuth callback...")
@@ -1219,14 +1221,18 @@ def commerzbank_callback(request):
     if response.status_code == 200:
         token_data = response.json()
         request.session["access_token"] = token_data.get("access_token")
-        print("[commerzbank_callback] Authentication successful")
+
+        print(f"[commerzbank_callback] Authentication successful. Access token: {token_data.get('access_token')}")
         messages.success(request, "Successfully authenticated with Commerzbank")
-        return redirect("fetch_commerzbank_data")
+
+        # Now fetch data
+        return fetch_commerzbank_data(request)
     else:
         error_message = response.json().get("error_description", "Unknown error")
         print(f"[commerzbank_callback] Error: {error_message}")
         messages.error(request, f"Authentication failed: {error_message}")
         return redirect("properties")
+
 
 def fetch_commerzbank_data(request):
     """ Fetches accounts and transactions from Commerzbank Sandbox API """
@@ -1239,6 +1245,7 @@ def fetch_commerzbank_data(request):
 
     headers = {"Authorization": f"Bearer {access_token}"}
 
+    # Fetch Bank Accounts
     accounts_url = "https://api-sandbox.commerzbank.com/api/accounts"
     print(f"[fetch_commerzbank_data] Requesting accounts from {accounts_url}")
     accounts_response = requests.get(accounts_url, headers=headers)
@@ -1253,6 +1260,7 @@ def fetch_commerzbank_data(request):
         request.session["commerzbank_accounts"] = accounts
         print(f"[fetch_commerzbank_data] {len(accounts)} accounts found")
 
+        # Fetch Transactions for First Account
         account_id = accounts[0].get("accountId")
         transactions_url = f"https://api-sandbox.commerzbank.com/api/accounts/{account_id}/transactions"
         print(f"[fetch_commerzbank_data] Requesting transactions from {transactions_url}")
@@ -1260,8 +1268,15 @@ def fetch_commerzbank_data(request):
 
         if transactions_response.status_code == 200:
             transactions = transactions_response.json().get("transactions", [])
+
+            # Log transactions
             print(f"[fetch_commerzbank_data] {len(transactions)} transactions retrieved")
+            print(json.dumps(transactions, indent=2))  # Pretty print transactions
+
             messages.success(request, f"Retrieved {len(transactions)} transactions.")
+
+            # Store transactions in session for debugging
+            request.session["commerzbank_transactions"] = transactions
         else:
             error_message = transactions_response.json().get("error_description", "Unknown error")
             print(f"[fetch_commerzbank_data] Error fetching transactions: {error_message}")
