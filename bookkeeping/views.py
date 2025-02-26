@@ -1168,7 +1168,7 @@ from django.contrib import messages
 import json
 
 # Commerzbank API OAuth URLs
-AUTH_BASE_URL = "https://api-sandbox.commerzbank.com/auth/realms/sandbox/protocol/openid-connect"
+AUTH_BASE_URL = "https://psd2.api-sandbox.commerzbank.com/berlingroup/v1"
 TOKEN_URL = f"{AUTH_BASE_URL}/token"
 AUTHORIZE_URL = f"{AUTH_BASE_URL}/auth"
 
