@@ -1162,10 +1162,9 @@ def ust_view(request, property_id):
 #################################################################
 
 import requests
-from django.shortcuts import HttpResponse
+from django.shortcuts import redirect, HttpResponse
 from django.conf import settings
 from django.contrib import messages
-import json
 
 # Commerzbank API OAuth URLs
 AUTH_BASE_URL = "https://api-sandbox.commerzbank.com/auth/realms/sandbox/protocol/openid-connect"
@@ -1192,8 +1191,7 @@ def authorize_commerzbank(request):
     auth_url = f"{AUTHORIZE_URL}?{requests.compat.urlencode(params)}"
     print(f"[authorize_commerzbank] Redirecting user to: {auth_url}")
 
-    return HttpResponse(f'<a href="{auth_url}">Click here to authenticate with Commerzbank</a>')
-
+    return redirect(auth_url)
 
 def commerzbank_callback(request):
     """ Handles OAuth callback and retrieves access token """
@@ -1202,7 +1200,8 @@ def commerzbank_callback(request):
     code = request.GET.get("code")
     if not code:
         print("[commerzbank_callback] Error: No authorization code received")
-        return HttpResponse("Error: No authorization code received.", status=400)
+        messages.error(request, "No authorization code received.")
+        return redirect("properties")
 
     redirect_uri = "https://bookkeeping-mei-02eece815857.herokuapp.com/commerzbank/callback/"
 
@@ -1220,22 +1219,14 @@ def commerzbank_callback(request):
     if response.status_code == 200:
         token_data = response.json()
         request.session["access_token"] = token_data.get("access_token")
-
         print("[commerzbank_callback] Authentication successful")
-        return HttpResponse(
-            f"<h1>Authentication Successful</h1>"
-            f"<p>Access Token:</p>"
-            f"<pre>{json.dumps(token_data, indent=2)}</pre>"
-        )
+        messages.success(request, "Successfully authenticated with Commerzbank")
+        return redirect("fetch_commerzbank_data")
     else:
         error_message = response.json().get("error_description", "Unknown error")
         print(f"[commerzbank_callback] Error: {error_message}")
-        return HttpResponse(
-            f"<h1>Authentication Failed</h1>"
-            f"<p>Error: {error_message}</p>",
-            status=400
-        )
-
+        messages.error(request, f"Authentication failed: {error_message}")
+        return redirect("properties")
 
 def fetch_commerzbank_data(request):
     """ Fetches accounts and transactions from Commerzbank Sandbox API """
