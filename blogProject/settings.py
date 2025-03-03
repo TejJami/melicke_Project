@@ -174,3 +174,5 @@ else:
 
 # Store certificate path in settings
 COMMERZBANK_CERT_PATH = cert_path
+
+COMMERZBANK_REDIRECT_URI = "https://bookkeeping-mei-02eece815857.herokuapp.com/commerzbank/callback/"
