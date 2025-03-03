@@ -1167,12 +1167,13 @@ from django.conf import settings
 from django.contrib import messages
 
 # Commerzbank API OAuth URLs
-AUTH_BASE_URL = "https://api-sandbox.commerzbank.com/auth/realms/sandbox/protocol/openid-connect"
+AUTH_BASE_URL = "https://psd2.api-sandbox.commerzbank.com/berlingroup/v1"
 TOKEN_URL = f"{AUTH_BASE_URL}/token"
 AUTHORIZE_URL = f"{AUTH_BASE_URL}/auth"
 
+
 def authorize_commerzbank(request):
-    """ Redirects to Commerzbank OAuth login """
+    """ Redirects user to Commerzbank OAuth login """
     print("[authorize_commerzbank] Initiating OAuth authorization...")
 
     if not settings.COMMERZBANK_CLIENT_ID or not settings.COMMERZBANK_CLIENT_SECRET:
@@ -1192,6 +1193,7 @@ def authorize_commerzbank(request):
     print(f"[authorize_commerzbank] Redirecting user to: {auth_url}")
 
     return redirect(auth_url)
+
 
 def commerzbank_callback(request):
     """ Handles OAuth callback and retrieves access token """
@@ -1219,57 +1221,13 @@ def commerzbank_callback(request):
     if response.status_code == 200:
         token_data = response.json()
         request.session["access_token"] = token_data.get("access_token")
-        print("[commerzbank_callback] Authentication successful")
+
+        print(f"[commerzbank_callback] Authentication successful. Access token: {token_data.get('access_token')}")
         messages.success(request, "Successfully authenticated with Commerzbank")
-        return redirect("fetch_commerzbank_data")
+
+        return redirect("properties")
     else:
         error_message = response.json().get("error_description", "Unknown error")
         print(f"[commerzbank_callback] Error: {error_message}")
         messages.error(request, f"Authentication failed: {error_message}")
         return redirect("properties")
-
-def fetch_commerzbank_data(request):
-    """ Fetches accounts and transactions from Commerzbank Sandbox API """
-    print("[fetch_commerzbank_data] Fetching bank accounts and transactions...")
-
-    access_token = request.session.get("access_token")
-    if not access_token:
-        print("[fetch_commerzbank_data] Error: No access token found, redirecting to login")
-        return redirect("authorize_commerzbank")
-
-    headers = {"Authorization": f"Bearer {access_token}"}
-
-    accounts_url = "https://api-sandbox.commerzbank.com/api/accounts"
-    print(f"[fetch_commerzbank_data] Requesting accounts from {accounts_url}")
-    accounts_response = requests.get(accounts_url, headers=headers)
-
-    if accounts_response.status_code == 200:
-        accounts = accounts_response.json().get("accounts", [])
-        if not accounts:
-            print("[fetch_commerzbank_data] Warning: No accounts found")
-            messages.warning(request, "No bank accounts found.")
-            return redirect("properties")
-
-        request.session["commerzbank_accounts"] = accounts
-        print(f"[fetch_commerzbank_data] {len(accounts)} accounts found")
-
-        account_id = accounts[0].get("accountId")
-        transactions_url = f"https://api-sandbox.commerzbank.com/api/accounts/{account_id}/transactions"
-        print(f"[fetch_commerzbank_data] Requesting transactions from {transactions_url}")
-        transactions_response = requests.get(transactions_url, headers=headers)
-
-        if transactions_response.status_code == 200:
-            transactions = transactions_response.json().get("transactions", [])
-            print(f"[fetch_commerzbank_data] {len(transactions)} transactions retrieved")
-            messages.success(request, f"Retrieved {len(transactions)} transactions.")
-        else:
-            error_message = transactions_response.json().get("error_description", "Unknown error")
-            print(f"[fetch_commerzbank_data] Error fetching transactions: {error_message}")
-            messages.error(request, f"Failed to fetch transactions: {error_message}")
-
-    else:
-        error_message = accounts_response.json().get("error_description", "Unknown error")
-        print(f"[fetch_commerzbank_data] Error fetching accounts: {error_message}")
-        messages.error(request, f"Failed to fetch accounts: {error_message}")
-
-    return redirect("properties")

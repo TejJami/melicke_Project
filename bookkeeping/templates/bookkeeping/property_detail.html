@@ -48,9 +48,9 @@
   <!-- Delete Button -->
   <button class="btn btn-outline btn-error" onclick="delete_property_modal.showModal()">Gebäude löschen</button>
   
-  <form action="{% url 'authorize_commerzbank' %}" method="get">
-    <button type="submit" class="btn w-64 btn-sm btn-outline mb-5">Connect to Commerzbank</button>
-</form>
+  <button id="commerzbank-button" class="btn btn-primary" onclick="handleCommerzbankConnect()">
+    Connect to Commerzbank
+</button>
 
 </div>
 
@@ -748,6 +748,33 @@
     });
 </script>
 
+<script>
+    function handleCommerzbankConnect() {
+        const isLoggedIn = localStorage.getItem('commerzbank_logged_in');
+  
+        if (isLoggedIn) {
+            // Logout logic
+            localStorage.removeItem('commerzbank_logged_in');
+            document.getElementById('commerzbank-button').innerText = "Connect to Commerzbank";
+        } else {
+            // Redirect to Commerzbank login page
+            window.location.href = "https://www.commerzbank.de/portal/de/kontakt-login/login.html";
+            
+            // Simulating login status for demo purposes
+            setTimeout(() => {
+                localStorage.setItem('commerzbank_logged_in', 'true');
+                document.getElementById('commerzbank-button').innerText = "Logout";
+            }, 3000); // Assuming login happens within 3 seconds
+        }
+    }
+  
+    // Ensure the correct button state on page load
+    document.addEventListener("DOMContentLoaded", function () {
+        if (localStorage.getItem('commerzbank_logged_in')) {
+            document.getElementById('commerzbank-button').innerText = "Logout";
+        }
+    });
+  </script>
 
 
 {% endblock %}
