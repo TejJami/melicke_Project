@@ -48,13 +48,10 @@
   <!-- Delete Button -->
   <button class="btn btn-outline btn-error" onclick="delete_property_modal.showModal()">Gebäude löschen</button>
   
-<!-- Button to trigger OAuth -->
-<a href="{% url 'authorize_commerzbank' property.id %}" class="btn btn-primary">
-    Connect to Commerzbank
-</a>
-
-
-
+    <!-- Button to trigger OAuth -->
+    <a href="{% url 'authorize_commerzbank' property.id %}" class="btn btn-primary">
+        Connect to Commerzbank
+    </a>
 
 </div>
 
@@ -69,13 +66,9 @@
 
         <hr class="my-3">
 
-        <h4 class="text-md font-bold">Account Details</h4>
-        <ul id="account-details" class="list-disc pl-5">
-            <li>Loading accounts...</li>
-        </ul>
-        <p id="account-error" class="text-red-500"></p>
-
-        <!-- New button to fetch transactions -->
+        <!-- Remove account details section -->
+        
+        <!-- Button to Fetch Transactions -->
         <button id="fetch-transactions" class="btn btn-outline btn-primary mt-3" style="display: none;">
             Fetch Transactions
         </button>
@@ -84,13 +77,10 @@
         <ul id="transaction-details" class="list-disc pl-5">
             <li>No transactions loaded yet.</li>
         </ul>
+
+        <p id="transaction-error" class="text-red-500"></p>
     </div>
 </dialog>
-
-<!-- Connect to Commerzbank Button -->
-<a href="{% url 'authorize_commerzbank' property.id %}" class="btn btn-primary">
-    Connect to Commerzbank
-</a>
 
 
 
@@ -812,43 +802,11 @@
             document.getElementById("access-token").textContent = "Authenticated";
             document.getElementById("expires-in").textContent = "Session Active";
 
-            console.log("[Commerzbank JS] 🔄 Fetching account details from /commerzbank/get_accounts/ ...");
-
-            // Fetch and display account details
-            fetch("/commerzbank/get_accounts/")
-                .then(response => response.json())
-                .then(data => {
-                    console.log("[Commerzbank JS] 📊 Received Account Data:", data);
-
-                    if (data.accounts && data.accounts.length > 0) {
-                        let accountList = document.getElementById("account-details");
-                        accountList.innerHTML = ""; // Clear previous entries
-
-                        data.accounts.forEach(account => {
-                            let accountItem = document.createElement("li");
-                            let iban = account.iban || "Unknown IBAN";
-                            let balance = account.balances ? account.balances.availableAmount : "Unknown Balance";
-
-                            accountItem.textContent = `IBAN: ${iban} - Balance: €${balance}`;
-                            accountList.appendChild(accountItem);
-                        });
-
-                        console.log("[Commerzbank JS] ✅ Account details displayed successfully.");
-                    } else {
-                        console.warn("[Commerzbank JS] ⚠️ No accounts found or API response empty.");
-                        document.getElementById("account-error").textContent = "Failed to load account details.";
-                    }
-                })
-                .catch(error => {
-                    console.error("[Commerzbank JS] ❌ Error fetching account data:", error);
-                    document.getElementById("account-error").textContent = "Error fetching account data.";
-                });
-
             // Show fetch transactions button
             fetchTransactionsButton.style.display = "block";
 
             // Show modal
-            console.log("[Commerzbank JS] 🏦 Opening modal to display authentication & account details.");
+            console.log("[Commerzbank JS] 🏦 Opening modal to display authentication.");
             commerzbankModal.showModal();
         } else {
             console.log("[Commerzbank JS] ❌ Authentication failed or user not authenticated.");
@@ -869,7 +827,11 @@
                     if (data.transactions && data.transactions.length > 0) {
                         data.transactions.forEach(txn => {
                             let txnItem = document.createElement("li");
-                            txnItem.textContent = `Date: ${txn.date}, Amount: €${txn.amount}, Description: ${txn.description}`;
+                            let date = txn.date || "Unknown Date";
+                            let amount = txn.amount || "Unknown Amount";
+                            let description = txn.description || "No Description";
+
+                            txnItem.textContent = `📅 ${date} | 💶 Amount: €${amount} | 📄 Description: ${description}`;
                             transactionList.appendChild(txnItem);
                         });
                         console.log("[Commerzbank JS] ✅ Transactions displayed successfully.");
@@ -891,6 +853,7 @@
         document.getElementById("commerzbankModal").close();
     });
 </script>
+
 
     
 
