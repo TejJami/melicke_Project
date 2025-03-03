@@ -1166,38 +1166,78 @@ from django.shortcuts import redirect, HttpResponse
 from django.conf import settings
 from django.contrib import messages
 
-# Commerzbank API OAuth URLs
+# Commerzbank API URLs
 AUTH_BASE_URL = "https://psd2.api-sandbox.commerzbank.com/berlingroup/v1"
-TOKEN_URL = f"{AUTH_BASE_URL}/token"
-AUTHORIZE_URL = f"{AUTH_BASE_URL}/auth"
+CONSENT_URL = f"{AUTH_BASE_URL}/consents"
+AUTHORIZE_URL = f"{AUTH_BASE_URL}/authorize"
 
-
-def authorize_commerzbank(request):
-    """ Redirects user to Commerzbank OAuth login """
-    print("[authorize_commerzbank] Initiating OAuth authorization...")
+def create_consent(request):
+    """Creates a consent resource at Commerzbank."""
+    print("[create_consent] Initiating consent creation...")
 
     if not settings.COMMERZBANK_CLIENT_ID or not settings.COMMERZBANK_CLIENT_SECRET:
-        print("[authorize_commerzbank] Error: Missing API credentials")
+        print("[create_consent] Error: Missing API credentials")
         return HttpResponse("Commerzbank API credentials are missing. Please check your settings.", status=500)
 
-    redirect_uri = "https://bookkeeping-mei-02eece815857.herokuapp.com/commerzbank/callback/"
+    data = {
+        "access": {
+            "accounts": [],
+            "balances": [],
+            "transactions": []
+        },
+        "recurringIndicator": True,
+        "validUntil": "2025-12-31",
+        "frequencyPerDay": 4,
+        "combinedServiceIndicator": False
+    }
+
+    headers = {
+        "Content-Type": "application/json",
+        "TPP-Redirect-URI": "https://yourapp.com/commerzbank/callback/",
+        "X-Request-ID": "unique-request-id",
+        "PSU-IP-Address": request.META.get('REMOTE_ADDR', '127.0.0.1')
+    }
+
+    response = requests.post(CONSENT_URL, json=data, headers=headers, cert=('path/to/cert.pem', 'path/to/key.pem'))
+
+    if response.status_code == 201:
+        consent_data = response.json()
+        consent_id = consent_data.get("consentId")
+        request.session["consent_id"] = consent_id
+        print(f"[create_consent] Consent created successfully. Consent ID: {consent_id}")
+        return redirect('authorize_commerzbank')
+    else:
+        error_message = response.json().get("tppMessages", [{"text": "Unknown error"}])[0]["text"]
+        print(f"[create_consent] Error creating consent: {error_message}")
+        messages.error(request, f"Consent creation failed: {error_message}")
+        return redirect("properties")
+
+def authorize_commerzbank(request):
+    """Redirects user to Commerzbank OAuth2 authorization."""
+    print("[authorize_commerzbank] Redirecting to Commerzbank for authorization...")
+
+    consent_id = request.session.get("consent_id")
+    if not consent_id:
+        print("[authorize_commerzbank] Error: Consent ID not found in session")
+        messages.error(request, "Consent ID is missing. Please initiate consent first.")
+        return redirect("properties")
 
     params = {
         "response_type": "code",
         "client_id": settings.COMMERZBANK_CLIENT_ID,
-        "redirect_uri": redirect_uri,
-        "scope": "AIS transactions",
+        "scope": "AIS",
+        "redirect_uri": "https://yourapp.com/commerzbank/callback/",
+        "state": "random_state_string",
+        "consentId": consent_id
     }
 
     auth_url = f"{AUTHORIZE_URL}?{requests.compat.urlencode(params)}"
-    print(f"[authorize_commerzbank] Redirecting user to: {auth_url}")
-
+    print(f"[authorize_commerzbank] Authorization URL: {auth_url}")
     return redirect(auth_url)
 
-
 def commerzbank_callback(request):
-    """ Handles OAuth callback and retrieves access token """
-    print("[commerzbank_callback] Handling OAuth callback...")
+    """Handles OAuth2 callback and retrieves access token."""
+    print("[commerzbank_callback] Handling OAuth2 callback...")
 
     code = request.GET.get("code")
     if not code:
@@ -1205,29 +1245,29 @@ def commerzbank_callback(request):
         messages.error(request, "No authorization code received.")
         return redirect("properties")
 
-    redirect_uri = "https://bookkeeping-mei-02eece815857.herokuapp.com/commerzbank/callback/"
-
+    token_url = f"{AUTH_BASE_URL}/token"
     data = {
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": redirect_uri,
+        "redirect_uri": "https://yourapp.com/commerzbank/callback/",
         "client_id": settings.COMMERZBANK_CLIENT_ID,
-        "client_secret": settings.COMMERZBANK_CLIENT_SECRET,
+        "client_secret": settings.COMMERZBANK_CLIENT_SECRET
     }
 
-    print("[commerzbank_callback] Requesting access token...")
-    response = requests.post(TOKEN_URL, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+
+    response = requests.post(token_url, data=data, headers=headers, cert=('path/to/cert.pem', 'path/to/key.pem'))
 
     if response.status_code == 200:
         token_data = response.json()
         request.session["access_token"] = token_data.get("access_token")
-
-        print(f"[commerzbank_callback] Authentication successful. Access token: {token_data.get('access_token')}")
-        messages.success(request, "Successfully authenticated with Commerzbank")
-
+        print(f"[commerzbank_callback] Access token retrieved: {token_data.get('access_token')}")
+        messages.success(request, "Successfully authenticated with Commerzbank.")
         return redirect("properties")
     else:
         error_message = response.json().get("error_description", "Unknown error")
-        print(f"[commerzbank_callback] Error: {error_message}")
+        print(f"[commerzbank_callback] Error retrieving access token: {error_message}")
         messages.error(request, f"Authentication failed: {error_message}")
         return redirect("properties")
