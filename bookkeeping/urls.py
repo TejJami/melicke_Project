@@ -80,4 +80,6 @@ urlpatterns = [
     # Integrate Bank api
     path('commerzbank/authorize/<int:property_id>/', views.authorize_commerzbank, name='authorize_commerzbank'),
     path('commerzbank/callback/', views.commerzbank_callback, name='commerzbank_callback'),
+    path('commerzbank/get_accounts/', views.get_commerzbank_accounts, name='get_commerzbank_accounts'),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

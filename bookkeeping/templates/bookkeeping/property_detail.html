@@ -66,8 +66,17 @@
         <p id="auth-message" class="mt-2">Authenticating...</p>
         <p><strong>Access Token:</strong> <span id="access-token"></span></p>
         <p><strong>Expires In:</strong> <span id="expires-in"></span> seconds</p>
+
+        <hr class="my-3">
+
+        <h4 class="text-md font-bold">Account Details</h4>
+        <ul id="account-details" class="list-disc pl-5">
+            <li>Loading accounts...</li>
+        </ul>
+        <p id="account-error" class="text-red-500"></p>
     </div>
 </dialog>
+
 
 
 <!-- Delete Property Modal -->
@@ -772,37 +781,49 @@
             return params;
         }
     
-        // Handle OAuth callback dynamically
         const params = getQueryParams(window.location.href);
         const commerzbankModal = document.getElementById("commerzbankModal");
     
         if (params.auth_success === "true") {
             console.log("User successfully authenticated!");
     
-            // Update modal content
+            // Show authentication message
             document.getElementById("auth-message").textContent = "Successfully Authenticated!";
             document.getElementById("access-token").textContent = "Authenticated";
             document.getElementById("expires-in").textContent = "Session Active";
     
-            // Show modal using showModal()
-            commerzbankModal.showModal();
-        } else if (params.auth_success === "false") {
-            console.log("Authentication failed:", params.error);
+            // Fetch and display account details
+            fetch("/commerzbank/get_accounts/")
+                .then(response => response.json())
+                .then(data => {
+                    if (data.accounts) {
+                        let accountList = document.getElementById("account-details");
+                        accountList.innerHTML = ""; // Clear previous entries
     
-            // Update modal content with error message
-            document.getElementById("auth-message").textContent = "Authentication Failed: " + params.error;
+                        data.accounts.forEach(account => {
+                            let accountItem = document.createElement("li");
+                            accountItem.textContent = `IBAN: ${account.iban} - Balance: €${account.balance}`;
+                            accountList.appendChild(accountItem);
+                        });
+                    } else {
+                        document.getElementById("account-error").textContent = "Failed to load account details.";
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching account data:", error);
+                    document.getElementById("account-error").textContent = "Error fetching account data.";
+                });
     
-            // Show modal using showModal()
+            // Show modal
             commerzbankModal.showModal();
         }
     });
     
-    // Close modal when clicking the close button
+    // Close modal
     document.querySelector(".close").addEventListener("click", function() {
         document.getElementById("commerzbankModal").close();
     });
     </script>
-    
-    
-    
+
+
 {% endblock %}
