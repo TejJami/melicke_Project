@@ -1237,10 +1237,10 @@ def commerzbank_callback(request):
         return JsonResponse({"error": "Authentication failed."}, status=400)
 
 def fetch_commerzbank_messages(access_token):
-    """Fetch available messages (transactions) from Commerzbank Corporate Payments API."""
-    print("[fetch_commerzbank_messages] 🔄 Fetching messages...")
+    """Fetch available messages (only camt.053 bank statements) from Commerzbank API."""
+    print("[fetch_commerzbank_messages] 🔄 Fetching bank statements (camt.053)...")
 
-    messages_url = f"{COMMERZBANK_BASE_URL}/messages"
+    messages_url = f"{COMMERZBANK_BASE_URL}/messages?OrderType=C53"  # Only camt.053
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
@@ -1248,58 +1248,64 @@ def fetch_commerzbank_messages(access_token):
 
     response = requests.get(messages_url, headers=headers)
     print(f"[fetch_commerzbank_messages] 🏦 API Response Status: {response.status_code}")
-    print(f"[fetch_commerzbank_messages] 📩 Raw Response Content: {response.text}")
 
     if response.status_code == 200:
         try:
             messages_data = response.json()
-            print(f"[fetch_commerzbank_messages] ✅ Messages Retrieved: {json.dumps(messages_data, indent=2)}")
+            print(f"[fetch_commerzbank_messages] ✅ Bank Statements Retrieved: {json.dumps(messages_data, indent=2)}")
             return messages_data
-        except json.JSONDecodeError as e:
+        except json.JSONDecodeError:
             return {"error": "Invalid JSON response from Commerzbank API."}
     else:
         return {"error": f"Failed to retrieve messages. Status: {response.status_code}"}
 
+
 def get_commerzbank_transactions(request):
-    """Fetches transactions based on available messages."""
-    print("[get_commerzbank_transactions] 🔄 Fetching transactions...")
+    """Fetches transactions from bank statements (camt.053)."""
+    print("[get_commerzbank_transactions] 🔄 Fetching bank transactions...")
 
     access_token = request.session.get("access_token")
     if not access_token:
         return JsonResponse({"error": "User not authenticated."}, status=401)
 
     messages_data = fetch_commerzbank_messages(access_token)
-
     if "error" in messages_data:
         return JsonResponse({"error": messages_data["error"]}, status=400)
 
     transactions = []
-    for message in messages_data.get("messages", []):
+    for message in messages_data:
         message_id = message.get("MessageId")
         if message_id:
-            transaction_details = fetch_message_details(access_token, message_id)
-            transactions.append(transaction_details)
+            statement_details = fetch_message_details(access_token, message_id)
+            
+            # Extract transactions from camt.053
+            transactions.extend(extract_transactions_from_camt(statement_details))
 
     return JsonResponse({"transactions": transactions})
 
-def fetch_message_details(access_token, message_id):
-    """Fetch detailed transactions for a specific message ID."""
-    print(f"[fetch_message_details] 🔄 Fetching details for message ID: {message_id}")
+def extract_transactions_from_camt(statement_details):
+    """Extract transactions from camt.053 bank statement XML response."""
+    try:
+        transactions = []
+        import xml.etree.ElementTree as ET
 
-    message_url = f"{COMMERZBANK_BASE_URL}/messages/{message_id}"
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json",
-    }
+        root = ET.fromstring(statement_details)
+        ns = {'ns': "urn:iso:std:iso:20022:tech:xsd:camt.053.001.08"}
 
-    response = requests.get(message_url, headers=headers)
-    print(f"[fetch_message_details] 🏦 API Response Status: {response.status_code}")
+        # Iterate through each transaction
+        for entry in root.findall(".//ns:Stmt/ns:Ntry", ns):
+            amount = entry.find("ns:Amt", ns).text
+            currency = entry.find("ns:Amt", ns).attrib.get("Ccy", "EUR")
+            date = entry.find("ns:BookgDt/ns:Dt", ns).text
+            description = entry.find("ns:AddtlNtryInf", ns).text
 
-    if response.status_code == 200:
-        try:
-            details_data = response.json()
-            return details_data
-        except json.JSONDecodeError as e:
-            return {"error": f"Invalid JSON response for message ID {message_id}."}
-    else:
-        return {"error": f"Failed to retrieve details for message ID {message_id}. Status: {response.status_code}"}
+            transactions.append({
+                "date": date,
+                "amount": f"{amount} {currency}",
+                "description": description
+            })
+
+        return transactions
+    except Exception as e:
+        print(f"[extract_transactions_from_camt] ❌ Error parsing camt.053: {e}")
+        return []

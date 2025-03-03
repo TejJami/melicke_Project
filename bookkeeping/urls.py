@@ -77,11 +77,8 @@ urlpatterns = [
     # Fetch unit tenant data
     path('fetch_unit_tenant_data/', views.fetch_unit_tenant_data, name='fetch_unit_tenant_data'),
     
-    # OAuth Authentication Endpoints
-    path('commerzbank/authorize/<int:property_id>/', views.authorize_commerzbank, name='authorize_commerzbank'),
+    path('authorize_commerzbank/<int:property_id>/', views.authorize_commerzbank, name='authorize_commerzbank'),
     path('commerzbank/callback/', views.commerzbank_callback, name='commerzbank_callback'),
-
-    # Fetch Transactions Separately
     path('commerzbank/get_transactions/', views.get_commerzbank_transactions, name='get_commerzbank_transactions'),
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

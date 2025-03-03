@@ -66,19 +66,18 @@
 
         <hr class="my-3">
 
-        <!-- Remove account details section -->
-        
-        <!-- Button to Fetch Transactions -->
-        <button id="fetch-transactions" class="btn btn-outline btn-primary mt-3" style="display: none;">
-            Fetch Transactions
-        </button>
+<!-- Fetch Transactions Button -->
+    <button id="fetch-transactions" class="btn btn-outline btn-primary mt-3">
+        Fetch Transactions
+    </button>
 
-        <h4 class="text-md font-bold mt-4">Transactions</h4>
-        <ul id="transaction-details" class="list-disc pl-5">
-            <li>No transactions loaded yet.</li>
-        </ul>
+    <h4 class="text-md font-bold mt-4">Transactions</h4>
+    <ul id="transaction-details" class="list-disc pl-5">
+        <li>No transactions loaded yet.</li>
+    </ul>
 
-        <p id="transaction-error" class="text-red-500"></p>
+    <p id="transaction-error" class="text-red-500"></p>
+
     </div>
 </dialog>
 
@@ -813,39 +812,36 @@
         }
 
         // Fetch transactions when button is clicked
-        fetchTransactionsButton.addEventListener("click", function () {
-            console.log("[Commerzbank JS] 🔄 Fetching transactions from /commerzbank/get_transactions/ ...");
+        document.addEventListener("DOMContentLoaded", function () {
+    const fetchTransactionsButton = document.getElementById("fetch-transactions");
+    const transactionList = document.getElementById("transaction-details");
+    const transactionError = document.getElementById("transaction-error");
 
-            fetch("/commerzbank/get_transactions/")
-                .then(response => response.json())
-                .then(data => {
-                    console.log("[Commerzbank JS] 📊 Received Transactions Data:", data);
+    fetchTransactionsButton.addEventListener("click", function () {
+        console.log("[Commerzbank JS] 🔄 Fetching bank statement transactions...");
 
-                    let transactionList = document.getElementById("transaction-details");
-                    transactionList.innerHTML = ""; // Clear previous entries
-
-                    if (data.transactions && data.transactions.length > 0) {
-                        data.transactions.forEach(txn => {
-                            let txnItem = document.createElement("li");
-                            let date = txn.date || "Unknown Date";
-                            let amount = txn.amount || "Unknown Amount";
-                            let description = txn.description || "No Description";
-
-                            txnItem.textContent = `📅 ${date} | 💶 Amount: €${amount} | 📄 Description: ${description}`;
-                            transactionList.appendChild(txnItem);
-                        });
-                        console.log("[Commerzbank JS] ✅ Transactions displayed successfully.");
-                    } else {
-                        transactionList.innerHTML = "<li>No transactions found.</li>";
-                        console.warn("[Commerzbank JS] ⚠️ No transactions found.");
-                    }
-                })
-                .catch(error => {
-                    console.error("[Commerzbank JS] ❌ Error fetching transactions:", error);
-                    document.getElementById("account-error").textContent = "Error fetching transactions.";
-                });
-        });
+        fetch("/commerzbank/get_transactions/")
+            .then(response => response.json())
+            .then(data => {
+                transactionList.innerHTML = "";
+                
+                if (data.transactions && data.transactions.length > 0) {
+                    data.transactions.forEach(txn => {
+                        let txnItem = document.createElement("li");
+                        txnItem.innerHTML = `📅 ${txn.date} | 💶 <strong>${txn.amount}</strong> | 📄 ${txn.description}`;
+                        transactionList.appendChild(txnItem);
+                    });
+                } else {
+                    transactionList.innerHTML = "<li>No transactions found.</li>";
+                }
+            })
+            .catch(error => {
+                console.error("[Commerzbank JS] ❌ Error fetching transactions:", error);
+                transactionError.textContent = "Error fetching transactions.";
+            });
     });
+});
+
 
     // Close modal
     document.querySelector(".close").addEventListener("click", function() {
