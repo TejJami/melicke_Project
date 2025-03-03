@@ -1259,14 +1259,14 @@ def fetch_commerzbank_messages(access_token):
     else:
         return {"error": f"Failed to retrieve messages. Status: {response.status_code}"}
 
-
-from django.http import JsonResponse
 import requests
+from django.http import JsonResponse
+from django.conf import settings
 
 COMMERZBANK_BASE_URL = "https://api-sandbox.commerzbank.com/corporate-payments-api/1/v1/bulk-payments"
 
 def get_commerzbank_transactions(request):
-    """Fetches C53 bank statement transactions using a direct URL call."""
+    """Fetches C53 bank statement transactions."""
     print("[get_commerzbank_transactions] 🔄 Fetching bank statements...")
 
     access_token = request.session.get("access_token")
@@ -1284,16 +1284,24 @@ def get_commerzbank_transactions(request):
     response = requests.get(f"{COMMERZBANK_BASE_URL}/messages?OrderType=C53", headers=headers)
 
     if response.status_code != 200:
-        return JsonResponse({"error": "Failed to retrieve messages."}, status=response.status_code)
+        return JsonResponse({"error": "Failed to retrieve messages.", "status": response.status_code}, status=response.status_code)
 
     messages_data = response.json()
-    messages = messages_data.get("messages", [])
+
+    # ✅ Check if response is a list
+    if isinstance(messages_data, list):
+        messages = messages_data  # Assign it directly
+    else:
+        messages = messages_data.get("messages", [])  # Fallback if API changes
 
     transactions = []
 
     # Step 2: Fetch bank statement details for each message ID
     for message in messages:
-        message_id = message["MessageId"]
+        message_id = message.get("MessageId")  # Ensure it's a dict before accessing
+        if not message_id:
+            continue
+
         statement_url = f"{COMMERZBANK_BASE_URL}/messages/{message_id}"
         statement_response = requests.get(statement_url, headers=headers)
 
