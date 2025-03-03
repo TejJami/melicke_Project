@@ -81,6 +81,4 @@ urlpatterns = [
     path('commerzbank/consent/', views.create_consent, name='create_consent'),
     path('commerzbank/authorize/', views.authorize_commerzbank, name='authorize_commerzbank'),
     path('commerzbank/callback/', views.commerzbank_callback, name='commerzbank_callback'),
-]
-
-]  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
