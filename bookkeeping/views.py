@@ -1171,13 +1171,16 @@ AUTH_BASE_URL = "https://api-sandbox.commerzbank.com/auth/realms/sandbox/protoco
 AUTHORIZE_URL = f"{AUTH_BASE_URL}/auth"
 TOKEN_URL = f"{AUTH_BASE_URL}/token"
 
-def authorize_commerzbank(request):
+def authorize_commerzbank(request, property_id):
     """Redirects user to Commerzbank OAuth2 login."""
-    print("[authorize_commerzbank] Redirecting to Commerzbank for authorization...")
+    print(f"[authorize_commerzbank] Redirecting to Commerzbank for authorization (Property ID: {property_id})")
 
     if not settings.COMMERZBANK_CLIENT_ID or not settings.COMMERZBANK_CLIENT_SECRET:
         print("[authorize_commerzbank] Error: Missing API credentials")
         return HttpResponse("Commerzbank API credentials are missing. Please check your settings.", status=500)
+
+    # Store property_id in session so we can use it after authentication
+    request.session["property_id"] = property_id
 
     params = {
         "response_type": "code",
@@ -1190,48 +1193,25 @@ def authorize_commerzbank(request):
     print(f"[authorize_commerzbank] Authorization URL: {auth_url}")
     return redirect(auth_url)
 
-import json
+from django.shortcuts import redirect
+from urllib.parse import urlencode
 
 def commerzbank_callback(request):
     """Handles OAuth2 callback and retrieves access token."""
     print("[commerzbank_callback] Handling OAuth2 callback...")
 
     code = request.GET.get("code")
+    property_id = request.session.get("property_id")  # Retrieve property ID from session
+
     if not code:
         print("[commerzbank_callback] Error: No authorization code received")
-        return HttpResponse(json.dumps({"error": "No authorization code received."}), content_type="application/json", status=400)
+        messages.error(request, "No authorization code received.")
+        return redirect("properties")  # Redirect to properties if there's an error
 
-    data = {
-        "grant_type": "authorization_code",
-        "code": code,
-        "redirect_uri": settings.COMMERZBANK_REDIRECT_URI,
-        "client_id": settings.COMMERZBANK_CLIENT_ID,
-        "client_secret": settings.COMMERZBANK_CLIENT_SECRET,
-    }
+    if not property_id:
+        print("[commerzbank_callback] Error: Property ID not found in session")
+        return redirect("properties")  # Fallback if property_id is missing
 
-    headers = {
-        "Content-Type": "application/x-www-form-urlencoded"
-    }
-
-    response = requests.post(TOKEN_URL, data=data, headers=headers)
-
-    if response.status_code == 200:
-        token_data = response.json()
-        request.session["access_token"] = token_data.get("access_token")
-        request.session["refresh_token"] = token_data.get("refresh_token")
-
-        print(f"[commerzbank_callback] Access token retrieved: {token_data.get('access_token')}")
-
-        # Return a JSON response instead of redirecting
-        return HttpResponse(json.dumps({
-            "success": True,
-            "access_token": token_data.get("access_token"),
-            "expires_in": token_data.get("expires_in"),
-            "refresh_token": token_data.get("refresh_token"),
-        }), content_type="application/json")
-    
-    else:
-        error_message = response.json().get("error_description", "Unknown error")
-        print(f"[commerzbank_callback] Error retrieving access token: {error_message}")
-
-        return HttpResponse(json.dumps({"error": f"Authentication failed: {error_message}"}), content_type="application/json", status=400)
+    # Instead of returning JSON, redirect back to property detail page with code
+    query_params = urlencode({"code": code})
+    return redirect(f"/property/{property_id}/?{query_params}")

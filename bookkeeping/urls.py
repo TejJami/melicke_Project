@@ -78,6 +78,6 @@ urlpatterns = [
     path('fetch_unit_tenant_data/', views.fetch_unit_tenant_data, name='fetch_unit_tenant_data'),
     
     # Integrate Bank api
-    path('commerzbank/authorize/', views.authorize_commerzbank, name='authorize_commerzbank'),
+    path('commerzbank/authorize/<int:property_id>/', views.authorize_commerzbank, name='authorize_commerzbank'),
     path('commerzbank/callback/', views.commerzbank_callback, name='commerzbank_callback'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
