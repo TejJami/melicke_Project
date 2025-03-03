@@ -772,6 +772,8 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
+        console.log("[Commerzbank JS] 🔄 Page Loaded, checking authentication status...");
+
         function getQueryParams(url) {
             let params = {};
             let parser = new URL(url);
@@ -780,50 +782,66 @@
             });
             return params;
         }
-    
+
         const params = getQueryParams(window.location.href);
         const commerzbankModal = document.getElementById("commerzbankModal");
-    
+
+        console.log("[Commerzbank JS] 📩 Query Parameters:", params);
+
         if (params.auth_success === "true") {
-            console.log("User successfully authenticated!");
-    
+            console.log("[Commerzbank JS] ✅ User successfully authenticated!");
+
             // Show authentication message
             document.getElementById("auth-message").textContent = "Successfully Authenticated!";
             document.getElementById("access-token").textContent = "Authenticated";
             document.getElementById("expires-in").textContent = "Session Active";
-    
+
+            console.log("[Commerzbank JS] 🔄 Fetching account details from /commerzbank/get_accounts/ ...");
+
             // Fetch and display account details
             fetch("/commerzbank/get_accounts/")
-                .then(response => response.json())
+                .then(response => {
+                    console.log("[Commerzbank JS] 📡 API Response Status:", response.status);
+                    return response.json();
+                })
                 .then(data => {
-                    if (data.accounts) {
+                    console.log("[Commerzbank JS] 📊 Received Account Data:", data);
+
+                    if (data.accounts && data.accounts.length > 0) {
                         let accountList = document.getElementById("account-details");
                         accountList.innerHTML = ""; // Clear previous entries
-    
+
                         data.accounts.forEach(account => {
                             let accountItem = document.createElement("li");
                             accountItem.textContent = `IBAN: ${account.iban} - Balance: €${account.balance}`;
                             accountList.appendChild(accountItem);
                         });
+
+                        console.log("[Commerzbank JS] ✅ Account details displayed successfully.");
                     } else {
+                        console.warn("[Commerzbank JS] ⚠️ No accounts found or API response empty.");
                         document.getElementById("account-error").textContent = "Failed to load account details.";
                     }
                 })
                 .catch(error => {
-                    console.error("Error fetching account data:", error);
+                    console.error("[Commerzbank JS] ❌ Error fetching account data:", error);
                     document.getElementById("account-error").textContent = "Error fetching account data.";
                 });
-    
+
             // Show modal
+            console.log("[Commerzbank JS] 🏦 Opening modal to display authentication & account details.");
             commerzbankModal.showModal();
+        } else {
+            console.log("[Commerzbank JS] ❌ Authentication failed or user not authenticated.");
         }
     });
-    
+
     // Close modal
     document.querySelector(".close").addEventListener("click", function() {
+        console.log("[Commerzbank JS] ❌ Closing modal.");
         document.getElementById("commerzbankModal").close();
     });
-    </script>
+</script>
 
 
 {% endblock %}
