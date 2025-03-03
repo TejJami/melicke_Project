@@ -157,3 +157,20 @@ django_heroku.settings(locals(), test_runner=False)
 COMMERZBANK_CLIENT_ID=os.getenv('COMMERZBANK_CLIENT_ID')
 COMMERZBANK_CLIENT_SECRET= os.getenv('COMMERZBANK_CLIENT_SECRET')
 COMMERZBANK_API_BASE=os.getenv('COMMERZBANK_API_BASE')
+
+import os
+import base64
+
+# Load Base64-encoded certificate from environment variable
+COMMERZBANK_CERT_BASE64 = os.getenv("COMMERZBANK_CERT", "")
+
+# Decode and write certificate to a temporary file if available
+if COMMERZBANK_CERT_BASE64:
+    cert_path = "/tmp/commerzbank_cert.pem"  # Temporary file for Heroku
+    with open(cert_path, "wb") as cert_file:
+        cert_file.write(base64.b64decode(COMMERZBANK_CERT_BASE64))
+else:
+    cert_path = None  # No certificate available
+
+# Store certificate path in settings
+COMMERZBANK_CERT_PATH = cert_path

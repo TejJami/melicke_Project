@@ -1172,12 +1172,11 @@ CONSENT_URL = f"{AUTH_BASE_URL}/consents"
 AUTHORIZE_URL = f"{AUTH_BASE_URL}/authorize"
 
 def create_consent(request):
-    """Creates a consent resource at Commerzbank."""
+    """Creates a consent resource at Commerzbank with certificate authentication."""
     print("[create_consent] Initiating consent creation...")
 
     if not settings.COMMERZBANK_CLIENT_ID or not settings.COMMERZBANK_CLIENT_SECRET:
-        print("[create_consent] Error: Missing API credentials")
-        return HttpResponse("Commerzbank API credentials are missing. Please check your settings.", status=500)
+        return HttpResponse("Commerzbank API credentials are missing.", status=500)
 
     data = {
         "access": {
@@ -1198,19 +1197,29 @@ def create_consent(request):
         "PSU-IP-Address": request.META.get('REMOTE_ADDR', '127.0.0.1')
     }
 
-    response = requests.post(CONSENT_URL, json=data, headers=headers, cert=('path/to/cert.pem', 'path/to/key.pem'))
+    try:
+        response = requests.post(
+            "https://psd2.api-sandbox.commerzbank.com/berlingroup/v1/consents",
+            json=data,
+            headers=headers,
+            verify=settings.COMMERZBANK_CERT_PATH if settings.COMMERZBANK_CERT_PATH else True,  # Use the certificate if available
+        )
 
-    if response.status_code == 201:
-        consent_data = response.json()
-        consent_id = consent_data.get("consentId")
-        request.session["consent_id"] = consent_id
-        print(f"[create_consent] Consent created successfully. Consent ID: {consent_id}")
-        return redirect('authorize_commerzbank')
-    else:
-        error_message = response.json().get("tppMessages", [{"text": "Unknown error"}])[0]["text"]
-        print(f"[create_consent] Error creating consent: {error_message}")
-        messages.error(request, f"Consent creation failed: {error_message}")
-        return redirect("properties")
+        if response.status_code == 201:
+            consent_data = response.json()
+            request.session["consent_id"] = consent_data.get("consentId")
+            print(f"[create_consent] Consent created successfully: {consent_data}")
+            return redirect('authorize_commerzbank')
+
+        else:
+            error_message = response.json().get("tppMessages", [{"text": "Unknown error"}])[0]["text"]
+            print(f"[create_consent] Error: {error_message}")
+            messages.error(request, f"Consent creation failed: {error_message}")
+            return redirect("properties")
+
+    except requests.exceptions.RequestException as e:
+        print(f"[create_consent] Request error: {e}")
+        return HttpResponse("Error while connecting to Commerzbank.", status=500)
 
 def authorize_commerzbank(request):
     """Redirects user to Commerzbank OAuth2 authorization."""
