@@ -762,10 +762,8 @@
     });
 </script>
 
-
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        // Function to extract query parameters from URL
         function getQueryParams(url) {
             let params = {};
             let parser = new URL(url);
@@ -777,39 +775,30 @@
     
         // Handle OAuth callback dynamically
         const params = getQueryParams(window.location.href);
-        if (params.code) {
-            console.log("OAuth code detected, fetching access token...");
+        if (params.auth_success === "true") {
+            console.log("User successfully authenticated!");
     
-            fetch(`/commerzbank/callback/?code=${params.code}`, {
-                method: "GET",
-                headers: { "X-Requested-With": "XMLHttpRequest" }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById("auth-message").textContent = "Successfully Authenticated!";
-                    document.getElementById("access-token").textContent = data.access_token;
-                    document.getElementById("expires-in").textContent = data.expires_in;
+            // Show success message in modal
+            document.getElementById("auth-message").textContent = "Successfully Authenticated!";
+            document.getElementById("access-token").textContent = "Authenticated";
+            document.getElementById("expires-in").textContent = "Session Active";
     
-                    // Show modal with authentication details
-                    document.getElementById("commerzbankModal").style.display = "block";
-                } else {
-                    document.getElementById("auth-message").textContent = "Authentication Failed: " + data.error;
-                    document.getElementById("commerzbankModal").style.display = "block";
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                document.getElementById("auth-message").textContent = "Authentication Failed. Try Again.";
-                document.getElementById("commerzbankModal").style.display = "block";
-            });
+            // Show modal
+            document.getElementById("commerzbankModal").style.display = "block";
+        } else if (params.auth_success === "false") {
+            console.log("Authentication failed:", params.error);
+    
+            // Show error message in modal
+            document.getElementById("auth-message").textContent = "Authentication Failed: " + params.error;
+            document.getElementById("commerzbankModal").style.display = "block";
         }
     });
     
-    // Close the modal
+    // Close modal on click
     document.querySelector(".close").addEventListener("click", function() {
         document.getElementById("commerzbankModal").style.display = "none";
     });
     </script>
+    
     
 {% endblock %}

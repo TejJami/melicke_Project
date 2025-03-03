@@ -1165,6 +1165,7 @@ import requests
 from django.shortcuts import redirect, HttpResponse
 from django.conf import settings
 from django.contrib import messages
+from urllib.parse import urlencode
 
 # Commerzbank OAuth2 Endpoints
 AUTH_BASE_URL = "https://api-sandbox.commerzbank.com/auth/realms/sandbox/protocol/openid-connect"
@@ -1182,19 +1183,19 @@ def authorize_commerzbank(request, property_id):
     # Store property_id in session so we can use it after authentication
     request.session["property_id"] = property_id
 
+    # Generate a state parameter for security
+    state = "secure_random_string"  # You should use a real CSRF token mechanism
+
     params = {
         "response_type": "code",
         "client_id": settings.COMMERZBANK_CLIENT_ID,
         "redirect_uri": settings.COMMERZBANK_REDIRECT_URI,
-        "state": "random_state_string"
+        "state": state
     }
 
     auth_url = f"{AUTHORIZE_URL}?{requests.compat.urlencode(params)}"
     print(f"[authorize_commerzbank] Authorization URL: {auth_url}")
     return redirect(auth_url)
-
-from django.shortcuts import redirect
-from urllib.parse import urlencode
 
 def commerzbank_callback(request):
     """Handles OAuth2 callback and retrieves access token."""
@@ -1210,8 +1211,40 @@ def commerzbank_callback(request):
 
     if not property_id:
         print("[commerzbank_callback] Error: Property ID not found in session")
+        messages.error(request, "Property ID is missing.")
         return redirect("properties")  # Fallback if property_id is missing
 
-    # Instead of returning JSON, redirect back to property detail page with code
-    query_params = urlencode({"code": code})
-    return redirect(f"/property/{property_id}/?{query_params}")
+    # Exchange authorization code for an access token
+    data = {
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": settings.COMMERZBANK_REDIRECT_URI,
+        "client_id": settings.COMMERZBANK_CLIENT_ID,
+        "client_secret": settings.COMMERZBANK_CLIENT_SECRET,
+    }
+
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+
+    response = requests.post(TOKEN_URL, data=data, headers=headers)
+
+    if response.status_code == 200:
+        token_data = response.json()
+        request.session["access_token"] = token_data.get("access_token")
+        request.session["refresh_token"] = token_data.get("refresh_token")
+
+        print(f"[commerzbank_callback] Access token retrieved: {token_data.get('access_token')}")
+        
+        # Redirect back to property detail page with the authentication status
+        query_params = urlencode({"code": code, "auth_success": "true"})
+        return redirect(f"/property/{property_id}/?{query_params}")
+    
+    else:
+        error_message = response.json().get("error_description", "Unknown error")
+        print(f"[commerzbank_callback] Error retrieving access token: {error_message}")
+        messages.error(request, f"Authentication failed: {error_message}")
+
+        # Redirect back with error message
+        query_params = urlencode({"auth_success": "false", "error": error_message})
+        return redirect(f"/property/{property_id}/?{query_params}")
