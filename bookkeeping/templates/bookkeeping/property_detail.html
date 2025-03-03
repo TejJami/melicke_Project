@@ -58,17 +58,16 @@
 
 </div>
 
-<!-- Modal for Authentication Details -->
-<div id="commerzbankModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <span class="close">&times;</span>
-        <h3>Commerzbank Authentication</h3>
-        <p id="auth-message">Authenticating...</p>
+<!-- Commerzbank Authentication Modal -->
+<dialog id="commerzbankModal" class="modal">
+    <div class="modal-box">
+        <button class="close btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+        <h3 class="text-lg font-bold">Commerzbank Authentication</h3>
+        <p id="auth-message" class="mt-2">Authenticating...</p>
         <p><strong>Access Token:</strong> <span id="access-token"></span></p>
         <p><strong>Expires In:</strong> <span id="expires-in"></span> seconds</p>
     </div>
-</div>
-
+</dialog>
 
 
 <!-- Delete Property Modal -->
@@ -775,30 +774,35 @@
     
         // Handle OAuth callback dynamically
         const params = getQueryParams(window.location.href);
+        const commerzbankModal = document.getElementById("commerzbankModal");
+    
         if (params.auth_success === "true") {
             console.log("User successfully authenticated!");
     
-            // Show success message in modal
+            // Update modal content
             document.getElementById("auth-message").textContent = "Successfully Authenticated!";
             document.getElementById("access-token").textContent = "Authenticated";
             document.getElementById("expires-in").textContent = "Session Active";
     
-            // Show modal
-            document.getElementById("commerzbankModal").style.display = "block";
+            // Show modal using showModal()
+            commerzbankModal.showModal();
         } else if (params.auth_success === "false") {
             console.log("Authentication failed:", params.error);
     
-            // Show error message in modal
+            // Update modal content with error message
             document.getElementById("auth-message").textContent = "Authentication Failed: " + params.error;
-            document.getElementById("commerzbankModal").style.display = "block";
+    
+            // Show modal using showModal()
+            commerzbankModal.showModal();
         }
     });
     
-    // Close modal on click
+    // Close modal when clicking the close button
     document.querySelector(".close").addEventListener("click", function() {
-        document.getElementById("commerzbankModal").style.display = "none";
+        document.getElementById("commerzbankModal").close();
     });
     </script>
+    
     
     
 {% endblock %}
