@@ -1166,78 +1166,24 @@ from django.shortcuts import redirect, HttpResponse
 from django.conf import settings
 from django.contrib import messages
 
-# Commerzbank API URLs
-AUTH_BASE_URL = "https://psd2.api-sandbox.commerzbank.com/berlingroup/v1"
-CONSENT_URL = f"{AUTH_BASE_URL}/consents"
-AUTHORIZE_URL = f"{AUTH_BASE_URL}/authorize"
-
-def create_consent(request):
-    """Creates a consent resource at Commerzbank with certificate authentication."""
-    print("[create_consent] Initiating consent creation...")
-
-    if not settings.COMMERZBANK_CLIENT_ID or not settings.COMMERZBANK_CLIENT_SECRET:
-        return HttpResponse("Commerzbank API credentials are missing.", status=500)
-
-    data = {
-        "access": {
-            "accounts": [],
-            "balances": [],
-            "transactions": []
-        },
-        "recurringIndicator": True,
-        "validUntil": "2025-12-31",
-        "frequencyPerDay": 4,
-        "combinedServiceIndicator": False
-    }
-
-    headers = {
-        "Content-Type": "application/json",
-        "TPP-Redirect-URI": "https://yourapp.com/commerzbank/callback/",
-        "X-Request-ID": "unique-request-id",
-        "PSU-IP-Address": request.META.get('REMOTE_ADDR', '127.0.0.1')
-    }
-
-    try:
-        response = requests.post(
-            "https://psd2.api-sandbox.commerzbank.com/berlingroup/v1/consents",
-            json=data,
-            headers=headers,
-            verify=settings.COMMERZBANK_CERT_PATH if settings.COMMERZBANK_CERT_PATH else True,  # Use the certificate if available
-        )
-
-        if response.status_code == 201:
-            consent_data = response.json()
-            request.session["consent_id"] = consent_data.get("consentId")
-            print(f"[create_consent] Consent created successfully: {consent_data}")
-            return redirect('authorize_commerzbank')
-
-        else:
-            error_message = response.json().get("tppMessages", [{"text": "Unknown error"}])[0]["text"]
-            print(f"[create_consent] Error: {error_message}")
-            messages.error(request, f"Consent creation failed: {error_message}")
-            return redirect("properties")
-
-    except requests.exceptions.RequestException as e:
-        print(f"[create_consent] Request error: {e}")
-        return HttpResponse("Error while connecting to Commerzbank.", status=500)
+# Commerzbank OAuth2 Endpoints
+AUTH_BASE_URL = "https://api-sandbox.commerzbank.com/auth/realms/sandbox/protocol/openid-connect"
+AUTHORIZE_URL = f"{AUTH_BASE_URL}/auth"
+TOKEN_URL = f"{AUTH_BASE_URL}/token"
 
 def authorize_commerzbank(request):
-    """Redirects user to Commerzbank OAuth2 authorization."""
+    """Redirects user to Commerzbank OAuth2 login."""
     print("[authorize_commerzbank] Redirecting to Commerzbank for authorization...")
 
-    consent_id = request.session.get("consent_id")
-    if not consent_id:
-        print("[authorize_commerzbank] Error: Consent ID not found in session")
-        messages.error(request, "Consent ID is missing. Please initiate consent first.")
-        return redirect("properties")
+    if not settings.COMMERZBANK_CLIENT_ID or not settings.COMMERZBANK_CLIENT_SECRET:
+        print("[authorize_commerzbank] Error: Missing API credentials")
+        return HttpResponse("Commerzbank API credentials are missing. Please check your settings.", status=500)
 
     params = {
         "response_type": "code",
         "client_id": settings.COMMERZBANK_CLIENT_ID,
-        "scope": "AIS",
-        "redirect_uri": "https://yourapp.com/commerzbank/callback/",
-        "state": "random_state_string",
-        "consentId": consent_id
+        "redirect_uri": settings.COMMERZBANK_REDIRECT_URI,
+        "state": "random_state_string"
     }
 
     auth_url = f"{AUTHORIZE_URL}?{requests.compat.urlencode(params)}"
@@ -1254,24 +1200,25 @@ def commerzbank_callback(request):
         messages.error(request, "No authorization code received.")
         return redirect("properties")
 
-    token_url = f"{AUTH_BASE_URL}/token"
     data = {
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": "https://yourapp.com/commerzbank/callback/",
+        "redirect_uri": settings.COMMERZBANK_REDIRECT_URI,
         "client_id": settings.COMMERZBANK_CLIENT_ID,
-        "client_secret": settings.COMMERZBANK_CLIENT_SECRET
+        "client_secret": settings.COMMERZBANK_CLIENT_SECRET,
     }
 
     headers = {
         "Content-Type": "application/x-www-form-urlencoded"
     }
 
-    response = requests.post(token_url, data=data, headers=headers, cert=('path/to/cert.pem', 'path/to/key.pem'))
+    response = requests.post(TOKEN_URL, data=data, headers=headers)
 
     if response.status_code == 200:
         token_data = response.json()
         request.session["access_token"] = token_data.get("access_token")
+        request.session["refresh_token"] = token_data.get("refresh_token")
+
         print(f"[commerzbank_callback] Access token retrieved: {token_data.get('access_token')}")
         messages.success(request, "Successfully authenticated with Commerzbank.")
         return redirect("properties")
