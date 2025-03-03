@@ -1160,13 +1160,11 @@ def ust_view(request, property_id):
     return render(request, 'bookkeeping/ust.html', context)
 
 #################################################################
-
 import requests
 import json
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.conf import settings
-from django.contrib import messages
 from urllib.parse import urlencode
 
 # Commerzbank OAuth2 Endpoints
@@ -1179,46 +1177,32 @@ def authorize_commerzbank(request, property_id):
     print(f"[authorize_commerzbank] Redirecting to Commerzbank for authorization (Property ID: {property_id})")
 
     if not settings.COMMERZBANK_CLIENT_ID or not settings.COMMERZBANK_CLIENT_SECRET:
-        print("[authorize_commerzbank] ❌ Error: Missing API credentials")
-        return HttpResponse("Commerzbank API credentials are missing. Please check your settings.", status=500)
+        return JsonResponse({"error": "Missing API credentials"}, status=500)
 
-    # Store property_id in session
-    request.session["property_id"] = property_id
-
-    # Generate a state parameter for security
-    state = "secure_random_string"  # You should use a real CSRF token mechanism
+    request.session["property_id"] = property_id  # Store property ID in session
 
     params = {
         "response_type": "code",
         "client_id": settings.COMMERZBANK_CLIENT_ID,
         "redirect_uri": settings.COMMERZBANK_REDIRECT_URI,
-        "state": state
+        "state": "secure_random_string"
     }
 
     auth_url = f"{AUTHORIZE_URL}?{requests.compat.urlencode(params)}"
-    print(f"[authorize_commerzbank] 🔗 Redirecting user to: {auth_url}")
+    print(f"[authorize_commerzbank] Redirecting user to: {auth_url}")
     return redirect(auth_url)
 
-
 def commerzbank_callback(request):
-    """Handles OAuth2 callback, retrieves access token, and fetches account details."""
-    print("[commerzbank_callback] 🔄 Handling OAuth2 callback...")
+    """Handles OAuth2 callback and retrieves access token."""
+    print("[commerzbank_callback] Handling OAuth2 callback...")
 
     code = request.GET.get("code")
     property_id = request.session.get("property_id")
 
-    print(f"[commerzbank_callback] 🏠 Property ID from session: {property_id}")
-    print(f"[commerzbank_callback] 📩 Authorization Code received: {code}")
+    if not code or not property_id:
+        return JsonResponse({"error": "Authorization code or property ID missing"}, status=400)
 
-    if not code:
-        print("[commerzbank_callback] ❌ Error: No authorization code received")
-        return JsonResponse({"error": "No authorization code received."}, status=400)
-
-    if not property_id:
-        print("[commerzbank_callback] ❌ Error: Property ID not found in session")
-        return JsonResponse({"error": "Property ID missing."}, status=400)
-
-    # Exchange authorization code for an access token
+    # Exchange authorization code for access token
     data = {
         "grant_type": "authorization_code",
         "code": code,
@@ -1227,88 +1211,42 @@ def commerzbank_callback(request):
         "client_secret": settings.COMMERZBANK_CLIENT_SECRET,
     }
 
-    headers = {"Content-Type": "application/x-www-form-urlencoded"}
-    print("[commerzbank_callback] 🔄 Requesting access token...")
-    response = requests.post(TOKEN_URL, data=data, headers=headers)
+    response = requests.post(TOKEN_URL, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
 
     if response.status_code == 200:
         token_data = response.json()
-        access_token = token_data.get("access_token")
-        print(f"[commerzbank_callback] ✅ Access Token Retrieved: {access_token[:10]}...")
+        request.session["access_token"] = token_data.get("access_token")
 
-        # Store access token in session
-        request.session["access_token"] = access_token
-        request.session["refresh_token"] = token_data.get("refresh_token")
+        print(f"[commerzbank_callback] Access Token Retrieved: {token_data.get('access_token')[:10]}...")
 
-        # Fetch and store account details
-        account_data = fetch_commerzbank_accounts(access_token)
-        request.session["commerzbank_accounts"] = account_data
-        print(f"[commerzbank_callback] 💰 Account Data Stored in Session: {account_data}")
+        # Fetch and store account transactions from Corporate Payments API
+        transactions_data = fetch_commerzbank_transactions(request.session["access_token"])
+        request.session["commerzbank_transactions"] = transactions_data
 
-        # Redirect back to property detail page
-        query_params = urlencode({"auth_success": "true"})
-        return redirect(f"/property/{property_id}/?{query_params}")
+        return redirect(f"/property/{property_id}/?auth_success=true")
 
-    else:
-        error_message = response.json().get("error_description", "Unknown error")
-        print(f"[commerzbank_callback] ❌ Error retrieving access token: {error_message}")
-        return JsonResponse({"error": f"Authentication failed: {error_message}"}, status=400)
+    return JsonResponse({"error": "Authentication failed"}, status=400)
 
+def fetch_commerzbank_transactions(access_token):
+    """Fetches all transactions using the Corporate Payments API."""
+    print("[fetch_commerzbank_transactions] Fetching transactions from Corporate Payments API...")
 
-def fetch_commerzbank_accounts(access_token):
-    """Fetches user account list and details from Commerzbank."""
-    print("[fetch_commerzbank_accounts] 🔄 Fetching account list...")
+    transactions_url = "https://developer.commerzbank.com/products/api-catalog/sandbox/corporate-payments-api/1/v1/bulk-payments"
+    headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
 
-    accounts_url = "https://psd2.api-sandbox.commerzbank.com/berlingroup/v1/accounts"
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json",
-    }
+    response = requests.get(transactions_url, headers=headers)
 
-    # Fetch list of accounts
-    response = requests.get(accounts_url, headers=headers)
-    
     if response.status_code == 200:
-        accounts_data = response.json()
-        print(f"[fetch_commerzbank_accounts] ✅ Account List Retrieved: {json.dumps(accounts_data, indent=2)}")
-
-        accounts = accounts_data.get("accounts", [])
-        if not accounts:
-            print("[fetch_commerzbank_accounts] ⚠️ No accounts found in response.")
-            return {"error": "No accounts available."}
-
-        # Fetch details for each account
-        detailed_accounts = []
-        for account in accounts:
-            account_id = account.get("resourceId")  # Check if this is the correct key for account ID
-            if not account_id:
-                continue
-
-            account_details_url = f"https://psd2.api-sandbox.commerzbank.com/berlingroup/v1/accounts/{account_id}"
-            details_response = requests.get(account_details_url, headers=headers)
-
-            if details_response.status_code == 200:
-                account_details = details_response.json()
-                print(f"[fetch_commerzbank_accounts] ✅ Account Details for {account_id}: {json.dumps(account_details, indent=2)}")
-                detailed_accounts.append(account_details)
-            else:
-                print(f"[fetch_commerzbank_accounts] ❌ Failed to fetch details for account {account_id}: {details_response.text}")
-
-        return {"accounts": detailed_accounts}
-    
+        transactions_data = response.json()
+        print(f"[fetch_commerzbank_transactions] Transactions Retrieved: {json.dumps(transactions_data, indent=2)}")
+        return transactions_data
     else:
-        print(f"[fetch_commerzbank_accounts] ❌ Failed to fetch account list: {response.text}")
-        return {"error": "Failed to retrieve account list."}
+        print(f"[fetch_commerzbank_transactions] Failed to fetch transactions: {response.text}")
+        return {"error": "Failed to retrieve transactions."}
 
+def get_commerzbank_transactions(request):
+    """Returns stored Commerzbank transaction data from session."""
+    print("[get_commerzbank_transactions] Fetching transaction data from session...")
+    transactions_data = request.session.get("commerzbank_transactions", {})
 
-def get_commerzbank_accounts(request):
-    """Returns stored Commerzbank account data from session."""
-    print("[get_commerzbank_accounts] 🔄 Fetching account data from session...")
-    account_data = request.session.get("commerzbank_accounts", {})
-    
-    if "error" in account_data:
-        print("[get_commerzbank_accounts] ❌ Error fetching accounts from session.")
-    else:
-        print(f"[get_commerzbank_accounts] ✅ Retrieved Accounts: {json.dumps(account_data, indent=2)}")
-
-    return JsonResponse({"accounts": account_data.get("accounts", [])})
+    return JsonResponse(transactions_data)
