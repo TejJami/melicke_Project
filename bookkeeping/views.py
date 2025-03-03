@@ -1190,6 +1190,8 @@ def authorize_commerzbank(request):
     print(f"[authorize_commerzbank] Authorization URL: {auth_url}")
     return redirect(auth_url)
 
+import json
+
 def commerzbank_callback(request):
     """Handles OAuth2 callback and retrieves access token."""
     print("[commerzbank_callback] Handling OAuth2 callback...")
@@ -1197,8 +1199,7 @@ def commerzbank_callback(request):
     code = request.GET.get("code")
     if not code:
         print("[commerzbank_callback] Error: No authorization code received")
-        messages.error(request, "No authorization code received.")
-        return redirect("properties")
+        return HttpResponse(json.dumps({"error": "No authorization code received."}), content_type="application/json", status=400)
 
     data = {
         "grant_type": "authorization_code",
@@ -1220,10 +1221,17 @@ def commerzbank_callback(request):
         request.session["refresh_token"] = token_data.get("refresh_token")
 
         print(f"[commerzbank_callback] Access token retrieved: {token_data.get('access_token')}")
-        messages.success(request, "Successfully authenticated with Commerzbank.")
-        return redirect("properties")
+
+        # Return a JSON response instead of redirecting
+        return HttpResponse(json.dumps({
+            "success": True,
+            "access_token": token_data.get("access_token"),
+            "expires_in": token_data.get("expires_in"),
+            "refresh_token": token_data.get("refresh_token"),
+        }), content_type="application/json")
+    
     else:
         error_message = response.json().get("error_description", "Unknown error")
         print(f"[commerzbank_callback] Error retrieving access token: {error_message}")
-        messages.error(request, f"Authentication failed: {error_message}")
-        return redirect("properties")
+
+        return HttpResponse(json.dumps({"error": f"Authentication failed: {error_message}"}), content_type="application/json", status=400)
