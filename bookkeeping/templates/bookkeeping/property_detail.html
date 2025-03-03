@@ -74,8 +74,23 @@
             <li>Loading accounts...</li>
         </ul>
         <p id="account-error" class="text-red-500"></p>
+
+        <!-- New button to fetch transactions -->
+        <button id="fetch-transactions" class="btn btn-outline btn-primary mt-3" style="display: none;">
+            Fetch Transactions
+        </button>
+
+        <h4 class="text-md font-bold mt-4">Transactions</h4>
+        <ul id="transaction-details" class="list-disc pl-5">
+            <li>No transactions loaded yet.</li>
+        </ul>
     </div>
 </dialog>
+
+<!-- Connect to Commerzbank Button -->
+<a href="{% url 'authorize_commerzbank' property.id %}" class="btn btn-primary">
+    Connect to Commerzbank
+</a>
 
 
 
@@ -773,7 +788,7 @@
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         console.log("[Commerzbank JS] 🔄 Page Loaded, checking authentication status...");
-    
+
         function getQueryParams(url) {
             let params = {};
             let parser = new URL(url);
@@ -782,41 +797,42 @@
             });
             return params;
         }
-    
+
         const params = getQueryParams(window.location.href);
         const commerzbankModal = document.getElementById("commerzbankModal");
-    
+        const fetchTransactionsButton = document.getElementById("fetch-transactions");
+
         console.log("[Commerzbank JS] 📩 Query Parameters:", params);
-    
+
         if (params.auth_success === "true") {
             console.log("[Commerzbank JS] ✅ User successfully authenticated!");
-    
+
             // Show authentication message
             document.getElementById("auth-message").textContent = "Successfully Authenticated!";
             document.getElementById("access-token").textContent = "Authenticated";
             document.getElementById("expires-in").textContent = "Session Active";
-    
+
             console.log("[Commerzbank JS] 🔄 Fetching account details from /commerzbank/get_accounts/ ...");
-    
+
             // Fetch and display account details
             fetch("/commerzbank/get_accounts/")
                 .then(response => response.json())
                 .then(data => {
                     console.log("[Commerzbank JS] 📊 Received Account Data:", data);
-    
+
                     if (data.accounts && data.accounts.length > 0) {
                         let accountList = document.getElementById("account-details");
                         accountList.innerHTML = ""; // Clear previous entries
-    
+
                         data.accounts.forEach(account => {
                             let accountItem = document.createElement("li");
                             let iban = account.iban || "Unknown IBAN";
                             let balance = account.balances ? account.balances.availableAmount : "Unknown Balance";
-    
+
                             accountItem.textContent = `IBAN: ${iban} - Balance: €${balance}`;
                             accountList.appendChild(accountItem);
                         });
-    
+
                         console.log("[Commerzbank JS] ✅ Account details displayed successfully.");
                     } else {
                         console.warn("[Commerzbank JS] ⚠️ No accounts found or API response empty.");
@@ -827,21 +843,55 @@
                     console.error("[Commerzbank JS] ❌ Error fetching account data:", error);
                     document.getElementById("account-error").textContent = "Error fetching account data.";
                 });
-    
+
+            // Show fetch transactions button
+            fetchTransactionsButton.style.display = "block";
+
             // Show modal
             console.log("[Commerzbank JS] 🏦 Opening modal to display authentication & account details.");
             commerzbankModal.showModal();
         } else {
             console.log("[Commerzbank JS] ❌ Authentication failed or user not authenticated.");
         }
+
+        // Fetch transactions when button is clicked
+        fetchTransactionsButton.addEventListener("click", function () {
+            console.log("[Commerzbank JS] 🔄 Fetching transactions from /commerzbank/get_transactions/ ...");
+
+            fetch("/commerzbank/get_transactions/")
+                .then(response => response.json())
+                .then(data => {
+                    console.log("[Commerzbank JS] 📊 Received Transactions Data:", data);
+
+                    let transactionList = document.getElementById("transaction-details");
+                    transactionList.innerHTML = ""; // Clear previous entries
+
+                    if (data.transactions && data.transactions.length > 0) {
+                        data.transactions.forEach(txn => {
+                            let txnItem = document.createElement("li");
+                            txnItem.textContent = `Date: ${txn.date}, Amount: €${txn.amount}, Description: ${txn.description}`;
+                            transactionList.appendChild(txnItem);
+                        });
+                        console.log("[Commerzbank JS] ✅ Transactions displayed successfully.");
+                    } else {
+                        transactionList.innerHTML = "<li>No transactions found.</li>";
+                        console.warn("[Commerzbank JS] ⚠️ No transactions found.");
+                    }
+                })
+                .catch(error => {
+                    console.error("[Commerzbank JS] ❌ Error fetching transactions:", error);
+                    document.getElementById("account-error").textContent = "Error fetching transactions.";
+                });
+        });
     });
-    
+
     // Close modal
     document.querySelector(".close").addEventListener("click", function() {
         console.log("[Commerzbank JS] ❌ Closing modal.");
         document.getElementById("commerzbankModal").close();
     });
-    </script>
+</script>
+
     
 
 
