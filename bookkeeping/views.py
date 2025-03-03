@@ -1260,28 +1260,48 @@ def fetch_commerzbank_messages(access_token):
         return {"error": f"Failed to retrieve messages. Status: {response.status_code}"}
 
 
-def get_commerzbank_transactions(request):
-    """Fetches transactions from bank statements (camt.053)."""
-    print("[get_commerzbank_transactions] 🔄 Fetching bank transactions...")
+import requests
+from django.http import JsonResponse
+from django.conf import settings
 
+COMMERZBANK_BASE_URL = "https://api-sandbox.commerzbank.com/corporate-payments-api/1/v1"
+
+def get_commerzbank_transactions(request):
+    """Fetches C53 bank statement transactions."""
     access_token = request.session.get("access_token")
     if not access_token:
         return JsonResponse({"error": "User not authenticated."}, status=401)
 
-    messages_data = fetch_commerzbank_messages(access_token)
-    if "error" in messages_data:
-        return JsonResponse({"error": messages_data["error"]}, status=400)
-
+    # Step 1: Get available messages with C53 order type
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/json",
+        "ClientProduct": "Test_AppV0.1"
+    }
+    
+    response = requests.get(f"{COMMERZBANK_BASE_URL}/messages?OrderType=C53", headers=headers)
+    
+    if response.status_code != 200:
+        return JsonResponse({"error": "Failed to retrieve message list."}, status=response.status_code)
+    
+    messages = response.json()
+    
     transactions = []
-    for message in messages_data:
-        message_id = message.get("MessageId")
-        if message_id:
-            statement_details = fetch_message_details(access_token, message_id)
-            
-            # Extract transactions from camt.053
-            transactions.extend(extract_transactions_from_camt(statement_details))
-
+    
+    # Step 2: Fetch the bank statement details for each message ID
+    for message in messages:
+        message_id = message["MessageId"]
+        statement_response = requests.get(f"{COMMERZBANK_BASE_URL}/messages/{message_id}", headers=headers)
+        
+        if statement_response.status_code == 200:
+            transactions.append(statement_response.text)  # XML response (camt.053 format)
+        
+        # Step 3: Confirm retrieval
+        confirm_data = {"received": "complete"}
+        requests.put(f"{COMMERZBANK_BASE_URL}/messages/{message_id}", headers=headers, json=confirm_data)
+    
     return JsonResponse({"transactions": transactions})
+
 
 def extract_transactions_from_camt(statement_details):
     """Extract transactions from camt.053 bank statement XML response."""
