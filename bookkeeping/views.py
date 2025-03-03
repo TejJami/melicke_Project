@@ -1256,24 +1256,49 @@ def commerzbank_callback(request):
 
 
 def fetch_commerzbank_accounts(access_token):
-    """Fetches user account details from Commerzbank."""
-    print("[fetch_commerzbank_accounts] 🔄 Fetching account details...")
+    """Fetches user account list and details from Commerzbank."""
+    print("[fetch_commerzbank_accounts] 🔄 Fetching account list...")
 
-    accounts_url = "https://api-sandbox.commerzbank.com/api/accounts"
+    accounts_url = "https://psd2.api-sandbox.commerzbank.com/berlingroup/v1/accounts"
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
     }
 
+    # Fetch list of accounts
     response = requests.get(accounts_url, headers=headers)
-
+    
     if response.status_code == 200:
-        account_data = response.json()
-        print(f"[fetch_commerzbank_accounts] ✅ Account Data Retrieved: {json.dumps(account_data, indent=2)}")
-        return account_data
+        accounts_data = response.json()
+        print(f"[fetch_commerzbank_accounts] ✅ Account List Retrieved: {json.dumps(accounts_data, indent=2)}")
+
+        accounts = accounts_data.get("accounts", [])
+        if not accounts:
+            print("[fetch_commerzbank_accounts] ⚠️ No accounts found in response.")
+            return {"error": "No accounts available."}
+
+        # Fetch details for each account
+        detailed_accounts = []
+        for account in accounts:
+            account_id = account.get("resourceId")  # Check if this is the correct key for account ID
+            if not account_id:
+                continue
+
+            account_details_url = f"https://psd2.api-sandbox.commerzbank.com/berlingroup/v1/accounts/{account_id}"
+            details_response = requests.get(account_details_url, headers=headers)
+
+            if details_response.status_code == 200:
+                account_details = details_response.json()
+                print(f"[fetch_commerzbank_accounts] ✅ Account Details for {account_id}: {json.dumps(account_details, indent=2)}")
+                detailed_accounts.append(account_details)
+            else:
+                print(f"[fetch_commerzbank_accounts] ❌ Failed to fetch details for account {account_id}: {details_response.text}")
+
+        return {"accounts": detailed_accounts}
+    
     else:
-        print(f"[fetch_commerzbank_accounts] ❌ Failed to fetch account data: {response.text}")
-        return {"error": "Failed to retrieve account data."}
+        print(f"[fetch_commerzbank_accounts] ❌ Failed to fetch account list: {response.text}")
+        return {"error": "Failed to retrieve account list."}
 
 
 def get_commerzbank_accounts(request):
