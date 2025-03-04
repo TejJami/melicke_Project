@@ -58,33 +58,33 @@
 <!-- Commerzbank Authentication Modal -->
 <dialog id="commerzbankModal" class="modal">
     <div class="modal-box">
+        <!-- Close Button -->
         <button class="close btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+
+        <!-- Authentication Status -->
         <h3 class="text-lg font-bold">Commerzbank Authentication</h3>
         <p id="auth-message" class="mt-2">Authenticating...</p>
-        <p><strong>Access Token:</strong> <span id="access-token"></span></p>
-        <p><strong>Expires In:</strong> <span id="expires-in"></span> seconds</p>
+        <p><strong>Access Token:</strong> <span id="access-token" class="text-green-500 font-semibold"></span></p>
+        <p><strong>Session Status:</strong> <span id="expires-in" class="text-blue-500"></span></p>
 
         <hr class="my-3">
 
-        <!-- Fetch Transactions Button (Now a direct Django call) -->
-        <a href="{% url 'get_commerzbank_transactions' %}" class="btn btn-outline btn-primary mt-3">
-            Fetch Transactions
-        </a>
+        <!-- Fetch Transactions Button (Now a JS-triggered event) -->
+        <button id="fetch-transactions" class="btn btn-outline btn-primary mt-3 w-full">
+            🔄 Fetch Transactions
+        </button>
 
+        <!-- Transactions Section -->
         <h4 class="text-md font-bold mt-4">Transactions</h4>
-        <ul id="transaction-details" class="list-disc pl-5">
-            {% if transactions %}
-                {% for txn in transactions %}
-                    <li>📅 <strong>{{ txn.date }}</strong> | 💶 <strong>{{ txn.amount }}</strong> | 📄 {{ txn.description }}</li>
-                {% endfor %}
-            {% else %}
-                <li>No transactions loaded yet.</li>
-            {% endif %}
+        <ul id="transaction-details" class="list-disc pl-5 mt-2 bg-gray-100 p-3 rounded-md max-h-60 overflow-y-auto">
+            <li class="text-gray-500">No transactions loaded yet.</li>
         </ul>
 
-        <p id="transaction-error" class="text-red-500"></p>
+        <!-- Error Message Display -->
+        <p id="transaction-error" class="text-red-500 mt-2 font-semibold hidden"></p>
     </div>
 </dialog>
+
 
 
 
@@ -780,61 +780,102 @@
 </script>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        console.log("[Commerzbank JS] 🔄 Page Loaded, checking authentication status...");
-    
-        // Function to parse URL query parameters
-        function getQueryParams(url) {
-            let params = {};
-            let parser = new URL(url);
-            parser.searchParams.forEach((value, key) => {
-                params[key] = value;
-            });
-            return params;
-        }
-    
-        // Get DOM elements
-        const params = getQueryParams(window.location.href);
-        const commerzbankModal = document.getElementById("commerzbankModal");
-        const fetchTransactionsButton = document.getElementById("fetch-transactions");
-        const transactionList = document.getElementById("transaction-details");
-        const closeButtons = document.querySelectorAll(".close");
-    
-        console.log("[Commerzbank JS] 📩 Query Parameters:", params);
-    
-        // Handle authentication success
-        if (params.auth_success === "true") {
-            console.log("[Commerzbank JS] ✅ User successfully authenticated!");
-    
-            // Update authentication message
-            document.getElementById("auth-message").textContent = "Successfully Authenticated!";
-            document.getElementById("access-token").textContent = "Authenticated";
-            document.getElementById("expires-in").textContent = "Session Active";
-    
-            // // Show fetch transactions button
-            // fetchTransactionsButton.style.display = "block";
-    
-            // Show authentication modal
-            console.log("[Commerzbank JS] 🏦 Opening modal to display authentication.");
+document.addEventListener("DOMContentLoaded", function () {
+    console.log("[Commerzbank JS] 🔄 Page Loaded, checking authentication status...");
+
+    // Function to parse URL query parameters
+    function getQueryParams(url) {
+        let params = {};
+        let parser = new URL(url);
+        parser.searchParams.forEach((value, key) => {
+            params[key] = value;
+        });
+        return params;
+    }
+
+    // Get DOM elements
+    const params = getQueryParams(window.location.href);
+    const commerzbankModal = document.getElementById("commerzbankModal");
+    const fetchTransactionsButton = document.getElementById("fetch-transactions");
+    const transactionList = document.getElementById("transaction-details");
+    const transactionError = document.getElementById("transaction-error");
+    const closeButtons = document.querySelectorAll(".close");
+
+    console.log("[Commerzbank JS] 📩 Query Parameters:", params);
+
+    // Handle authentication success
+    if (params.auth_success === "true") {
+        console.log("[Commerzbank JS] ✅ User successfully authenticated!");
+
+        document.getElementById("auth-message").textContent = "Successfully Authenticated!";
+        document.getElementById("access-token").textContent = "Authenticated";
+        document.getElementById("expires-in").textContent = "Session Active";
+
+        console.log("[Commerzbank JS] 🏦 Opening modal to display authentication.");
+        commerzbankModal.showModal();
+    } else {
+        console.log("[Commerzbank JS] ❌ Authentication failed or user not authenticated.");
+    }
+
+    // Function to fetch and display transactions
+    async function fetchTransactions() {
+        console.log("[Commerzbank JS] 🔍 Fetching transactions...");
+
+        try {
+            let response = await fetch("{% url 'get_commerzbank_transactions' %}");
+            let data = await response.json();
+
+            if (!response.ok || data.error) {
+                console.error("[Commerzbank JS] ❌ Error fetching transactions:", data.error || response.status);
+                transactionError.textContent = "Failed to load transactions.";
+                return;
+            }
+
+            // Clear existing transactions
+            transactionList.innerHTML = "";
+
+            if (data.transactions.length === 0) {
+                transactionList.innerHTML = "<li>No transactions available.</li>";
+            } else {
+                data.transactions.forEach((txn, index) => {
+                    const listItem = document.createElement("li");
+                    listItem.innerHTML = `📅 <strong>Transaction ${index + 1}</strong>: <pre>${txn}</pre>`;
+                    transactionList.appendChild(listItem);
+                });
+            }
+
+            // Show modal with transactions
             commerzbankModal.showModal();
-        } else {
-            console.log("[Commerzbank JS] ❌ Authentication failed or user not authenticated.");
+            console.log("[Commerzbank JS] ✅ Transactions loaded successfully.");
+        } catch (error) {
+            console.error("[Commerzbank JS] ❌ Fetch error:", error);
+            transactionError.textContent = "An error occurred while fetching transactions.";
         }
-    
-        // Automatically open modal if transactions are already loaded
-        if (transactionList.children.length > 1) { // More than 1 means transactions exist
-            console.log("[Commerzbank JS] ✅ Transactions are already loaded, opening modal.");
-            commerzbankModal.showModal();
-        }
-    
-        // Close modal event listener (supports multiple close buttons)
-        closeButtons.forEach(button => {
-            button.addEventListener("click", function () {
-                console.log("[Commerzbank JS] ❌ Closing modal.");
-                commerzbankModal.close();
-            });
+    }
+
+    // Fetch transactions when the button is clicked
+    if (fetchTransactionsButton) {
+        fetchTransactionsButton.addEventListener("click", function (event) {
+            event.preventDefault(); // Prevent page navigation
+            fetchTransactions();
+        });
+    }
+
+    // Open modal if transactions already exist
+    if (transactionList.children.length > 1) {
+        console.log("[Commerzbank JS] ✅ Transactions already loaded, opening modal.");
+        commerzbankModal.showModal();
+    }
+
+    // Close modal event listener
+    closeButtons.forEach(button => {
+        button.addEventListener("click", function () {
+            console.log("[Commerzbank JS] ❌ Closing modal.");
+            commerzbankModal.close();
         });
     });
+});
+
     </script>
     
     
