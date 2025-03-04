@@ -824,7 +824,9 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             let response = await fetch("{% url 'get_commerzbank_transactions' %}");
             let data = await response.json();
-
+            
+            console.log('Raw data:',data)
+            
             if (!response.ok || data.error) {
                 console.error("[Commerzbank JS] ❌ Error fetching transactions:", data.error || response.status);
                 transactionError.textContent = "Failed to load transactions.";
