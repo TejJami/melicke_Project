@@ -1170,11 +1170,12 @@ from django.shortcuts import redirect
 from django.conf import settings
 from urllib.parse import urlencode
 
-# Base API URL for Corporate Payments
-COMMERZBANK_BASE_URL = "https://api-sandbox.commerzbank.com/corporate-payments-api/1/v1"
+# # Base API URL for Corporate Payments
+# COMMERZBANK_BASE_URL = "https://api-sandbox.commerzbank.com/corporate-payments-api/1/v1"
+COMMERZBANK_BASE_URL = "https://api.commerzbank.com/corporate-payments-api/1/v1/bulk-payments"
 
 # OAuth2 Endpoints
-AUTH_BASE_URL = "https://api-sandbox.commerzbank.com/auth/realms/sandbox/protocol/openid-connect"
+AUTH_BASE_URL = "https://api.commerzbank.com/auth/realms/external/protocol/openid-connect"
 AUTHORIZE_URL = f"{AUTH_BASE_URL}/auth"
 TOKEN_URL = f"{AUTH_BASE_URL}/token"
 
@@ -1263,7 +1264,6 @@ import requests
 from django.http import JsonResponse
 from django.conf import settings
 
-COMMERZBANK_BASE_URL = "https://api-sandbox.commerzbank.com/corporate-payments-api/1/v1/bulk-payments"
 
 def get_commerzbank_transactions(request):
     """Fetches C53 bank statement transactions."""
