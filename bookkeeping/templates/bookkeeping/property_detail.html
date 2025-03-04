@@ -57,7 +57,7 @@
 
 <!-- Commerzbank Authentication Modal -->
 <dialog id="commerzbankModal" class="modal">
-    <div class="modal-box">
+    <div class="modal-box ">
         <!-- Close Button -->
         <button class="close btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
 
@@ -73,6 +73,14 @@
         <button id="fetch-transactions" class="btn btn-outline btn-primary mt-3 w-full">
             🔄 Fetch Transactions
         </button>
+
+        <!-- Loading Spinner -->
+        <div id="transaction-spinner" class="flex justify-center items-center my-3 hidden">
+            <svg class="animate-spin h-6 w-6 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+        </div>
 
         <!-- Transactions Section -->
         <h4 class="text-md font-bold mt-4">Transactions</h4>
@@ -821,6 +829,11 @@ document.addEventListener("DOMContentLoaded", function () {
     async function fetchTransactions() {
         console.log("[Commerzbank JS] 🔍 Fetching transactions...");
 
+        // Show spinner and clear transaction list
+        document.getElementById("transaction-spinner").classList.remove("hidden");
+        transactionList.innerHTML = ""; 
+        transactionError.textContent = "";
+
         try {
             let response = await fetch("{% url 'get_commerzbank_transactions' %}");
             let data = await response.json();
@@ -833,15 +846,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            // Clear existing transactions
-            transactionList.innerHTML = "";
-
             if (!data.transactions || data.transactions.length === 0) {
                 transactionList.innerHTML = "<li>No transactions available.</li>";
                 return;
             }
 
-            // Parse XML and extract transaction details
+            // Parse XML and populate transactions
             data.transactions.forEach((txnXML, index) => {
                 let parser = new DOMParser();
                 let xmlDoc = parser.parseFromString(txnXML, "text/xml");
@@ -857,25 +867,24 @@ document.addEventListener("DOMContentLoaded", function () {
                     let reference = txn.getElementsByTagName("AcctSvcrRef")[0]?.textContent || "N/A";
                     let accountName = xmlDoc.getElementsByTagName("Nm")[0]?.textContent || "N/A";
 
-                    // Format transaction as a single-line entry
                     const formattedTransaction = `${bookingDate} | ${description} | ${amount} ${currency} | ${type} | ${reference} | ${accountName}`;
 
-                    // Log extracted data for debugging
                     console.log(`[Commerzbank JS] 🔍 Transaction ${index + 1}.${idx + 1}:`, formattedTransaction);
 
-                    // Create list item
                     const listItem = document.createElement("li");
                     listItem.textContent = formattedTransaction;
                     transactionList.appendChild(listItem);
                 });
             });
 
-            // Show modal with transactions
             commerzbankModal.showModal();
             console.log("[Commerzbank JS] ✅ Transactions loaded successfully.");
         } catch (error) {
             console.error("[Commerzbank JS] ❌ Fetch error:", error);
             transactionError.textContent = "An error occurred while fetching transactions.";
+        } finally {
+            // Hide spinner after fetching
+            document.getElementById("transaction-spinner").classList.add("hidden");
         }
     }
 
