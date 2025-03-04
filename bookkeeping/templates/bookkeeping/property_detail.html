@@ -817,7 +817,7 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log("[Commerzbank JS] ❌ Authentication failed or user not authenticated.");
     }
 
-    // Function to fetch and display transactions
+    // Function to format transactions as single-line entries
     async function fetchTransactions() {
         console.log("[Commerzbank JS] 🔍 Fetching transactions...");
 
@@ -838,8 +838,23 @@ document.addEventListener("DOMContentLoaded", function () {
                 transactionList.innerHTML = "<li>No transactions available.</li>";
             } else {
                 data.transactions.forEach((txn, index) => {
+                    // Extract necessary fields
+                    const {
+                        date,
+                        description,
+                        amount,
+                        currency,
+                        type,
+                        credit_debit,
+                        account_name
+                    } = txn;
+
+                    // Format the transaction in one line
+                    const formattedTransaction = `${date} | ${description} | ${amount} ${currency} | ${type} | ${credit_debit} | ${account_name}`;
+
+                    // Create list item
                     const listItem = document.createElement("li");
-                    listItem.innerHTML = `📅 <strong>Transaction ${index + 1}</strong>: <pre>${txn}</pre>`;
+                    listItem.textContent = formattedTransaction;
                     transactionList.appendChild(listItem);
                 });
             }
@@ -852,6 +867,7 @@ document.addEventListener("DOMContentLoaded", function () {
             transactionError.textContent = "An error occurred while fetching transactions.";
         }
     }
+
 
     // Fetch transactions when the button is clicked
     if (fetchTransactionsButton) {
