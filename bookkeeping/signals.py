@@ -168,27 +168,30 @@ def create_income_profiles_for_lease(sender, instance, created, **kwargs):
         # Convert ust_type if it's a string
         ust_value = ust_mapping.get(instance.ust_type, 19)  # Default to 'Voll' (19%)
 
-        # Create income profile for deposit
-        IncomeProfile.objects.create(
-            lease=instance,
-            property=instance.property,
-            transaction_type='security_deposit',
-            amount=instance.deposit_amount,
-            date=instance.start_date,  # Use the lease's start date or adjust as needed
-            account_name=instance.tenant.name,
-            recurring=False,  # Deposits are not recurring
-            ust=ust_value  # Use the mapped numeric UST value
-        )
+        # Loop through all tenants in the lease
+        for tenant in instance.tenants.all():
+            # Create income profile for deposit (if applicable)
+            if instance.deposit_amount > 0:
+                IncomeProfile.objects.create(
+                    lease=instance,
+                    property=instance.property,
+                    transaction_type='security_deposit',
+                    amount=instance.deposit_amount / instance.tenants.count(),  # Split deposit among tenants
+                    date=instance.start_date,  # Use the lease's start date
+                    account_name=tenant.name,
+                    recurring=False,  # Deposits are not recurring
+                    ust=ust_value  # Use the mapped numeric UST value
+                )
 
-        # Create income profile for rent
-        IncomeProfile.objects.create(
-            lease=instance,
-            property=instance.property,
-            transaction_type='rent',
-            amount=instance.rent,
-            date=instance.start_date,  # Adjust as needed
-            account_name=instance.tenant.name,
-            recurring=True,  # Rent is typically recurring
-            frequency='monthly',
-            ust=ust_value  # Use the mapped numeric UST value
-        )
+            # Create income profile for rent
+            IncomeProfile.objects.create(
+                lease=instance,
+                property=instance.property,
+                transaction_type='rent',
+                amount=instance.rent / instance.tenants.count(),  # Split rent among tenants
+                date=instance.start_date,  # Use the lease's start date
+                account_name=tenant.name,
+                recurring=True,  # Rent is typically recurring
+                frequency='monthly',
+                ust=ust_value  # Use the mapped numeric UST value
+            )

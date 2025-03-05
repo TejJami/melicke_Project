@@ -108,14 +108,12 @@
         <thead>
             <tr class="border-b border-base-200">
                 <th>Name</th>
+                <th>Eigentum</th>  <!-- Add this column in the header -->
                 <th>Telefon</th>
                 <th>Email</th>
                 <th>Adresse</th>
                 <th>IBAN</th>
                 <th>BIC</th>
-                <th>Steuer-ID</th>
-                <th>Firma</th>
-                <th>Notes</th>
                 <th>Aktionen</th>
             </tr>
         </thead>
@@ -139,14 +137,23 @@
                         {{ landlord.name }}
                     </a>
                 </td>
+                <td>
+                    {% for property in landlord.owned_properties.all %}
+                        <a href="{% url 'property_detail' property.id %}" class="text-blue-500 hover:underline">
+                            {{ property.name }}
+                        </a>{% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        <span class="text-gray-500">Kein Eigentum zugewiesen</span>
+                    {% endfor %}
+                </td>
+                
+                          
                 <td>{{ landlord.phone_number }}</td>
                 <td>{{ landlord.email }}</td>
                 <td>{{ landlord.address }}</td>
                 <td>{{ landlord.iban }}</td>
                 <td>{{ landlord.bic }}</td>
                 <td>{{ landlord.tax_id }}</td>
-                <td>{{ landlord.company_name }}</td>
-                <td>{{ landlord.notes }}</td>
                 <td>
                     <!-- Delete Form with Circular Button -->
                     <form method="post" action="{% url 'delete_landlord' landlord.id %}" class="inline" onsubmit="return confirm('Sind Sie sicher, dass Sie diesen Vermieter löschen möchten?');">

@@ -24,7 +24,7 @@
 
       <!-- Right Section: Property Details -->
       <div class="text-right text-white">
-        <p><span class="font-semibold">UST Typ:</span> {{ property.ust_type }}</p>
+        <!-- <p><span class="font-semibold">UST Typ:</span> {{ property.ust_type }}</p> -->
         <p>
           <span class="font-semibold">Adresse:</span> {{ property.street }}, {{ property.city }}
         </p>
@@ -129,15 +129,19 @@
               </label>
               <input type="text" name="name" class="input input-bordered w-full" value="{{ property.name }}" required>
           </div>
+
           <div class="mb-4">
               <label class="label">
                   <span class="label-text">Gebäudetyp</span>
               </label>
               <select name="property_type" class="select select-bordered w-full" required>
-                  <option value="residential" {% if property.property_type == "residential" %}selected{% endif %}>Residential</option>
-                  <option value="commercial" {% if property.property_type == "commercial" %}selected{% endif %}>Commercial</option>
+                  <option value="residential" {% if property.property_type == "residential" %}selected{% endif %}>Wohngebäude</option>
+                  <option value="commercial" {% if property.property_type == "commercial" %}selected{% endif %}>Gewerbegebäude</option>
+                  <option value="mixed-use" {% if property.property_type == "mixed-use" %}selected{% endif %}>Mischnutzung</option>
+
               </select>
           </div>
+
           <div class="mb-4">
               <label class="label">
                   <span class="label-text">Straße</span>
@@ -182,7 +186,7 @@
             </select>
           </div>
           
-          <!-- UST Type Field -->
+          <!-- UST Type Field
           <div class="mb-4">
               <label class="label"><span class="label-text">UST Typ</span></label>
               <select name="ust_type" class="select select-bordered w-full">
@@ -190,7 +194,11 @@
                   <option value="7" {% if property.ust_type == "Teilw" %}selected{% endif %}>Teilw (7%)</option>
                   <option value="19" {% if property.ust_type == "Voll" %}selected{% endif %}>Voll (19%)</option>
               </select>
-          </div>            
+          </div>             -->
+          <div class="mb-4">
+            <label class="label"><span class="label-text">Teilweise-Steuersatz</span></label>
+            <input type="text" name="partial_tax_rate" class="input input-bordered w-full" value="{{ property.partial_tax_rate}}"required>
+        </div>
 
           <!-- Property Image Field -->
           <div class="mb-4">
@@ -373,38 +381,54 @@
 
 <!-- Edit Unit Modal -->
 <dialog id="edit_unit_modal" class="modal">
-  <div class="modal-box bg-base-100 text-base-content">
-      <form method="post" id="edit_unit_form">
-          {% csrf_token %}
-          <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="edit_unit_modal.close()">✕</button>
-          <h1 class="text-lg font-bold mb-4">Einheit bearbeiten</h1>
-          <div class="mb-4">
-              <label class="label"><span class="label-text">Einheitenname</span></label>
-              <input type="text" name="unit_name" id="edit_unit_name" class="input input-bordered w-full" required>
-          </div>
-          <div class="mb-4">
-              <label class="label"><span class="label-text">Fläche (m²)</span></label>
-              <input type="number" name="floor_area" id="edit_floor_area" step="0.1" class="input input-bordered w-full" required>
-          </div>
-          <div class="mb-4">
-              <label class="label"><span class="label-text">Anzahl der Zimmer</span></label>
-              <input type="number" name="rooms" id="edit_rooms" class="input input-bordered w-full" required>
-          </div>
-          <div class="mb-4">
-              <label class="label"><span class="label-text">Anzahl der Badezimmer</span></label>
-              <input type="number" name="baths" id="edit_baths" class="input input-bordered w-full" required>
-          </div>
-          <div class="mb-4">
-              <label class="label"><span class="label-text">Marktmiete</span></label>
-              <input type="number" name="market_rent" id="edit_market_rent" step="0.01" class="input input-bordered w-full" required>
-          </div>
-          <div class="modal-action">
-              <button type="submit" class="btn btn-outline">Speichern</button>
-              <button type="button" class="btn btn-outline btn-error" onclick="edit_unit_modal.close()">Abbrechen</button>
-          </div>
-      </form>
-  </div>
-</dialog>
+    <div class="modal-box bg-base-100 text-base-content">
+        <form method="post" id="edit_unit_form">
+            {% csrf_token %}
+            <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="edit_unit_modal.close()">✕</button>
+            <h1 class="text-lg font-bold mb-4">Einheit bearbeiten</h1>
+  
+            <div class="mb-4">
+                <label class="label"><span class="label-text">Einheitenname</span></label>
+                <input type="text" name="unit_name" id="edit_unit_name" class="input input-bordered w-full" required>
+            </div>
+  
+            <div class="mb-4">
+                <label class="label"><span class="label-text">Fläche (m²)</span></label>
+                <input type="number" name="floor_area" id="edit_floor_area" step="0.1" class="input input-bordered w-full" required>
+            </div>
+  
+            <div class="mb-4">
+                <label class="label"><span class="label-text">Etage</span></label>
+                <input type="number" name="floor" id="edit_floor" class="input input-bordered w-full" required>
+            </div>
+  
+            <div class="mb-4">
+                <label class="label"><span class="label-text">Position</span></label>
+                <select name="position" id="edit_position" class="select select-bordered w-full" required>
+                    <option value="Left">Links</option>
+                    <option value="Middle">Mitte</option>
+                    <option value="Right">Rechts</option>
+                </select>
+            </div>
+  
+            <div class="mb-4">
+                <label class="label"><span class="label-text">Miete</span></label>
+                <input type="number" name="rent" id="edit_rent" step="0.01" class="input input-bordered w-full" required>
+            </div>
+  
+            <div class="mb-4">
+                <label class="label"><span class="label-text">Zusätzliche Kosten</span></label>
+                <input type="number" name="additional_costs" id="edit_additional_costs" step="0.01" class="input input-bordered w-full">
+            </div>
+  
+            <div class="modal-action">
+                <button type="submit" class="btn btn-outline">Speichern</button>
+                <button type="button" class="btn btn-outline btn-error" onclick="edit_unit_modal.close()">Abbrechen</button>
+            </div>
+        </form>
+    </div>
+  </dialog>
+  
 
 <!-- Edit Lease Modal -->
 <dialog id="edit_lease_modal" class="modal">

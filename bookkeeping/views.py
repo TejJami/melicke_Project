@@ -238,7 +238,7 @@ def add_property(request):
         zip_code = request.POST.get('zip')
         country = request.POST.get('country')
         landlord_ids = request.POST.getlist('landlords')
-        ust_type = request.POST.get('ust_type')
+        partial_tax_rate = request.POST.get('partial_tax_rate')
 
         # Get property image from request.FILES
         image = request.FILES.get('image')  # Extract the uploaded image file
@@ -252,7 +252,8 @@ def add_property(request):
             city=city,
             zip=zip_code,
             country=country,
-            ust_type=ust_type,
+            # ust_type=ust_type,
+            partial_tax_rate=partial_tax_rate,
             image=image,  # Assign the uploaded image to the property
         )
         property_obj.landlords.set(landlord_ids)  # Set landlords for the property
@@ -304,7 +305,9 @@ def edit_property(request, pk):
         property_obj.zip = request.POST.get('zip')
         property_obj.country = request.POST.get('country')
 
-        property_obj.ust_type = request.POST.get('ust_type')
+        # property_obj.ust_type = request.POST.get('ust_type')
+        property_obj.partial_tax_rate = request.POST.get('partial_tax_rate')
+
 
         # Update landlords
         landlord_ids = request.POST.getlist('landlords')
@@ -605,26 +608,38 @@ def units(request):
      })
 
 # Add Unit
+from decimal import Decimal
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Unit, Property
+
 def add_unit(request):
     if request.method == 'POST':
         property_id = request.POST.get('property')
         unit_name = request.POST.get('unit_name')
         floor_area = request.POST.get('floor_area')
-        rooms = request.POST.get('rooms')
-        baths = request.POST.get('baths')
-        market_rent = request.POST.get('market_rent')
+        rent = request.POST.get('rent')
+        additional_costs = request.POST.get('additional_costs')
+        floor = request.POST.get('floor')
+        position = request.POST.get('position')
 
         # Ensure the property exists
         property_obj = get_object_or_404(Property, id=property_id)
+
+        # Convert data to appropriate types
+        floor_area = float(floor_area) if floor_area else None
+        rent = Decimal(rent) if rent else None
+        additional_costs = Decimal(additional_costs) if additional_costs else None
+        floor = int(floor) if floor else None
 
         # Create the unit
         Unit.objects.create(
             property=property_obj,
             unit_name=unit_name,
             floor_area=floor_area,
-            rooms=rooms,
-            baths=baths,
-            market_rent=market_rent,
+            rent=rent,
+            additional_costs=additional_costs,
+            floor=floor,
+            position=position
         )
 
         # Redirect to property detail view
@@ -634,6 +649,7 @@ def add_unit(request):
     properties = Property.objects.all()
     return render(request, 'bookkeeping/add_unit.html', {'properties': properties})
 
+
 # Edit Unit
 def edit_unit(request, pk):
     unit = get_object_or_404(Unit, id=pk)  # Fetch the unit using the primary key
@@ -642,9 +658,16 @@ def edit_unit(request, pk):
         # Update unit details from the form data
         unit.unit_name = request.POST.get('unit_name')
         unit.floor_area = request.POST.get('floor_area')
-        unit.rooms = request.POST.get('rooms')
-        unit.baths = request.POST.get('baths')
-        unit.market_rent = request.POST.get('market_rent')
+        unit.rent = request.POST.get('rent')
+        unit.additional_costs = request.POST.get('additional_costs')
+        unit.floor = request.POST.get('floor')
+        unit.position = request.POST.get('position')
+
+        # Convert data to appropriate types
+        unit.floor_area = float(unit.floor_area) if unit.floor_area else None
+        unit.rent = Decimal(unit.rent) if unit.rent else None
+        unit.additional_costs = Decimal(unit.additional_costs) if unit.additional_costs else None
+        unit.floor = int(unit.floor) if unit.floor else None
 
         # Retrieve the property using the unit's property relationship
         property_id = unit.property.id  # Fetch the associated property ID
@@ -680,7 +703,10 @@ def delete_unit(request, pk):
 # Landlords View
 def landlords(request):
     query = request.GET.get('q', '')
-    landlords = Landlord.objects.all()
+
+    # Prefetch properties using the correct reverse relation (from Property's landlords field)
+    landlords = Landlord.objects.prefetch_related('owned_properties').all()
+
 
     if query:
         landlords = landlords.filter(name__icontains=query)  # Filter landlords by name
@@ -688,6 +714,8 @@ def landlords(request):
     return render(request, 'bookkeeping/landlords.html', {
         'landlords': landlords,
     })
+
+
     
 # Add Landlord
 def add_landlord(request):
@@ -806,7 +834,7 @@ def leases(request):
 def add_lease(request):
     if request.method == 'POST':
         unit_id = request.POST.get('unit')
-        tenant_id = request.POST.get('tenant')
+        tenant_ids = request.POST.getlist('tenants')  # Get multiple tenants as a list
         start_date = request.POST.get('start_date') or None
         end_date = request.POST.get('end_date') or None
         ust_type = request.POST.get('ust_type')
@@ -816,27 +844,27 @@ def add_lease(request):
         unit_obj = get_object_or_404(Unit, id=unit_id)
         property_obj = unit_obj.property
         landlords = property_obj.landlords.all()
-        rent = unit_obj.market_rent
+        rent = unit_obj.rent
 
-        # Fetch tenant and related data
-        tenant_obj = get_object_or_404(Tenant, id=tenant_id)
-        account_name = tenant_obj.name
-        iban = tenant_obj.iban
+        # Fetch tenants and extract data
+        tenants = Tenant.objects.filter(id__in=tenant_ids)
+        account_names = [tenant.name for tenant in tenants]
+        ibans = [tenant.iban for tenant in tenants]
 
         # Create the lease
         lease = Lease.objects.create(
             property=property_obj,
             unit=unit_obj,
-            tenant=tenant_obj,
             start_date=start_date,
             end_date=end_date,
             ust_type=ust_type,
             deposit_amount=deposit_amount,
             rent=rent,
-            account_names=[account_name],
-            ibans=[iban],
+            account_names=account_names,
+            ibans=ibans,
         )
-        lease.landlords.set(landlords)
+        lease.landlords.set(landlords)  # Set landlords for the lease
+        lease.tenants.set(tenants)  # Assign multiple tenants
         lease.save()
 
         # Redirect to property detail view
@@ -1012,10 +1040,13 @@ def delete_income_profile(request, pk):
 
 #################################################################
 
-# AJAX endpoint to fetch unit and tenant data
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import Unit, Tenant
+
 def fetch_unit_tenant_data(request):
     unit_id = request.GET.get('unit_id')
-    tenant_id = request.GET.get('tenant_id')
+    tenant_ids = request.GET.getlist('tenant_ids[]')  # Get multiple tenant IDs
 
     response = {}
 
@@ -1023,14 +1054,15 @@ def fetch_unit_tenant_data(request):
         unit = get_object_or_404(Unit, id=unit_id)
         response['property_id'] = unit.property.id
         response['landlord_ids'] = list(unit.property.landlords.values_list('id', flat=True))
-        response['rent'] = unit.market_rent
+        response['rent'] = unit.rent
 
-    if tenant_id:
-        tenant = get_object_or_404(Tenant, id=tenant_id)
-        response['account_name'] = tenant.name
-        response['iban'] = tenant.iban
+    if tenant_ids:
+        tenants = Tenant.objects.filter(id__in=tenant_ids)
+        response['account_names'] = [tenant.name for tenant in tenants]
+        response['ibans'] = [tenant.iban for tenant in tenants]
 
     return JsonResponse(response)
+
 
 #################################################################
 

@@ -53,6 +53,7 @@ class Property(models.Model):
     #     choices=[('Nicht', '0'), ('Voll', '19'), ('Teilw', '7')],
     #     default='Voll'
     # )
+    partial_tax_rate = models.FloatField(max_length=5, null=True, blank=True)
    
     @staticmethod
     def get_next_default_image():
@@ -83,18 +84,27 @@ class Property(models.Model):
             self.image = self.get_next_default_image()
         super().save(*args, **kwargs)
 
-# Unit Model (Part of the Property)
+from django.db import models
+
 class Unit(models.Model):
+    POSITION_CHOICES = [
+        ('Left', 'Left'),
+        ('Middle', 'Middle'),
+        ('Right', 'Right'),
+    ]
+
     property = models.ForeignKey(Property, related_name='units', on_delete=models.CASCADE)  # Links unit to a property
     unit_name = models.CharField(max_length=255)  # E.g., "Unit A", "Flat 1B"
-    floor_area = models.FloatField(help_text="Floor area in square meters")  # Floor area in sq.m.
-    rooms = models.IntegerField(help_text="Number of rooms in the unit")  # Number of rooms
-    baths = models.IntegerField(help_text="Number of bathrooms in the unit")  # Number of bathrooms
-    market_rent = models.DecimalField(max_digits=10, decimal_places=2, help_text="Market rent for the unit")  # Rent in currency
+    floor = models.IntegerField(help_text="Floor number of the unit", null=True, blank=True)  # Floor level
+    floor_area = models.FloatField(help_text="Floor area in square meters", null=True, blank=True,)  # Floor area in sq.m.
+    rent = models.DecimalField(max_digits=10, decimal_places=2, help_text="Rent for the unit", null=True, blank=True,)  # Renamed from market_rent
+    additional_costs = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Additional costs")  # New field for extra costs
+    position = models.CharField(max_length=10, choices=POSITION_CHOICES, default='Middle', help_text="Unit position (Left, Middle, Right)", null=True, blank=True,)  # New choice field
 
     def __str__(self):
-        return f"{self.unit_name} - {self.property.name}"
-
+        return f"{self.unit_name} - {self.property.name} (Floor {self.floor}, {self.position})"
+    
+    
 # Model to represent parsed transactions after categorization
 class ParsedTransaction(models.Model):
     date = models.DateField()  # Date of transaction
@@ -148,7 +158,8 @@ class EarmarkedTransaction(models.Model):
 class Lease(models.Model):
     property = models.ForeignKey(Property, related_name='leases', on_delete=models.CASCADE)
     unit = models.ForeignKey(Unit, related_name='leases', on_delete=models.CASCADE)
-    tenant = models.ForeignKey(Tenant, related_name='leases', on_delete=models.CASCADE)
+    tenants = models.ManyToManyField(Tenant, related_name='leases')
+
     landlords = models.ManyToManyField(Landlord, related_name='leases')
 
     start_date = models.DateField(null=True, blank=True)
@@ -164,7 +175,7 @@ class Lease(models.Model):
     ibans = ArrayField(models.CharField(max_length=34), blank=True, default=list)
 
     def __str__(self):
-        return f"Lease: {self.property.name} - {self.unit.unit_name} ({self.tenant.name})"
+        return f"Lease: {self.property.name} - {self.unit.unit_name} ({self.tenants.name})"
 
 # Model to represent expense categories
 class ExpenseProfile(models.Model):

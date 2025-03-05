@@ -29,24 +29,39 @@
                     </label>
                     <input type="number" name="floor_area" step="0.1" class="input input-bordered w-full" required>
                 </div>
+
+
+
                 <div class="mb-4">
                     <label class="label">
-                        <span class="label-text">Anzahl der Zimmer</span>
+                        <span class="label-text">Etage</span>
                     </label>
-                    <input type="number" name="rooms" class="input input-bordered w-full" required>
+                    <input type="number" name="floor" class="input input-bordered w-full" required>
                 </div>
                 <div class="mb-4">
                     <label class="label">
-                        <span class="label-text">Anzahl der Badezimmer</span>
+                        <span class="label-text">Position</span>
                     </label>
-                    <input type="number" name="baths" class="input input-bordered w-full" required>
+                    <select name="position" class="select select-bordered w-full" required>
+                        <option value="Left">Links</option>
+                        <option value="Middle" selected>Mitte</option>
+                        <option value="Right">Rechts</option>
+                    </select>
                 </div>
                 <div class="mb-4">
                     <label class="label">
-                        <span class="label-text">Marktmiete</span>
+                        <span class="label-text">Miete</span>
                     </label>
-                    <input type="number" name="market_rent" step="0.01" class="input input-bordered w-full" required>
+                    <input type="number" name="rent" step="0.01" class="input input-bordered w-full" required>
                 </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Zusätzliche Kosten</span>
+                    </label>
+                    <input type="number" name="additional_costs" step="0.01" class="input input-bordered w-full">
+                </div>
+
+                
                 <div class="modal-action">
                     <button type="submit" class="btn btn-outline">Hinzufügen</button>
                     <button type="button" class="btn btn-outline btn-error" onclick="add_unit_modal.close()">Abbrechen</button>
@@ -58,17 +73,30 @@
     <!-- Unit List -->
     <div class="overflow-x-auto">
         <h2 class="text-xl font-light mb-3">Units for {{ property.name }}</h2>
-        <table class="table text-left bg-base-100 text-base-content">
+        <div class="mb-4 flex items-center gap-2">
+            <select id="tenantFilter" class="select select-bordered w-64" onchange="filterUnitsByTenant()">
+                <option value="">Alle Mieter</option>
+                {% for tenant in tenants %}
+                    <option value="{{ tenant.name }}">{{ tenant.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <table id="unitTable" class="table text-left bg-base-100 text-base-content">
+
             <thead>
                 <tr class="border-b border-base-200">
                     <th>Einheitenname</th>
+                    <th>Mieter</th> 
                     <th>Fläche</th>
-                    <th>Zimmer</th>
-                    <th>Bäder</th>
-                    <th>Marktmiete</th>
+                    <th>Etage</th>
+                    <th>Position</th>
+                    <th>Miete</th>
+                    <th>Zusätzliche Kosten</th>
                     <th>Aktionen</th>
                 </tr>
-            </thead>
+            </thead>            
+            
             <tbody>
                 {% for unit in units %}
                 <tr>
@@ -78,17 +106,33 @@
                             {{ unit.id }}, 
                             '{{ unit.unit_name|escapejs }}', 
                             '{{ unit.floor_area|floatformat:"1" }}', 
-                            {{ unit.rooms }}, 
-                            {{ unit.baths }}, 
-                            '{{ unit.market_rent|floatformat:"2" }}'
+                            {{ unit.floor }}, 
+                            '{{ unit.position }}', 
+                            '{{ unit.rent|floatformat:"2" }}', 
+                            '{{ unit.additional_costs|default:0|floatformat:"2" }}'
                         )">
                             {{ unit.unit_name }}
                         </a>
                     </td>
+                    <td>
+                        {% with unit.leases.first as lease %}
+                            {% if lease and lease.tenants.all %}
+                                {% for tenant in lease.tenants.all %}
+                                    {{ tenant.name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-gray-500">Kein Mieter</span>
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                    
                     <td>{{ unit.floor_area|floatformat:"1" }} sq.m.</td>
-                    <td>{{ unit.rooms }}</td>
-                    <td>{{ unit.baths }}</td>
-                    <td>€{{ unit.market_rent|floatformat:"2" }}</td>
+                    <td>{{ unit.floor }}</td>
+                    <td>{{ unit.position }}</td>
+                    <td>€{{ unit.rent|floatformat:"2" }}</td>
+                    <td>€{{ unit.additional_costs|default:0|floatformat:"2" }}</td>
+
+                    
                     <td>
                         <!-- Delete Form with Circular Button -->
                         <form method="post" action="{% url 'delete_unit' unit.id %}" class="inline"
@@ -114,14 +158,31 @@
 </div>
 
 <script>
-    function openunitEditModal(id, unitName, floorArea, rooms, baths, marketRent) {
-        console.log(id, unitName, floorArea, rooms, baths, marketRent);
-        document.getElementById('edit_unit_form').action = `/edit_unit/${id}/`;
-        document.getElementById('edit_unit_name').value = unitName;
-        document.getElementById('edit_floor_area').value = floorArea ? parseFloat(floorArea).toFixed(1) : '';
-        document.getElementById('edit_rooms').value = rooms ? parseInt(rooms, 10) : 0;
-        document.getElementById('edit_baths').value = baths ? parseInt(baths, 10) : 0;
-        document.getElementById('edit_market_rent').value = marketRent ? parseFloat(marketRent).toFixed(2) : '';
-        document.getElementById('edit_unit_modal').showModal();
+function openunitEditModal(id, unitName, floorArea, floor, position, rent, additionalCosts) {
+    console.log(id, unitName, floorArea, floor, position, rent, additionalCosts);
+    document.getElementById('edit_unit_form').action = `/edit_unit/${id}/`;
+    document.getElementById('edit_unit_name').value = unitName;
+    document.getElementById('edit_floor_area').value = floorArea ? parseFloat(floorArea).toFixed(1) : '';
+    document.getElementById('edit_floor').value = floor ? parseInt(floor, 10) : '';
+    document.getElementById('edit_position').value = position;
+    document.getElementById('edit_rent').value = rent ? parseFloat(rent).toFixed(2) : '';
+    document.getElementById('edit_additional_costs').value = additionalCosts ? parseFloat(additionalCosts).toFixed(2) : '';
+    document.getElementById('edit_unit_modal').showModal();
+}
+
+</script>
+
+<script>
+    function filterUnitsByTenant() {
+        const selectedTenant = document.getElementById("tenantFilter").value.toLowerCase().trim();
+        const tableRows = document.querySelectorAll("#unitTable tbody tr");
+
+        tableRows.forEach(row => {
+            const tenantColumn = row.querySelector("td:nth-child(2)"); // Adjust index if needed
+            if (tenantColumn) {
+                const tenantNames = tenantColumn.innerText.toLowerCase().trim().split(", "); // Handles multiple tenants
+                row.style.display = selectedTenant === "" || tenantNames.includes(selectedTenant) ? "" : "none";
+            }
+        });
     }
 </script>

@@ -48,7 +48,8 @@
                     <label class="label">
                         <span class="label-text">Mieter *</span>
                     </label>
-                    <select name="tenant" id="tenant" class="select select-bordered w-full" required onchange="updateFieldsFromTenant()">
+                    <select name="tenants" id="tenants" class="select select-bordered w-full" multiple required>
+
                         {% for tenant in tenants %}
                         <option value="{{ tenant.id }}">{{ tenant.name }}</option>
                         {% endfor %}
@@ -104,7 +105,16 @@
     <!-- Lease List -->
     <div class="overflow-x-auto">
         <h2 class="text-xl font-light mb-3">Mietverträge für {{ property.name }}</h2>
-        <table class="table w-3/5 text-left bg-base-100 text-base-content">
+        <div class="mb-4 flex items-center gap-2">
+            <select id="tenantFilter" class="select select-bordered w-64" onchange="filterLeasesByTenant()">
+                <option value="">Alle Mieter</option>
+                {% for tenant in tenants %}
+                    <option value="{{ tenant.name }}">{{ tenant.name }}</option>
+                {% endfor %}
+            </select>
+        </div>        
+        <table id="leaseTable" class="table w-3/5 text-left bg-base-100 text-base-content">
+
             <thead>
                 <tr class="border-b border-base-200">
                     <th>Einheit</th>
@@ -125,16 +135,25 @@
                         onclick="openEditLeaseModal(
                             {{ lease.id }}, 
                             {{ lease.unit.id }}, 
-                            {{ lease.tenant.id }}, 
+                            [{% for tenant in lease.tenants.all %}{{ tenant.id }}{% if not forloop.last %}, {% endif %}{% endfor %}], 
                             '{{ lease.start_date|date:'Y-m-d' }}', 
                             '{{ lease.end_date|date:'Y-m-d' }}', 
                             '{{ lease.deposit_amount|floatformat:2 }}', 
                             '{{ lease.rent|floatformat:2 }}', 
-                            '{{ lease.ust_type }}')">
+                            '{{ lease.ust_type }}'
+                        )">
+                        
                             {{ lease.unit.unit_name }}
                         </a>
                     </td>
-                    <td>{{ lease.tenant.name }}</td>
+                    <td>
+                        {% for tenant in lease.tenants.all %}
+                            {{ tenant.name }}{% if not forloop.last %}, {% endif %}
+                        {% empty %}
+                            <span class="text-gray-500">Kein Mieter</span>
+                        {% endfor %}
+                    </td>
+                    
                     <td>{{ lease.start_date|date:'Y-m-d' }}</td>
                     <td>{{ lease.end_date|date:'Y-m-d'|default:"-" }}</td>
                     <td>{{ lease.ust_type }}</td>
@@ -181,23 +200,42 @@
             });
     }
 
-    function openEditLeaseModal(id, unitId, tenantId, startDate, endDate, depositAmount, rent, ustType) {
-        const form = document.getElementById('edit_lease_form');
-        form.action = `/edit_lease/${id}/`;
+    function openEditLeaseModal(id, unitId, tenantIds, startDate, endDate, depositAmount, rent, ustType) {
+    const form = document.getElementById('edit_lease_form');
+    form.action = `/edit_lease/${id}/`;
 
-        document.getElementById('edit_unit').value = unitId;
-        document.getElementById('edit_tenant').value = tenantId;
-        document.getElementById('edit_start_date').value = startDate || '';
-        document.getElementById('edit_end_date').value = endDate || '';
+    document.getElementById('edit_unit').value = unitId;
+    document.getElementById('edit_start_date').value = startDate || '';
+    document.getElementById('edit_end_date').value = endDate || '';
 
-        // Convert depositAmount and rent to a format suitable for HTML inputs
-        const parseToDotDecimal = (value) => value.replace(',', '.');
-        document.getElementById('edit_deposit_amount').value = parseToDotDecimal(depositAmount) || '';
-        document.getElementById('edit_rent').value = parseToDotDecimal(rent) || '';
+    // Convert depositAmount and rent to a format suitable for HTML inputs
+    const parseToDotDecimal = (value) => value.replace(',', '.');
+    document.getElementById('edit_deposit_amount').value = parseToDotDecimal(depositAmount) || '';
+    document.getElementById('edit_rent').value = parseToDotDecimal(rent) || '';
 
-        document.getElementById('edit_ust_type').value = ustType || '';
+    document.getElementById('edit_ust_type').value = ustType || '';
 
-        document.getElementById('edit_lease_modal').showModal();
+    // Select multiple tenants
+    const tenantSelect = document.getElementById('edit_tenants');
+    [...tenantSelect.options].forEach(option => {
+        option.selected = tenantIds.includes(parseInt(option.value));
+    });
+
+    document.getElementById('edit_lease_modal').showModal();
+}
+
+</script>
+<script>
+    function filterLeasesByTenant() {
+        const selectedTenant = document.getElementById("tenantFilter").value.toLowerCase();
+        const tableRows = document.querySelectorAll("#leaseTable tbody tr");
+
+        tableRows.forEach(row => {
+            const tenantColumn = row.querySelector("td:nth-child(2)"); // Adjust index if needed
+            if (tenantColumn) {
+                const tenantText = tenantColumn.innerText.toLowerCase();
+                row.style.display = selectedTenant === "" || tenantText.includes(selectedTenant) ? "" : "none";
+            }
+        });
     }
-
 </script>
