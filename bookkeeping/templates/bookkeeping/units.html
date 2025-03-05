@@ -74,7 +74,8 @@
     <div class="overflow-x-auto">
         <h2 class="text-xl font-light mb-3">Units for {{ property.name }}</h2>
         <div class="mb-4 flex items-center gap-2">
-            <select id="tenantFilter" class="select select-bordered w-64" onchange="filterUnitsByTenant()">
+            <select id="tenantFilterUnit" class="select select-bordered w-64" onchange="filterUnitsByTenant()">
+
                 <option value="">Alle Mieter</option>
                 {% for tenant in tenants %}
                     <option value="{{ tenant.name }}">{{ tenant.name }}</option>
@@ -173,16 +174,17 @@ function openunitEditModal(id, unitName, floorArea, floor, position, rent, addit
 </script>
 
 <script>
-    function filterUnitsByTenant() {
-        const selectedTenant = document.getElementById("tenantFilter").value.toLowerCase().trim();
-        const tableRows = document.querySelectorAll("#unitTable tbody tr");
+function filterUnitsByTenant() {
+    const selectedTenant = document.getElementById("tenantFilterUnit").value.toLowerCase().trim();
+    const tableRows = document.querySelectorAll("#unitTable tbody tr");
 
-        tableRows.forEach(row => {
-            const tenantColumn = row.querySelector("td:nth-child(2)"); // Adjust index if needed
-            if (tenantColumn) {
-                const tenantNames = tenantColumn.innerText.toLowerCase().trim().split(", "); // Handles multiple tenants
-                row.style.display = selectedTenant === "" || tenantNames.includes(selectedTenant) ? "" : "none";
-            }
-        });
-    }
+    tableRows.forEach(row => {
+        const tenantColumn = row.querySelector("td:nth-child(2)"); // Adjust index if needed
+        if (tenantColumn) {
+            const tenantNames = tenantColumn.innerText.toLowerCase().trim().split(", "); // Handles multiple tenants
+            row.style.display = selectedTenant === "" || tenantNames.includes(selectedTenant) ? "" : "none";
+        }
+    });
+}
+
 </script>
