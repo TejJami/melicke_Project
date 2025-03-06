@@ -26,8 +26,11 @@
       <div class="text-right text-white">
         <!-- <p><span class="font-semibold">UST Typ:</span> {{ property.ust_type }}</p> -->
         <p>
-          <span class="font-semibold">Adresse:</span> {{ property.street }}, {{ property.city }}
+          <span class="font-semibold">Adresse:</span> {{ property.street }}, {{ property.building_no }}, {{ property.city }}
         </p>
+        <p>
+            <span class="font-semibold">Teilweise-Steuersatz:</span> {{ property.partial_tax_rate}} %
+          </p>
         <p>
           <span class="font-semibold">Vermieter:</span>
           {% for landlord in property_landlords %}
@@ -114,7 +117,7 @@
   </div>
 </dialog>
 
-
+<!-- Edit Property Modal -->
 <dialog id="edit_property_modal" class="modal">
   <div class="modal-box bg-base-100 text-base-content">
       <form method="post" id="edit_property_form" action="{% url 'edit_property' property.id %}" enctype="multipart/form-data">
@@ -196,7 +199,7 @@
               </select>
           </div>             -->
           <div class="mb-4">
-            <label class="label"><span class="label-text">Teilweise-Steuersatz</span></label>
+            <label class="label"><span class="label-text">Teilweise-Steuersatz %</span></label>
             <input type="text" name="partial_tax_rate" class="input input-bordered w-full" value="{{ property.partial_tax_rate}}"required>
         </div>
 
@@ -369,7 +372,7 @@
         </div>
 
         <!-- UST Tab -->
-      <input type="radio" name="property_tabs" id="ust_tab" role="tab" class="tab" aria-label="UST" data-property-id="{{ property.id }}">
+      <input type="radio" name="property_tabs" id="ust_tab" role="tab" class="tab" aria-label="USt" data-property-id="{{ property.id }}">
       <div role="tabpanel" class="tab-content">
           <!-- USt content will be dynamically loaded here -->
           {% include 'bookkeeping/ust.html' with ust=ust%}
@@ -417,7 +420,7 @@
             </div>
   
             <div class="mb-4">
-                <label class="label"><span class="label-text">Zusätzliche Kosten</span></label>
+                <label class="label"><span class="label-text">NebenKosten</span></label>
                 <input type="number" name="additional_costs" id="edit_additional_costs" step="0.01" class="input input-bordered w-full">
             </div>
   
@@ -456,6 +459,7 @@
                   <option value="{{ unit.id }}">{{ unit.unit_name }}</option>
                   {% endfor %}
               </select>
+              
           </div>
 
           <div class="mb-4">
@@ -472,12 +476,11 @@
 
           <div class="mb-4">
               <label class="label">
-                  <span class="label-text">UST Typ *</span>
+                  <span class="label-text">USt Typ *</span>
               </label>
               <select name="ust_type" id="edit_ust_type" class="select select-bordered w-full" required>
-                  <option value="Nicht">Nicht</option>
-                  <option value="Voll">Voll</option>
-                  <option value="Teilw">Teilw</option>
+                  <option value="Ohne">Ohne</option>
+                  <option value="Mit">Mit</option>
               </select>
           </div>
 
@@ -492,7 +495,7 @@
               <label class="label">
                   <span class="label-text">Miete *</span>
               </label>
-              <input type="number" name="rent" id="edit_rent" step="0.01" class="input input-bordered w-full" readonly>
+              <input type="text" name="edit_rent" id="edit_rent"  class="input input-bordered w-full" readonly>
           </div>
 
           <div class="mb-4">
@@ -641,7 +644,7 @@
             </div>
 
             <div class="mb-4">
-                <label for="ust">UST Type *</label>
+                <label for="ust">USt Type *</label>
                 <select name="ust" class="select select-bordered w-full" required>
                     <option value="0">0%</option>
                     <option value="7">7%</option>

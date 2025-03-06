@@ -106,7 +106,7 @@
                 </select>
             </div>
             <div class="mb-4">
-                <label class="label"><span class="label-text">Teilweise-Steuersatz</span></label>
+                <label class="label"><span class="label-text">Teilweise-Steuersatz %</span></label>
                 <input type="number" name="partial_tax_rate" class="input input-bordered w-full" required>
             </div>
             <!-- <div class="mb-4">
@@ -147,8 +147,18 @@
                 <p>{{ property.street }}, {{ property.city }}</p>
                 <!-- Badge Positioned to Top-Right -->
                 <div class="absolute top-2 right-2">
-                    <div class="badge badge-accent">{{ property.property_type }}</div>
-                </div>
+                    <div class="badge badge-accent">
+                        {% if property.property_type == "residential" %}
+                            Wohngebäude
+                        {% elif property.property_type == "commercial" %}
+                            Gewerbegebäude
+                        {% elif property.property_type == "mixed-use" %}
+                            Mischnutzung
+                        {% else %}
+                            {{ property.property_type }}
+                        {% endif %}
+                    </div>
+                </div>                
             </div>
         </div>
     </a>

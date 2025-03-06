@@ -25,11 +25,12 @@ class Landlord(models.Model):
     iban = models.CharField(max_length=34, blank=True, null=True)  # Bank account IBAN
     bic = models.CharField(max_length=11, blank=True, null=True)  # Optional BIC/SWIFT code
     tax_id = models.CharField(max_length=50, blank=True, null=True)  # Tax identification number
-    company_name = models.CharField(max_length=255, blank=True, null=True)  # Company name if landlord is a business
+    object = models.CharField(max_length=255, blank=True, null=True)  # New field for object reference
     notes = models.TextField(blank=True, null=True)  # Free text for additional notes
 
     def __str__(self):
-        return self.name
+        return f"{self.name} - {self.object if self.object else 'No Object'}"
+
 
 # Property Model (Building)
 class Property(models.Model):
@@ -166,8 +167,8 @@ class Lease(models.Model):
     end_date = models.DateField(null=True, blank=True)
     ust_type = models.CharField(
         max_length=10,
-        choices=[('Nicht', '0'), ('Voll', '19'), ('Teilw', '7')],
-        default='Voll'
+        choices=[('Ohne', '0'), ('Mit', '19')],
+        default='Ohne'
     )
     deposit_amount = models.DecimalField(max_digits=10, decimal_places=2)
     rent = models.DecimalField(max_digits=10, decimal_places=2)  # Add rent field

@@ -188,11 +188,13 @@
                     <!-- Delete Form with Circular Button -->
                     <form method="post" action="{% url 'delete_tenant' tenant.id %}" class="inline" onsubmit="return confirm('Are you sure you want to delete this tenant?');">
                         {% csrf_token %}
-                        <button type="submit" 
-                                class="btn btn-circle btn-outline btn-error btn-sm hover:bg-error hover:text-white hover:border-transparent transition-all" 
-                                aria-label="Delete Tenant">
-                            ✕
-                        </button>
+                        <button type="button" 
+                        class="btn btn-circle btn-outline btn-error btn-sm hover:bg-error hover:text-white hover:border-transparent transition-all" 
+                        aria-label="Delete Tenant"
+                        onclick="openDeleteTenantModal('{{ tenant.id }}', '{{ tenant.name|escapejs }}')">
+                    ✕
+                </button>
+                
                     </form>
                 </td>
             </tr>
@@ -204,6 +206,28 @@
         </tbody>
     </table>
 </div>
+
+<dialog id="delete_tenant_modal" class="modal">
+    <div class="modal-box bg-base-100 text-base-content">
+        <form method="post" id="delete_tenant_form">
+            {% csrf_token %}
+            <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="delete_tenant_modal.close()">✕</button>
+            <h1 class="text-lg font-bold mb-4 text-error">Mieter löschen</h1>
+            <p class="mb-4 text-base-content">
+                Bist du sicher, dass du <strong id="delete_tenant_name"></strong> löschen möchtest? 
+                Bitte gib den Namen ein, um fortzufahren.
+            </p>
+
+            <!-- Input for confirming name -->
+            <input type="text" id="confirm_tenant_name" class="input input-bordered w-full mb-4" placeholder="Mietername eingeben" required>
+
+            <div class="modal-action">
+                <button type="submit" id="confirm_delete_btn" class="btn btn-error" disabled>Löschen</button>
+                <button type="button" class="btn btn-outline" onclick="delete_tenant_modal.close()">Abbrechen</button>
+            </div>
+        </form>
+    </div>
+</dialog>
 
 
 <!-- Edit Tenant Modal -->
@@ -265,6 +289,29 @@ function openEditTenantModal(id, name, otherAccountNames, phoneNumber, email, ad
 
     edit_tenant_modal.showModal();
 }
+
+function openDeleteTenantModal(tenantId, tenantName) {
+    const form = document.getElementById('delete_tenant_form');
+    form.action = `/delete_tenant/${tenantId}/`;  // Set correct URL
+
+    // Set tenant name in modal
+    document.getElementById('delete_tenant_name').innerText = tenantName;
+    const confirmInput = document.getElementById('confirm_tenant_name');
+    const confirmBtn = document.getElementById('confirm_delete_btn');
+
+    // Reset input and disable button
+    confirmInput.value = '';
+    confirmBtn.disabled = true;
+
+    // Enable button only if name matches
+    confirmInput.addEventListener('input', function () {
+        confirmBtn.disabled = this.value !== tenantName;
+    });
+
+    // Show the modal
+    delete_tenant_modal.showModal();
+}
+
 </script>
 <script>
     function showLeaseDetails(event, property, unit, start, end, rent, deposit, ust) {
@@ -278,7 +325,7 @@ function openEditTenantModal(id, name, otherAccountNames, phoneNumber, email, ad
             <strong>End Date:</strong> ${end} <br>
             <strong>Rent:</strong> €${rent} <br>
             <strong>Deposit:</strong> €${deposit} <br>
-            <strong>UST Type:</strong> ${ust}
+            <strong>USt Type:</strong> ${ust}
         `;
 
         // Adjust position

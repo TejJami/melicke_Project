@@ -62,6 +62,10 @@
                     <input type="text" name="name" class="input input-bordered w-full" placeholder="Landlord Name" required>
                 </div>
                 <div class="mb-4">
+                    <label class="label"><span class="label-text">Objekt *</span></label>
+                    <input type="text" name="object " class="input input-bordered w-full" placeholder="Company Name" required>
+                </div>
+                <div class="mb-4">
                     <label class="label"><span class="label-text">Telefonnummer</span></label>
                     <input type="text" name="phone_number" class="input input-bordered w-full" placeholder="Phone Number">
                 </div>
@@ -85,10 +89,7 @@
                     <label class="label"><span class="label-text">Steuer-ID</span></label>
                     <input type="text" name="tax_id" class="input input-bordered w-full" placeholder="Tax ID">
                 </div>
-                <div class="mb-4">
-                    <label class="label"><span class="label-text">Firmenname</span></label>
-                    <input type="text" name="company_name" class="input input-bordered w-full" placeholder="Company Name">
-                </div>
+
                 <div class="mb-4">
                     <label class="label"><span class="label-text">Notizen</span></label>
                     <textarea name="notes" class="textarea textarea-bordered w-full" placeholder="Additional Notes"></textarea>
@@ -131,10 +132,10 @@
                         '{{ landlord.iban|escapejs }}', 
                         '{{ landlord.bic|escapejs }}', 
                         '{{ landlord.tax_id|escapejs }}', 
-                        '{{ landlord.company_name|escapejs }}', 
+                        '{{ landlord.object |escapejs }}', 
                         '{{ landlord.notes|escapejs }}'
                     )">                    
-                        {{ landlord.name }}
+                        {{ landlord.name }} - {{ landlord.object }}
                     </a>
                 </td>
                 <td>
@@ -158,11 +159,13 @@
                     <!-- Delete Form with Circular Button -->
                     <form method="post" action="{% url 'delete_landlord' landlord.id %}" class="inline" onsubmit="return confirm('Sind Sie sicher, dass Sie diesen Vermieter löschen möchten?');">
                         {% csrf_token %}
-                        <button type="submit" 
-                                class="btn btn-circle btn-outline btn-error btn-sm hover:bg-error hover:text-white hover:border-transparent transition-all" 
-                                aria-label="Delete Landlord">
-                            ✕
-                        </button>
+                        <button type="button" 
+                        class="btn btn-circle btn-outline btn-error btn-sm hover:bg-error hover:text-white hover:border-transparent transition-all" 
+                        aria-label="Delete Landlord"
+                        onclick="openDeleteLandlordModal('{{ landlord.id }}', '{{ landlord.name|escapejs }}')">
+                    ✕
+                </button>
+                
                     </form>
                 </td>
             </tr>
@@ -176,6 +179,29 @@
 </div>
 
 
+<dialog id="delete_landlord_modal" class="modal">
+    <div class="modal-box bg-base-100 text-base-content">
+        <form method="post" id="delete_landlord_form">
+            {% csrf_token %}
+            <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="delete_landlord_modal.close()">✕</button>
+            <h1 class="text-lg font-bold mb-4 text-error">Vermieter löschen</h1>
+            <p class="mb-4 text-base-content">
+                Bist du sicher, dass du <strong id="delete_landlord_name"></strong> löschen möchtest? 
+                Bitte gib den Namen ein, um fortzufahren.
+            </p>
+
+            <!-- Input for confirming name -->
+            <input type="text" id="confirm_landlord_name" class="input input-bordered w-full mb-4" placeholder="Vermietername eingeben" required>
+
+            <div class="modal-action">
+                <button type="submit" id="confirm_delete_landlord_btn" class="btn btn-error" disabled>Löschen</button>
+                <button type="button" class="btn btn-outline" onclick="delete_landlord_modal.close()">Abbrechen</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+
 <!-- Edit Landlord Modal -->
 <dialog id="edit_landlord_modal" class="modal">
     <div class="modal-box bg-base-100 text-base-content">
@@ -187,6 +213,9 @@
 
             <label>Name *</label>
             <input type="text" name="name" id="edit_landlord_name" class="input input-bordered w-full mb-2" required>
+
+            <label>Objekt *</label>
+            <input type="text" name="object " id="edit_landlord_company" class="input input-bordered w-full mb-2" required>
 
             <label>Telefon</label>
             <input type="text" name="phone_number" id="edit_landlord_phone" class="input input-bordered w-full mb-2">
@@ -206,8 +235,6 @@
             <label>Steuer-ID</label>
             <input type="text" name="tax_id" id="edit_landlord_tax_id" class="input input-bordered w-full mb-2">
 
-            <label>Firma</label>
-            <input type="text" name="company_name" id="edit_landlord_company" class="input input-bordered w-full mb-2">
 
             <label>Notizen</label>
             <textarea name="notes" id="edit_landlord_notes" class="textarea textarea-bordered w-full mb-2"></textarea>
@@ -238,5 +265,28 @@
 
         document.getElementById('edit_landlord_modal').showModal();
     }
+
+    function openDeleteLandlordModal(landlordId, landlordName) {
+    const form = document.getElementById('delete_landlord_form');
+    form.action = `/delete_landlord/${landlordId}/`;  // Set correct URL
+
+    // Set landlord name in modal
+    document.getElementById('delete_landlord_name').innerText = landlordName;
+    const confirmInput = document.getElementById('confirm_landlord_name');
+    const confirmBtn = document.getElementById('confirm_delete_landlord_btn');
+
+    // Reset input and disable button
+    confirmInput.value = '';
+    confirmBtn.disabled = true;
+
+    // Enable button only if name matches
+    confirmInput.addEventListener('input', function () {
+        confirmBtn.disabled = this.value !== landlordName;
+    });
+
+    // Show the modal
+    delete_landlord_modal.showModal();
+}
+
 </script>
 {% endblock %}

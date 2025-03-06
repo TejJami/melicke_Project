@@ -58,12 +58,11 @@
 
                 <div class="mb-4">
                     <label class="label">
-                        <span class="label-text">UST Typ *</span>
+                        <span class="label-text">USt Typ *</span>
                     </label>
                     <select name="ust_type" class="select select-bordered w-full" required>
-                        <option value="Nicht">Nicht</option>
-                        <option value="Voll">Voll</option>
-                        <option value="Teilw">Teilw</option>
+                        <option value="Ohne">Ohne</option>
+                        <option value="Mit">Mit</option>
                     </select>
                 </div>
 
@@ -119,11 +118,12 @@
                 <tr class="border-b border-base-200">
                     <th>Einheit</th>
                     <th>Mieter</th>
-                    <th>Startdatum</th>
-                    <th>Enddatum</th>
+
                     <th>UST Typ</th>
                     <th>Miete</th>
                     <th>Kaution</th>
+                    <th>Startdatum</th>
+                    <th>Enddatum</th>
                     <th>Aktionen</th>
                 </tr>
             </thead>
@@ -138,10 +138,11 @@
                             [{% for tenant in lease.tenants.all %}'{{ tenant.id }}'{% if not forloop.last %}, {% endif %}{% endfor %}],  
                             '{{ lease.start_date|default:''|date:'Y-m-d' }}', 
                             '{{ lease.end_date|default:''|date:'Y-m-d' }}', 
-                            '{{ lease.deposit_amount|default:'0.00'|floatformat:2|default:'' }}'.replace(',', '.'),  
-                            '{{ lease.rent|default:'0.00'|floatformat:2|default:'' }}'.replace(',', '.'), 
+                            '{{ lease.deposit_amount|default:0.00|floatformat:2 }}',  
+                            '{{ lease.rent }}', 
                             '{{ lease.ust_type|default:'' }}'
-                        )"                        
+                        )"
+                                         
                         >
                         
                             {{ lease.unit.unit_name }}
@@ -155,11 +156,12 @@
                         {% endfor %}
                     </td>
                     
-                    <td>{{ lease.start_date|date:'Y-m-d' }}</td>
-                    <td>{{ lease.end_date|date:'Y-m-d'|default:"-" }}</td>
+
                     <td>{{ lease.ust_type }}</td>
                     <td>€{{ lease.rent|floatformat:2 }}</td>
                     <td>€{{ lease.deposit_amount|floatformat:2 }}</td>
+                    <td>{{ lease.start_date|date:'Y-m-d' }}</td>
+                    <td>{{ lease.end_date|date:'Y-m-d'|default:"-" }}</td>
                     <td>
                         <!-- Delete Form with Circular Button -->
                         <form method="post" action="{% url 'delete_lease' lease.id %}" class="inline"
@@ -202,39 +204,45 @@
     }
 
     function openEditLeaseModal(id, unitId, tenantIds, startDate, endDate, depositAmount, rent, ustType) {
+    console.log(rent)
         const form = document.getElementById('edit_lease_form');
-        form.action = `/edit_lease/${id}/`;
+    form.action = `/edit_lease/${id}/`;
 
-        document.getElementById('edit_unit').value = unitId;
-        document.getElementById('edit_start_date').value = startDate || '';
-        document.getElementById('edit_end_date').value = endDate || '';
+    document.getElementById('edit_unit').value = unitId;
+    document.getElementById('edit_start_date').value = startDate || '';
+    document.getElementById('edit_end_date').value = endDate || '';
 
-        // Parse deposit amount and rent safely
-        document.getElementById('edit_deposit_amount').value = depositAmount ? parseFloat(depositAmount).toFixed(2) : '';
-        document.getElementById('edit_rent').value = rent ? parseFloat(rent).toFixed(2) : '';
+    // Ensure correct decimal format (convert German ',' to '.')
+    depositAmount = depositAmount.toString().replace(',', '.');
+    rent = rent.toString().replace(',', '.');
 
-        document.getElementById('edit_ust_type').value = ustType || '';
+    // Safely parse numbers
+    document.getElementById('edit_deposit_amount').value = depositAmount ? parseFloat(depositAmount).toFixed(2) : '0.00';
+    document.getElementById('edit_rent').value = rent ? parseFloat(depositAmount).toFixed(2) : '0.00' ;
 
-        // Convert tenantIds into a valid array (string numbers to integers)
-        tenantIds = tenantIds.map(id => parseInt(id));
+    document.getElementById('edit_ust_type').value = ustType || '';
 
-        // Select multiple tenants
-        const tenantSelect = document.getElementById('edit_tenants');
-        [...tenantSelect.options].forEach(option => {
-            option.selected = tenantIds.includes(parseInt(option.value));
-        });
+    // Convert tenantIds into a valid array (string numbers to integers)
+    tenantIds = tenantIds.map(id => parseInt(id));
 
-        document.getElementById('edit_lease_modal').showModal();
-setTimeout(() => {
+    // Select multiple tenants
     const tenantSelect = document.getElementById('edit_tenants');
-    if (tenantSelect) {
-        tenantIds = tenantIds.map(id => parseInt(id));
-        [...tenantSelect.options].forEach(option => {
-            option.selected = tenantIds.includes(parseInt(option.value));
-        });
-    }
-}, 100); // Wait 100ms for modal to load
-    }
+    [...tenantSelect.options].forEach(option => {
+        option.selected = tenantIds.includes(parseInt(option.value));
+    });
+
+    document.getElementById('edit_lease_modal').showModal();
+    
+    // Ensure tenant selection is applied properly after modal loads
+    setTimeout(() => {
+        if (tenantSelect) {
+            [...tenantSelect.options].forEach(option => {
+                option.selected = tenantIds.includes(parseInt(option.value));
+            });
+        }
+    }, 100); // Wait 100ms for modal to load
+}
+
 
 </script>
 <script>

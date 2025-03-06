@@ -226,7 +226,70 @@ def properties(request):
         'landlords': landlords,
     })
 
-# Add Property
+# # Add Property
+# def add_property(request):
+#     if request.method == 'POST':
+#         # Get property fields
+#         property_type = request.POST.get('property_type')
+#         name = request.POST.get('name')
+#         street = request.POST.get('street')
+#         building_no = request.POST.get('building_no')
+#         city = request.POST.get('city')
+#         zip_code = request.POST.get('zip')
+#         country = request.POST.get('country')
+#         landlord_ids = request.POST.getlist('landlords')
+#         partial_tax_rate = request.POST.get('partial_tax_rate')
+
+#         # Get property image from request.FILES
+#         image = request.FILES.get('image')  # Extract the uploaded image file
+
+#         # Create the Property object
+#         property_obj = Property.objects.create(
+#             property_type=property_type,
+#             name=name,
+#             street=street,
+#             building_no=building_no,
+#             city=city,
+#             zip=zip_code,
+#             country=country,
+#             # ust_type=ust_type,
+#             partial_tax_rate=partial_tax_rate,
+#             image=image,  # Assign the uploaded image to the property
+#         )
+#         property_obj.landlords.set(landlord_ids)  # Set landlords for the property
+
+#         # Handle Units
+#         unit_data_keys = [key for key in request.POST.keys() if key.startswith('units-')]
+#         unit_data = {}
+
+#         # Organize unit data
+#         for key in unit_data_keys:
+#             match = re.match(r'units-(\d+)-(.+)', key)
+#             if match:
+#                 unit_index, field_name = match.groups()
+#                 if unit_index not in unit_data:
+#                     unit_data[unit_index] = {}
+#                 unit_data[unit_index][field_name] = request.POST.get(key)
+
+#         # Create Unit objects
+#         for unit_index, unit_fields in unit_data.items():
+#             if unit_fields.get('unit_name'):  # Check if unit has a name (to avoid blank entries)
+#                 Unit.objects.create(
+#                     property=property_obj,
+#                     unit_name=unit_fields.get('unit_name'),
+#                     floor_area=unit_fields.get('floor_area'),
+#                     rooms=unit_fields.get('rooms'),
+#                     baths=unit_fields.get('baths'),
+#                     market_rent=unit_fields.get('market_rent'),
+#                 )
+
+#         return redirect('properties')
+
+#     landlords = Landlord.objects.all()
+
+#     return render(request, 'bookkeeping/add_property.html', {
+#         'landlords': landlords,
+#     })
 def add_property(request):
     if request.method == 'POST':
         # Get property fields
@@ -239,9 +302,7 @@ def add_property(request):
         country = request.POST.get('country')
         landlord_ids = request.POST.getlist('landlords')
         partial_tax_rate = request.POST.get('partial_tax_rate')
-
-        # Get property image from request.FILES
-        image = request.FILES.get('image')  # Extract the uploaded image file
+        image = request.FILES.get('image')
 
         # Create the Property object
         property_obj = Property.objects.create(
@@ -252,51 +313,108 @@ def add_property(request):
             city=city,
             zip=zip_code,
             country=country,
-            # ust_type=ust_type,
             partial_tax_rate=partial_tax_rate,
-            image=image,  # Assign the uploaded image to the property
+            image=image,
         )
-        property_obj.landlords.set(landlord_ids)  # Set landlords for the property
-
-        # Handle Units
-        unit_data_keys = [key for key in request.POST.keys() if key.startswith('units-')]
-        unit_data = {}
-
-        # Organize unit data
-        for key in unit_data_keys:
-            match = re.match(r'units-(\d+)-(.+)', key)
-            if match:
-                unit_index, field_name = match.groups()
-                if unit_index not in unit_data:
-                    unit_data[unit_index] = {}
-                unit_data[unit_index][field_name] = request.POST.get(key)
-
-        # Create Unit objects
-        for unit_index, unit_fields in unit_data.items():
-            if unit_fields.get('unit_name'):  # Check if unit has a name (to avoid blank entries)
-                Unit.objects.create(
-                    property=property_obj,
-                    unit_name=unit_fields.get('unit_name'),
-                    floor_area=unit_fields.get('floor_area'),
-                    rooms=unit_fields.get('rooms'),
-                    baths=unit_fields.get('baths'),
-                    market_rent=unit_fields.get('market_rent'),
-                )
+        property_obj.landlords.set(landlord_ids)  # Assign landlords
 
         return redirect('properties')
 
     landlords = Landlord.objects.all()
-
     return render(request, 'bookkeeping/add_property.html', {
         'landlords': landlords,
     })
-# Edit Property
+
+
+# # Edit Property
+# def edit_property(request, pk):
+#     property_obj = get_object_or_404(Property, id=pk)
+#     UnitFormSet = modelformset_factory(Unit, fields=('unit_name', 'floor_area', 'rooms', 'baths', 'market_rent'), extra=0, can_delete=True)
+
+#     if request.method == 'POST':
+#         # Update the main property fields
+#         property_obj.property_type = request.POST.get('property_type')
+#         property_obj.name = request.POST.get('name')
+#         property_obj.street = request.POST.get('street')
+#         property_obj.building_no = request.POST.get('building_no')
+#         property_obj.city = request.POST.get('city')
+#         property_obj.zip = request.POST.get('zip')
+#         property_obj.country = request.POST.get('country')
+
+#         # property_obj.ust_type = request.POST.get('ust_type')
+#         property_obj.partial_tax_rate = request.POST.get('partial_tax_rate')
+
+
+#         # Update landlords
+#         landlord_ids = request.POST.getlist('landlords')
+#         property_obj.landlords.set(landlord_ids)
+
+#         # Save the property
+#         property_obj.save()
+
+#         # Process the formset for existing units
+#         unit_formset = UnitFormSet(request.POST, queryset=property_obj.units.all(), prefix='units')
+#         if unit_formset.is_valid():
+#             units = unit_formset.save(commit=False)
+#             # Save updated and existing units
+#             for unit in units:
+#                 unit.property = property_obj
+#                 unit.save()
+
+#             # Delete any units marked for deletion
+#             for deleted_unit in unit_formset.deleted_objects:
+#                 deleted_unit.delete()
+#         else:
+#             print(unit_formset.errors)  # Debugging: print errors if formset validation fails
+
+#         # Process dynamically added units
+#         unit_data_keys = [key for key in request.POST.keys() if key.startswith('units-')]
+#         print("unit_data_keys",unit_data_keys)
+#         new_unit_data = {}
+
+#         for key in unit_data_keys:
+#             match = re.match(r'units-(\d+)-(.+)', key)
+#             if match:
+#                 unit_index, field_name = match.groups()
+#                 if unit_index not in new_unit_data:
+#                     new_unit_data[unit_index] = {}
+#                 new_unit_data[unit_index][field_name] = request.POST.get(key)
+
+#         for unit_index, unit_fields in new_unit_data.items():
+#             # Ensure all required fields are present and create new units
+#             unit_name = unit_fields.get('unit_name')
+#             floor_area = unit_fields.get('floor_area', '0')  # Default to '0' if missing
+#             rooms = unit_fields.get('rooms', '0')  # Default to '0' if missing
+#             baths = unit_fields.get('baths', '0')  # Default to '0' if missing
+#             market_rent = unit_fields.get('market_rent', '0.0')  # Default to '0.0' if missing
+
+#             if unit_name:  # Only create units with a valid name
+#                 Unit.objects.create(
+#                     property=property_obj,
+#                     unit_name=unit_name,
+#                     floor_area=floor_area,
+#                     rooms=rooms,
+#                     baths=baths,
+#                     market_rent=market_rent,
+#                 )
+
+#         return redirect('property_detail', property_id=pk)
+
+#     # Prepopulate the formsets for existing units
+#     landlords = Landlord.objects.all()
+#     unit_formset = UnitFormSet(queryset=property_obj.units.all(), prefix='units')
+
+#     return render(request, 'bookkeeping/edit_property.html', {
+#         'property': property_obj,
+#         'landlords': landlords,
+#         'unit_formset': unit_formset,
+#     })
+
 def edit_property(request, pk):
     property_obj = get_object_or_404(Property, id=pk)
-    UnitFormSet = modelformset_factory(Unit, fields=('unit_name', 'floor_area', 'rooms', 'baths', 'market_rent'), extra=0, can_delete=True)
 
     if request.method == 'POST':
-        # Update the main property fields
+        # Update property fields
         property_obj.property_type = request.POST.get('property_type')
         property_obj.name = request.POST.get('name')
         property_obj.street = request.POST.get('street')
@@ -305,74 +423,26 @@ def edit_property(request, pk):
         property_obj.zip = request.POST.get('zip')
         property_obj.country = request.POST.get('country')
 
-        # property_obj.ust_type = request.POST.get('ust_type')
-        property_obj.partial_tax_rate = request.POST.get('partial_tax_rate')
+        # Convert German-formatted numbers
+        partial_tax_rate = request.POST.get('partial_tax_rate', '0')  # Default to '0' if None
+        partial_tax_rate = partial_tax_rate.replace(',', '.')  # Replace German comma with a dot
+        property_obj.partial_tax_rate = float(partial_tax_rate)  # Ensure valid float format
 
-
-        # Update landlords
+        # Handle landlords update
         landlord_ids = request.POST.getlist('landlords')
         property_obj.landlords.set(landlord_ids)
 
-        # Save the property
+        # Save updated property
         property_obj.save()
-
-        # Process the formset for existing units
-        unit_formset = UnitFormSet(request.POST, queryset=property_obj.units.all(), prefix='units')
-        if unit_formset.is_valid():
-            units = unit_formset.save(commit=False)
-            # Save updated and existing units
-            for unit in units:
-                unit.property = property_obj
-                unit.save()
-
-            # Delete any units marked for deletion
-            for deleted_unit in unit_formset.deleted_objects:
-                deleted_unit.delete()
-        else:
-            print(unit_formset.errors)  # Debugging: print errors if formset validation fails
-
-        # Process dynamically added units
-        unit_data_keys = [key for key in request.POST.keys() if key.startswith('units-')]
-        print("unit_data_keys",unit_data_keys)
-        new_unit_data = {}
-
-        for key in unit_data_keys:
-            match = re.match(r'units-(\d+)-(.+)', key)
-            if match:
-                unit_index, field_name = match.groups()
-                if unit_index not in new_unit_data:
-                    new_unit_data[unit_index] = {}
-                new_unit_data[unit_index][field_name] = request.POST.get(key)
-
-        for unit_index, unit_fields in new_unit_data.items():
-            # Ensure all required fields are present and create new units
-            unit_name = unit_fields.get('unit_name')
-            floor_area = unit_fields.get('floor_area', '0')  # Default to '0' if missing
-            rooms = unit_fields.get('rooms', '0')  # Default to '0' if missing
-            baths = unit_fields.get('baths', '0')  # Default to '0' if missing
-            market_rent = unit_fields.get('market_rent', '0.0')  # Default to '0.0' if missing
-
-            if unit_name:  # Only create units with a valid name
-                Unit.objects.create(
-                    property=property_obj,
-                    unit_name=unit_name,
-                    floor_area=floor_area,
-                    rooms=rooms,
-                    baths=baths,
-                    market_rent=market_rent,
-                )
 
         return redirect('property_detail', property_id=pk)
 
-    # Prepopulate the formsets for existing units
     landlords = Landlord.objects.all()
-    unit_formset = UnitFormSet(queryset=property_obj.units.all(), prefix='units')
-
     return render(request, 'bookkeeping/edit_property.html', {
         'property': property_obj,
         'landlords': landlords,
-        'unit_formset': unit_formset,
     })
+
 
 # Delete Property
 def delete_property(request, pk):
@@ -727,7 +797,7 @@ def add_landlord(request):
         iban = request.POST.get('iban')
         bic = request.POST.get('bic')
         tax_id = request.POST.get('tax_id')
-        company_name = request.POST.get('company_name')
+        object  = request.POST.get('company_name')
         notes = request.POST.get('notes')
 
         # Create the landlord
@@ -739,7 +809,7 @@ def add_landlord(request):
             iban=iban,
             bic=bic,
             tax_id=tax_id,
-            company_name=company_name,
+            object =object ,
             notes=notes,
         )
         return redirect('landlords')
@@ -758,7 +828,7 @@ def edit_landlord(request, pk):
         landlord.iban = request.POST.get('iban')
         landlord.bic = request.POST.get('bic')
         landlord.tax_id = request.POST.get('tax_id')
-        landlord.company_name = request.POST.get('company_name')
+        landlord.object  = request.POST.get('object ')
         landlord.notes = request.POST.get('notes')
 
         landlord.save()
@@ -886,15 +956,29 @@ def edit_lease(request, pk):
 
     if request.method == 'POST':
         lease.unit = get_object_or_404(Unit, id=request.POST.get('unit'))
-        lease.tenant = get_object_or_404(Tenant, id=request.POST.get('tenant'))
         lease.start_date = request.POST.get('start_date') or None
         lease.end_date = request.POST.get('end_date') or None
         lease.ust_type = request.POST.get('ust_type')
-        lease.deposit_amount = request.POST.get('deposit_amount')
+
+        # Convert deposit amount safely
+        deposit_amount = request.POST.get('deposit_amount', '0').replace(',', '.')
+        lease.deposit_amount = Decimal(deposit_amount)
+
+        # Fetch unit's rent
+        lease.rent = lease.unit.rent
 
         # Save updated landlords
         landlord_ids = request.POST.getlist('landlords')
         lease.landlords.set(landlord_ids)
+
+        # Handle multiple tenants
+        tenant_ids = request.POST.getlist('tenants')
+        tenants = Tenant.objects.filter(id__in=tenant_ids)
+        lease.tenants.set(tenants)
+
+        # Update account names & IBANs for tenants
+        lease.account_names = [tenant.name for tenant in tenants]
+        lease.ibans = [tenant.iban for tenant in tenants]
 
         # Save the updated lease
         lease.save()
@@ -907,6 +991,7 @@ def edit_lease(request, pk):
     units = Unit.objects.all()
     tenants = Tenant.objects.all()
     landlords = Landlord.objects.all()
+
     return render(request, 'bookkeeping/edit_lease.html', {
         'lease': lease,
         'properties': properties,
