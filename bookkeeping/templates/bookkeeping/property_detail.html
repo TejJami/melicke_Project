@@ -462,11 +462,12 @@
               <label class="label">
                   <span class="label-text">Mieter *</span>
               </label>
-              <select name="tenant" id="edit_tenant" class="select select-bordered w-full" required>
-                  {% for tenant in tenants %}
-                  <option value="{{ tenant.id }}">{{ tenant.name }}</option>
-                  {% endfor %}
-              </select>
+              <select name="tenants" id="edit_tenants" class="select select-bordered w-full" multiple required>
+                {% for tenant in tenants %}
+                    <option value="{{ tenant.id }}">{{ tenant.name }}</option>
+                {% endfor %}
+            </select>
+            
           </div>
 
           <div class="mb-4">

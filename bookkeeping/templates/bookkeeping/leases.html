@@ -135,13 +135,14 @@
                         onclick="openEditLeaseModal(
                             {{ lease.id }}, 
                             {{ lease.unit.id }}, 
-                            [{% for tenant in lease.tenants.all %}{{ tenant.id }}{% if not forloop.last %}, {% endif %}{% endfor %}], 
-                            '{{ lease.start_date|date:'Y-m-d' }}', 
-                            '{{ lease.end_date|date:'Y-m-d' }}', 
-                            '{{ lease.deposit_amount|floatformat:2 }}', 
-                            '{{ lease.rent|floatformat:2 }}', 
-                            '{{ lease.ust_type }}'
-                        )">
+                            [{% for tenant in lease.tenants.all %}'{{ tenant.id }}'{% if not forloop.last %}, {% endif %}{% endfor %}],  
+                            '{{ lease.start_date|default:''|date:'Y-m-d' }}', 
+                            '{{ lease.end_date|default:''|date:'Y-m-d' }}', 
+                            '{{ lease.deposit_amount|default:'0.00'|floatformat:2|default:'' }}'.replace(',', '.'),  
+                            '{{ lease.rent|default:'0.00'|floatformat:2|default:'' }}'.replace(',', '.'), 
+                            '{{ lease.ust_type|default:'' }}'
+                        )"                        
+                        >
                         
                             {{ lease.unit.unit_name }}
                         </a>
@@ -201,28 +202,39 @@
     }
 
     function openEditLeaseModal(id, unitId, tenantIds, startDate, endDate, depositAmount, rent, ustType) {
-    const form = document.getElementById('edit_lease_form');
-    form.action = `/edit_lease/${id}/`;
+        const form = document.getElementById('edit_lease_form');
+        form.action = `/edit_lease/${id}/`;
 
-    document.getElementById('edit_unit').value = unitId;
-    document.getElementById('edit_start_date').value = startDate || '';
-    document.getElementById('edit_end_date').value = endDate || '';
+        document.getElementById('edit_unit').value = unitId;
+        document.getElementById('edit_start_date').value = startDate || '';
+        document.getElementById('edit_end_date').value = endDate || '';
 
-    // Convert depositAmount and rent to a format suitable for HTML inputs
-    const parseToDotDecimal = (value) => value.replace(',', '.');
-    document.getElementById('edit_deposit_amount').value = parseToDotDecimal(depositAmount) || '';
-    document.getElementById('edit_rent').value = parseToDotDecimal(rent) || '';
+        // Parse deposit amount and rent safely
+        document.getElementById('edit_deposit_amount').value = depositAmount ? parseFloat(depositAmount).toFixed(2) : '';
+        document.getElementById('edit_rent').value = rent ? parseFloat(rent).toFixed(2) : '';
 
-    document.getElementById('edit_ust_type').value = ustType || '';
+        document.getElementById('edit_ust_type').value = ustType || '';
 
-    // Select multiple tenants
+        // Convert tenantIds into a valid array (string numbers to integers)
+        tenantIds = tenantIds.map(id => parseInt(id));
+
+        // Select multiple tenants
+        const tenantSelect = document.getElementById('edit_tenants');
+        [...tenantSelect.options].forEach(option => {
+            option.selected = tenantIds.includes(parseInt(option.value));
+        });
+
+        document.getElementById('edit_lease_modal').showModal();
+setTimeout(() => {
     const tenantSelect = document.getElementById('edit_tenants');
-    [...tenantSelect.options].forEach(option => {
-        option.selected = tenantIds.includes(parseInt(option.value));
-    });
-
-    document.getElementById('edit_lease_modal').showModal();
-}
+    if (tenantSelect) {
+        tenantIds = tenantIds.map(id => parseInt(id));
+        [...tenantSelect.options].forEach(option => {
+            option.selected = tenantIds.includes(parseInt(option.value));
+        });
+    }
+}, 100); // Wait 100ms for modal to load
+    }
 
 </script>
 <script>

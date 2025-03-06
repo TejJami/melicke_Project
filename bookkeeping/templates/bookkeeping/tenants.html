@@ -119,6 +119,8 @@
         <thead>
             <tr class="border-b border-base-200">
                 <th>Name</th>
+                <th>Unit</th>
+                <th>Property Type</th> 
                 <th>Andere Kontonamen</th>
                 <th>Telefon</th>
                 <th>Email</th>
@@ -148,6 +150,30 @@
                     >
                         {{ tenant.name }}
                     </a>
+                </td>
+                <!-- Show Assigned Leases -->
+                <td>
+                    {% for lease in tenant.leases.all %}
+                        <span 
+                            class="text-blue-500 cursor-pointer underline" 
+                            onmouseover="showLeaseDetails(event, '{{ lease.property.name }}', '{{ lease.unit.unit_name }}', '{{ lease.start_date|default:'-' }}', '{{ lease.end_date|default:'-' }}', '{{ lease.rent|floatformat:2 }}', '{{ lease.deposit_amount|floatformat:2 }}', '{{ lease.ust_type }}')"
+                            onmouseout="hideLeaseDetails()"
+                        >
+                            {{ lease.unit.unit_name }} ({{ lease.property.name }})
+                        </span>
+                        {% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        <span class="text-gray-500">Kein Mietvertrag</span>
+                    {% endfor %}
+                </td>
+                <!-- Show Property Type -->
+                <td>
+                    {% for lease in tenant.leases.all %}
+                        <span class="text-gray-700">{{ lease.property.property_type }}</span>
+                        {% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        <span class="text-gray-500">-</span>
+                    {% endfor %}
                 </td>
                 <td>{{ tenant.other_account_names }}</td>
                 <td>{{ tenant.phone_number }}</td>
@@ -238,4 +264,53 @@ function openEditTenantModal(id, name, otherAccountNames, phoneNumber, email, ad
     edit_tenant_modal.showModal();
 }
 </script>
+<script>
+    function showLeaseDetails(event, property, unit, start, end, rent, deposit, ust) {
+        let tooltip = document.getElementById("lease-tooltip");
+        
+        // Set the tooltip content
+        tooltip.innerHTML = `
+            <strong>Property:</strong> ${property} <br>
+            <strong>Unit:</strong> ${unit} <br>
+            <strong>Start Date:</strong> ${start} <br>
+            <strong>End Date:</strong> ${end} <br>
+            <strong>Rent:</strong> €${rent} <br>
+            <strong>Deposit:</strong> €${deposit} <br>
+            <strong>UST Type:</strong> ${ust}
+        `;
+
+        // Adjust position
+        tooltip.style.display = "block";
+        tooltip.style.left = event.pageX + 15 + "px";
+        tooltip.style.top = event.pageY + "px";
+
+        // Update tooltip theme dynamically
+        updateTooltipTheme();
+    }
+
+    function hideLeaseDetails() {
+        document.getElementById("lease-tooltip").style.display = "none";
+    }
+
+    function updateTooltipTheme() {
+        let tooltip = document.getElementById("lease-tooltip");
+        let htmlElement = document.documentElement;
+        let theme = htmlElement.getAttribute("data-theme");
+
+        if (theme === "light") {
+            tooltip.classList.remove("bg-gray-800", "text-white");
+            tooltip.classList.add("bg-gray-200", "text-black");
+        } else {
+            tooltip.classList.remove("bg-gray-200", "text-black");
+            tooltip.classList.add("bg-gray-800", "text-white");
+        }
+    }
+
+    // Listen for theme changes
+    document.addEventListener("custom.layout-changed", updateTooltipTheme);
+</script>
+
+<!-- Tooltip Box -->
+<div id="lease-tooltip" class="fixed hidden bg-gray-800 text-white text-xs p-2 rounded-lg shadow-md z-50"></div>
+
 {% endblock %}
