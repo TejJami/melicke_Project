@@ -120,14 +120,15 @@
             <tr class="border-b border-base-200">
                 <th>Name</th>
                 <th>Unit</th>
-                <th>Property Type</th> 
                 <th>Andere Kontonamen</th>
+
+                <th>Property Type</th> 
                 <th>Telefon</th>
                 <th>Email</th>
                 <th>Adresse</th>
                 <!-- <th>IBAN</th> -->
                 <!-- <th>BIC</th> -->
-                <th style="width: 25%;">Notizen</th>
+                <!-- <th style="width: 25%;">Notizen</th> -->
                 <th>Aktionen</th>
             </tr>
         </thead>
@@ -166,6 +167,8 @@
                         <span class="text-gray-500">Kein Mietvertrag</span>
                     {% endfor %}
                 </td>
+                <td>{{ tenant.other_account_names }}</td>
+
                 <!-- Show Property Type -->
                 <td>
                     {% for lease in tenant.leases.all %}
@@ -175,13 +178,12 @@
                         <span class="text-gray-500">-</span>
                     {% endfor %}
                 </td>
-                <td>{{ tenant.other_account_names }}</td>
                 <td>{{ tenant.phone_number }}</td>
                 <td>{{ tenant.email }}</td>
                 <td>{{ tenant.address }}</td>
                 <!-- <td>{{ tenant.iban }}</td>
                 <td>{{ tenant.bic }}</td> -->
-                <td>{{ tenant.notes }}</td>
+                <!-- <td>{{ tenant.notes }}</td> -->
                 <td>
                     <!-- Delete Form with Circular Button -->
                     <form method="post" action="{% url 'delete_tenant' tenant.id %}" class="inline" onsubmit="return confirm('Are you sure you want to delete this tenant?');">
