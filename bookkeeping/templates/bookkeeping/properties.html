@@ -107,16 +107,25 @@
             </div>
             <div class="mb-4">
                 <label class="label"><span class="label-text">Teilweise-Steuersatz %</span></label>
-                <input type="number" name="partial_tax_rate" class="input input-bordered w-full" required>
+                <input type="number" name="partial_tax_rate" id="partial_tax_rate" class="input input-bordered w-full" required>
             </div>
-            <!-- <div class="mb-4">
-                <label class="label"><span class="label-text">UST Typ</span></label>
-                <select name="ust_type" class="select select-bordered w-full">
-                    <option value="0">Nicht (0%)</option>
-                    <option value="7">Teilw (7%)</option>
-                    <option value="19">Voll (19%)</option>
-                </select>
-            </div>             -->
+            <div class="mb-4 flex items-center gap-3">
+                <label class="label"><span class="label-text">Automatisch berechnen</span></label>
+                <input type="checkbox" id="auto_calculate" name="auto_calculate_tax" class="checkbox" {% if property.auto_calculate_tax %}checked{% endif %}>
+            </div>
+            
+            <div id="auto_calculate_options" class="{% if not property.auto_calculate_tax %}hidden{% endif %} ml-5">
+                <div class="mb-4 flex items-center gap-3">
+                    <input type="radio" id="use_sq_meterage" name="tax_calculation_method" value="sq_meterage" class="radio" {% if property.tax_calculation_method == "sq_meterage" %}checked{% endif %}>
+                    <label for="use_sq_meterage" class="label-text">Basierend auf Fläche (m²)</label>
+                </div>
+                <div class="mb-4 flex items-center gap-3">
+                    <input type="radio" id="use_income" name="tax_calculation_method" value="income" class="radio" {% if property.tax_calculation_method == "income" %}checked{% endif %}>
+                    <label for="use_income" class="label-text">Basierend auf Einnahmen</label>
+                </div>
+            </div>
+            
+
             <div class="mb-4">
                 <label class="label"><span class="label-text">Gebäudebild</span></label>
                 <input type="file" name="image" class="file-input file-input-bordered w-full" accept="image/*">
@@ -186,5 +195,21 @@
     </div>
 </div>
 
+<script>
+    document.getElementById("auto_calculate").addEventListener("change", function() {
+        let options = document.getElementById("auto_calculate_options");
+        let taxRateField = document.getElementById("partial_tax_rate");
 
+        options.classList.toggle("hidden", !this.checked);
+        taxRateField.disabled = this.checked;  // Disable input when auto-calculation is enabled
+    });
+
+    document.querySelectorAll("input[name='tax_calculation_method']").forEach((radio) => {
+        radio.addEventListener("change", function() {
+            if (this.checked) {
+                document.getElementById("partial_tax_rate").disabled = true;
+            }
+        });
+    });
+</script>
 {% endblock %}

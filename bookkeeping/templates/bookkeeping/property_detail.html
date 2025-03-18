@@ -28,9 +28,32 @@
         <p>
           <span class="font-semibold">Adresse:</span> {{ property.street }}, {{ property.building_no }}, {{ property.city }}
         </p>
-        <p>
-            <span class="font-semibold">Teilweise-Steuersatz:</span> {{ property.partial_tax_rate}} %
-          </p>
+        <p class="property-details">
+            <span class="font-semibold">Teilweise-Steuersatz:</span>
+            {% if property.partial_tax_rate is not None %}
+                {{ property.partial_tax_rate }} %
+            {% elif property.auto_calculate_tax %}
+                Automatisch berechnet nach <br>
+                {% if property.tax_calculation_method == "sq_meterage" %}
+                    Fläche (m²)
+                {% elif property.tax_calculation_method == "income" %}
+                    Einnahmen
+                {% else %}
+                    unbekannter Methode
+                {% endif %}
+            {% else %}
+                Nicht festgelegt
+            {% endif %}
+        </p>
+        
+        <style>
+            .property-details {
+                word-wrap: break-word; /* Break long words */
+                white-space: normal; /* Allow text wrapping */
+                max-width: 300px; /* Adjust width as needed */
+            }
+        </style>
+        
         <p>
           <span class="font-semibold">Vermieter:</span>
           {% for landlord in property_landlords %}
@@ -189,20 +212,76 @@
             </select>
           </div>
           
-          <!-- UST Type Field
-          <div class="mb-4">
-              <label class="label"><span class="label-text">UST Typ</span></label>
-              <select name="ust_type" class="select select-bordered w-full">
-                  <option value="0" {% if property.ust_type == "Nicht" %}selected{% endif %}>Nicht (0%)</option>
-                  <option value="7" {% if property.ust_type == "Teilw" %}selected{% endif %}>Teilw (7%)</option>
-                  <option value="19" {% if property.ust_type == "Voll" %}selected{% endif %}>Voll (19%)</option>
-              </select>
-          </div>             -->
           <div class="mb-4">
             <label class="label"><span class="label-text">Teilweise-Steuersatz %</span></label>
             <input type="text" name="partial_tax_rate" class="input input-bordered w-full" value="{{ property.partial_tax_rate}}"required>
         </div>
 
+        <!-- Automatische Berechnung -->
+        <div class="mb-4 flex items-center gap-3">
+            <label class="label"><span class="label-text">Automatisch berechnen</span></label>
+            <input type="checkbox" id="auto_calculate_edit" name="auto_calculate_tax" class="checkbox" 
+                {% if property.auto_calculate_tax %}checked{% endif %}>
+        </div>
+
+        <!-- Berechnungsoptionen (hidden by default) -->
+        <div id="auto_calculate_options_edit" class="{% if not property.auto_calculate_tax %}hidden{% endif %} ml-5">
+            <div class="mb-4 flex items-center gap-3">
+                <input type="radio" id="tax_sq_meterage_edit" name="tax_calculation_method" value="sq_meterage" class="radio"
+                    {% if property.tax_calculation_method == "sq_meterage" %}checked{% endif %}>
+                <label for="tax_sq_meterage_edit" class="label-text">Fläche (m²)</label>
+            </div>
+            <div class="mb-4 flex items-center gap-3">
+                <input type="radio" id="tax_income_edit" name="tax_calculation_method" value="income" class="radio"
+                    {% if property.tax_calculation_method == "income" %}checked{% endif %}>
+                <label for="tax_income_edit" class="label-text">Einnahmen</label>
+            </div>
+        </div>
+
+        <script>
+            document.getElementById("auto_calculate_edit").addEventListener("change", function() {
+                let options = document.getElementById("auto_calculate_options_edit");
+                let taxRateField = document.querySelector("input[name='partial_tax_rate']");
+        
+                options.classList.toggle("hidden", !this.checked);
+                taxRateField.disabled = this.checked;  // Disable manual input if auto calculation is selected
+            });
+        </script>
+<script>
+    document.getElementById("auto_calculate_edit").addEventListener("change", function() {
+        document.getElementById("auto_calculate_options_edit").classList.toggle("hidden", !this.checked);
+    });
+
+    // Ensure only one checkbox is selected at a time
+    document.getElementById("use_sq_meterage_edit").addEventListener("change", function() {
+        if (this.checked) {
+            document.getElementById("use_income_edit").checked = false;
+        }
+    });
+
+    document.getElementById("use_income_edit").addEventListener("change", function() {
+        if (this.checked) {
+            document.getElementById("use_sq_meterage_edit").checked = false;
+        }
+    });
+</script>
+<script>
+    document.getElementById("auto_calculate").addEventListener("change", function() {
+        let options = document.getElementById("auto_calculate_options");
+        let taxRateField = document.getElementById("partial_tax_rate");
+
+        options.classList.toggle("hidden", !this.checked);
+        taxRateField.disabled = this.checked;  // Disable input when auto-calculation is enabled
+    });
+
+    document.querySelectorAll("input[name='tax_calculation_method']").forEach((radio) => {
+        radio.addEventListener("change", function() {
+            if (this.checked) {
+                document.getElementById("partial_tax_rate").disabled = true;
+            }
+        });
+    });
+</script>
           <!-- Property Image Field -->
           <div class="mb-4">
               <label class="label"><span class="label-text">Gebäudebild</span></label>

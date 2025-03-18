@@ -301,8 +301,14 @@ def add_property(request):
         zip_code = request.POST.get('zip')
         country = request.POST.get('country')
         landlord_ids = request.POST.getlist('landlords')
-        partial_tax_rate = request.POST.get('partial_tax_rate')
+        # partial_tax_rate = request.POST.get('partial_tax_rate')
         image = request.FILES.get('image')
+
+
+        auto_calculate_tax = request.POST.get('auto_calculate_tax') == "on"  # Checkbox returns "on" if checked
+        tax_calculation_method = request.POST.get('tax_calculation_method', 'none')  # Default to manual entry
+        partial_tax_rate = request.POST.get('partial_tax_rate', '0').replace(',', '.')  # Ensure valid decimal format
+        partial_tax_rate = float(partial_tax_rate) if not auto_calculate_tax else None  # Null if auto-calculated
 
         # Create the Property object
         property_obj = Property.objects.create(
@@ -314,8 +320,11 @@ def add_property(request):
             zip=zip_code,
             country=country,
             partial_tax_rate=partial_tax_rate,
+            auto_calculate_tax=auto_calculate_tax,
+            tax_calculation_method=tax_calculation_method,
             image=image,
         )
+
         property_obj.landlords.set(landlord_ids)  # Assign landlords
 
         return redirect('properties')
@@ -426,7 +435,17 @@ def edit_property(request, pk):
         # Convert German-formatted numbers
         partial_tax_rate = request.POST.get('partial_tax_rate', '0')  # Default to '0' if None
         partial_tax_rate = partial_tax_rate.replace(',', '.')  # Replace German comma with a dot
-        property_obj.partial_tax_rate = float(partial_tax_rate)  # Ensure valid float format
+        # property_obj.partial_tax_rate = float(partial_tax_rate)  # Ensure valid float format
+
+        auto_calculate_tax = request.POST.get('auto_calculate_tax') == "on"
+        tax_calculation_method = request.POST.get('tax_calculation_method', 'none')
+        partial_tax_rate = request.POST.get('partial_tax_rate', '0').replace(',', '.')
+        partial_tax_rate = float(partial_tax_rate) if not auto_calculate_tax else None
+
+        property_obj.auto_calculate_tax = auto_calculate_tax
+        property_obj.tax_calculation_method = tax_calculation_method
+        property_obj.partial_tax_rate = partial_tax_rate
+
 
         # Handle landlords update
         landlord_ids = request.POST.getlist('landlords')
