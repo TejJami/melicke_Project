@@ -940,7 +940,8 @@ def add_lease(request):
         account_names = [tenant.name for tenant in tenants]
         ibans = [tenant.iban for tenant in tenants]
 
-        # Create the lease
+        additional_costs = unit_obj.additional_costs  # Fetch additional costs from the unit
+
         lease = Lease.objects.create(
             property=property_obj,
             unit=unit_obj,
@@ -949,9 +950,11 @@ def add_lease(request):
             ust_type=ust_type,
             deposit_amount=deposit_amount,
             rent=rent,
+            additional_costs=additional_costs,  # Store in lease
             account_names=account_names,
             ibans=ibans,
         )
+
         lease.landlords.set(landlords)  # Set landlords for the lease
         lease.tenants.set(tenants)  # Assign multiple tenants
         lease.save()
@@ -985,6 +988,8 @@ def edit_lease(request, pk):
 
         # Fetch unit's rent
         lease.rent = lease.unit.rent
+
+        lease.additional_costs = lease.unit.additional_costs  # Update from unit
 
         # Save updated landlords
         landlord_ids = request.POST.getlist('landlords')

@@ -113,145 +113,110 @@
         </div>
 </dialog>
 
-<!-- Toggle Button -->
+<!-- Toggle Button with DaisyUI -->
 <div class="flex justify-end mb-3">
     <label class="flex items-center gap-2 cursor-pointer">
-        <input type="checkbox" id="toggleLeaseDetails" class="checkbox">
-        <span>Lease Details Anzeigen</span>
+        <input type="checkbox" id="toggleLeaseDetails" class="toggle toggle-primary">
+        <span class="font-semibold">Mietdetails anzeigen</span>
     </label>
 </div>
+
 
 <!-- Tenant Table -->
 <div class="overflow-x-auto">
     <table class="table w-full text-left bg-base-100 text-base-content">
         <thead>
-            <tr id="tenantTableHeaders">
+            <tr>
                 <th>Name</th>
                 <th>Unit</th>
-                <th class="lease-toggle">Andere Kontonamen</th>
-                <th class="lease-toggle">Property Type</th>
-                <th>Telefon</th>
-                <th>Email</th>
-                <th>Adresse</th>
-                <th class="lease-details hidden">Start Date</th>
-                <th class="lease-details hidden">End Date</th>
-                <th class="lease-details hidden">Rent</th>
-                <th class="lease-details hidden">Deposit</th>
-                <th class="lease-details hidden">USt Type</th>
+                
+                <!-- Contact Columns (Hidden when Lease Details are Shown) -->
+                <th class="contact-columns">Telefon</th>
+                <th class="contact-columns">Email</th>
+                <th class="contact-columns">Adresse</th>
+        
+                <!-- Lease Columns (Hidden by Default) -->
+                <th class="lease-columns hidden">Startdatum</th>
+                <th class="lease-columns hidden">Enddatum</th>
+                <th class="lease-columns hidden">Miete</th>
+                <th class="lease-columns hidden">Kaution</th>
+                <th class="lease-columns hidden">USt Typ</th>
+        
                 <th>Aktionen</th>
             </tr>
         </thead>
+        
         <tbody>
             {% for tenant in tenants %}
             <tr>
-                <td><strong>{{ tenant.name }}</strong></td>
+                <td>{{ tenant.name }}</td>
                 <td>
                     {% if tenant.leases.all %}
                         {% for lease in tenant.leases.all %}
-                            <span>{{ lease.unit.unit_name }}</span>
+                            {{ lease.unit.unit_name }}
                         {% endfor %}
                     {% else %}
                         <span class="text-gray-500">Kein Mietvertrag</span>
                     {% endif %}
                 </td>
-
-                <td class="lease-toggle">
-                    {{ tenant.other_account_names }}
-                </td>
-
-                <td class="lease-toggle">
-                    {% if tenant.leases.all %}
-                        {% for lease in tenant.leases.all %}
-                            <span>{{ lease.property.property_type }}</span>
-                        {% endfor %}
-                    {% else %}
-                        <span class="text-gray-500">-</span>
-                    {% endif %}
-                </td>
-
-                <td>{{ tenant.phone_number }}</td>
-                <td>{{ tenant.email }}</td>
-                <td>{{ tenant.address }}</td>
-
+        
+                <!-- Contact Columns -->
+                <td class="contact-columns">{{ tenant.phone_number }}</td>
+                <td class="contact-columns">{{ tenant.email }}</td>
+                <td class="contact-columns">{{ tenant.address }}</td>
+        
                 <!-- Lease Details (Hidden by Default) -->
-                <td class="lease-details hidden">
-                    {% if tenant.leases.all %}
-                        {% for lease in tenant.leases.all %}
-                            <span>{{ lease.start_date|default:"-" }}</span>
-                        {% endfor %}
-                    {% else %}
-                        <span class="text-gray-500">-</span>
-                    {% endif %}
-                </td>
-
-                <td class="lease-details hidden">
-                    {% if tenant.leases.all %}
-                        {% for lease in tenant.leases.all %}
-                            <span>{{ lease.end_date|default:"-" }}</span>
-                        {% endfor %}
-                    {% else %}
-                        <span class="text-gray-500">-</span>
-                    {% endif %}
-                </td>
-
-                <td class="lease-details hidden">
-                    {% if tenant.leases.all %}
-                        {% for lease in tenant.leases.all %}
-                            <span>€{{ lease.rent|floatformat:2 }}</span>
-                        {% endfor %}
-                    {% else %}
-                        <span class="text-gray-500">-</span>
-                    {% endif %}
-                </td>
-
-                <td class="lease-details hidden">
-                    {% if tenant.leases.all %}
-                        {% for lease in tenant.leases.all %}
-                            <span>€{{ lease.deposit_amount|floatformat:2 }}</span>
-                        {% endfor %}
-                    {% else %}
-                        <span class="text-gray-500">-</span>
-                    {% endif %}
-                </td>
-
-                <td class="lease-details hidden">
-                    {% if tenant.leases.all %}
-                        {% for lease in tenant.leases.all %}
-                            <span>{{ lease.ust_type }}</span>
-                        {% endfor %}
-                    {% else %}
-                        <span class="text-gray-500">-</span>
-                    {% endif %}
-                </td>
-
+                {% if tenant.leases.all %}
+                    {% for lease in tenant.leases.all %}
+                        <td class="lease-columns hidden">{{ lease.start_date|default:"-" }}</td>
+                        <td class="lease-columns hidden">{{ lease.end_date|default:"-" }}</td>
+                        <td class="lease-columns hidden">€{{ lease.rent|floatformat:2 }}</td>
+                        <td class="lease-columns hidden">€{{ lease.deposit_amount|floatformat:2 }}</td>
+                        <td class="lease-columns hidden">{{ lease.ust_type }}</td>
+                    {% endfor %}
+                {% else %}
+                    <td class="lease-columns hidden" colspan="5">-</td>
+                {% endif %}
+        
+                <!-- Actions Column -->
+                <!-- Updated Delete Button to correctly call the modal -->
                 <td>
-                    <form method="post" action="{% url 'delete_tenant' tenant.id %}" class="inline" onsubmit="return confirm('Are you sure you want to delete this tenant?');">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-circle btn-outline btn-error btn-sm">✕</button>
-                    </form>
+                    <button 
+                        class="btn btn-circle btn-outline btn-error btn-sm hover:bg-error hover:text-white" 
+                        onclick="openDeleteTenantModal('{{ tenant.id }}', '{{ tenant.name|escapejs }}')">
+                        ✕
+                    </button>
                 </td>
+
             </tr>
             {% endfor %}
         </tbody>
+        
     </table>
 </div>
 
-<script>
-document.getElementById("toggleLeaseDetails").addEventListener("change", function () {
-    let leaseDetails = document.querySelectorAll(".lease-details");
-    let leaseHeaders = document.querySelectorAll(".lease-details");
-    let leaseToggleCols = document.querySelectorAll(".lease-toggle");
 
-    if (this.checked) {
-        leaseDetails.forEach(col => col.classList.remove("hidden"));
-        leaseHeaders.forEach(header => header.classList.remove("hidden"));
-        leaseToggleCols.forEach(col => col.classList.add("hidden")); // Hide "Other Account Names" and "Property Type"
-    } else {
-        leaseDetails.forEach(col => col.classList.add("hidden"));
-        leaseHeaders.forEach(header => header.classList.add("hidden"));
-        leaseToggleCols.forEach(col => col.classList.remove("hidden"));
-    }
+
+<!-- Toggle Functionality -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const toggle = document.getElementById("toggleLeaseDetails");
+
+    toggle.addEventListener("change", function () {
+        const showDetails = this.checked;
+
+        // Hide/Show the lease-specific columns
+        document.querySelectorAll(".lease-columns").forEach(col => {
+            col.style.display = showDetails ? "table-cell" : "none";
+        });
+
+        // Hide/Show the general contact columns
+        document.querySelectorAll(".contact-columns").forEach(col => {
+            col.style.display = showDetails ? "none" : "table-cell";
+        });
+    });
 });
+
 </script>
 
     

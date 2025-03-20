@@ -121,6 +121,8 @@
 
                     <th>USt Typ</th>
                     <th>Miete</th>
+                    <th>NebenKosten</th>
+
                     <th>Kaution</th>
                     <th>Startdatum</th>
                     <th>Enddatum</th>
@@ -159,6 +161,8 @@
 
                     <td>{{ lease.ust_type }}</td>
                     <td>€{{ lease.rent|floatformat:2 }}</td>
+                    <td>€{{ lease.additional_costs|floatformat:"2" }}</td>
+
                     <td>€{{ lease.deposit_amount|floatformat:2 }}</td>
                     <td>{{ lease.start_date|date:'Y-m-d' }}</td>
                     <td>{{ lease.end_date|date:'Y-m-d'|default:"-" }}</td>

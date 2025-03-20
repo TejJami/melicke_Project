@@ -32,55 +32,6 @@ class Landlord(models.Model):
         return f"{self.name} - {self.object if self.object else 'No Object'}"
 
 
-# # Property Model (Building)
-# class Property(models.Model):
-#     PROPERTY_TYPE_CHOICES = [
-#         ('Residential', 'Residential'),
-#         ('Commercial', 'Commercial'),
-#         ('Mixed Use', 'Mixed Use'),
-#     ]
-
-#     property_type = models.CharField(max_length=20, choices=PROPERTY_TYPE_CHOICES, default='Residential')
-#     name = models.CharField(max_length=255)
-#     street = models.CharField(max_length=255)
-#     building_no = models.CharField(max_length=50)
-#     city = models.CharField(max_length=100)
-#     zip = models.CharField(max_length=10)
-#     country = models.CharField(max_length=100)
-#     landlords = models.ManyToManyField(Landlord, related_name='owned_properties')  # Multiple landlords can own a property
-#     image = models.ImageField(upload_to='property_images/', null=True, blank=True)
-
-#     partial_tax_rate = models.FloatField(max_length=5, null=True, blank=True)
-   
-#     @staticmethod
-#     def get_next_default_image():
-#         # List of default images
-#         default_images = [
-#             'property_images/default1.png',
-#             'property_images/default2.jpg',
-#             'property_images/default3.jpg',
-#             'property_images/default4.jpg',
-#             'property_images/default5.jpg',
-#             'property_images/default6.jpg',
-#         ]
-#         # Get the current counter from the database or initialize it
-#         from django.core.cache import cache
-#         counter = cache.get('default_image_counter', 0)
-
-#         # Select the next image
-#         next_image = default_images[counter]
-
-#         # Update the counter
-#         counter = (counter + 1) % len(default_images)
-#         cache.set('default_image_counter', counter)
-
-#         return next_image
-
-#     def save(self, *args, **kwargs):
-#         if not self.image:
-#             self.image = self.get_next_default_image()
-#         super().save(*args, **kwargs)
-
 
 from django.db import models
 from decimal import Decimal
@@ -231,6 +182,8 @@ class Lease(models.Model):
     )
     deposit_amount = models.DecimalField(max_digits=10, decimal_places=2)
     rent = models.DecimalField(max_digits=10, decimal_places=2)  # Add rent field
+    additional_costs = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Additional costs for the lease")
+
     account_names = ArrayField(models.CharField(max_length=255), blank=True, default=list)
     ibans = ArrayField(models.CharField(max_length=34), blank=True, default=list)
 

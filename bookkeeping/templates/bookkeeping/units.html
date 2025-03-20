@@ -131,7 +131,13 @@
                     
                     <td>{{ unit.floor_area|floatformat:"1" }} sq.m.</td>
                     <td>{{ unit.floor }}</td>
-                    <td>{{ unit.position }}</td>
+                    <td>
+                        {% if unit.position == "Left" %} Links
+                        {% elif unit.position == "Middle" %} Mitte
+                        {% elif unit.position == "Right" %} Rechts
+                        {% else %} - {% endif %}
+                    </td>
+                    
                     <td>€{{ unit.rent|floatformat:"2" }}</td>
                     <td>€{{ unit.additional_costs|default:0|floatformat:"2" }}</td>
 
