@@ -164,12 +164,12 @@
                                 <td class="contact-columns">{{ tenant.address }}</td>
             
                                 <!-- Lease Columns -->
-                                <td class="lease-columns hidden">{{ lease.start_date|default:"-" }}</td>
-                                <td class="lease-columns hidden">{{ lease.end_date|default:"-" }}</td>
-                                <td class="lease-columns hidden">€{{ lease.rent|floatformat:2 }}</td>
-                                <td class="lease-columns hidden">€{{ lease.additional_costs|floatformat:2 }}</td>
-                                <td class="lease-columns hidden">€{{ lease.deposit_amount|floatformat:2 }}</td>
-                                <td class="lease-columns hidden">{{ lease.ust_type }}</td>
+                                <td class="lease-columns" style="display: none;">{{ lease.start_date|default:"-" }}</td>
+                                <td class="lease-columns" style="display: none;">{{ lease.end_date|default:"-" }}</td>
+                                <td class="lease-columns" style="display: none;">€{{ lease.rent|floatformat:2 }}</td>
+                                <td class="lease-columns" style="display: none;">€{{ lease.additional_costs|floatformat:2 }}</td>
+                                <td class="lease-columns" style="display: none;">€{{ lease.deposit_amount|floatformat:2 }}</td>
+                                <td class="lease-columns" style="display: none;">{{ lease.ust_type }}</td>
             
                                 {% if forloop.first %}
                                     <td rowspan="{{ leases|length }}">
@@ -206,9 +206,14 @@
                             <td class="contact-columns">{{ tenant.phone_number }}</td>
                             <td class="contact-columns">{{ tenant.email }}</td>
                             <td class="contact-columns">{{ tenant.address }}</td>
-            
-                            <!-- Lease Columns -->
-                            <td class="lease-columns hidden" colspan="5">-</td>
+
+                            <td class="lease-columns" style="display: none;">-</td>
+                            <td class="lease-columns" style="display: none;">-</td>
+                            <td class="lease-columns" style="display: none;">-</td>
+                            <td class="lease-columns" style="display: none;">-</td>
+                            <td class="lease-columns" style="display: none;">-</td>
+                            <td class="lease-columns" style="display: none;">-</td>
+
             
                             <!-- Actions -->
                             <td>

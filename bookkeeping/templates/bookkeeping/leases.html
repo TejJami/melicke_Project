@@ -206,9 +206,30 @@
                 rentInput.value = data.rent;
             });
     }
+    function parseGermanNumber_2(value) {
+    if (value === null || value === undefined) return 0;
+
+    value = String(value).trim();
+
+    // If value has both `.` and `,` assume it's German format (e.g. 3.500,50)
+    if (value.includes('.') && value.includes(',')) {
+        value = value.replace(/\./g, '').replace(',', '.');
+    }
+    // If only `,` is present, assume it's decimal (e.g. 350,50)
+    else if (value.includes(',') && !value.includes('.')) {
+        value = value.replace(',', '.');
+    }
+    // If only `.` is present, assume it's already correct
+
+    let parsed = parseFloat(value);
+    return isNaN(parsed) ? 0 : parsed;
+}
+
+
+
 
     function openEditLeaseModal(id, unitId, tenantIds, startDate, endDate, depositAmount, rent, ustType) {
-    console.log(rent)
+    console.log(depositAmount)
         const form = document.getElementById('edit_lease_form');
     form.action = `/edit_lease/${id}/`;
 
@@ -221,7 +242,12 @@
     rent = rent.toString().replace(',', '.');
 
     // Safely parse numbers
-    document.getElementById('edit_deposit_amount').value = depositAmount ? parseFloat(depositAmount).toFixed(2) : '0.00';
+    document.getElementById('edit_deposit_amount').value = parseGermanNumber_2(depositAmount).toFixed(2);
+
+
+    console.log(parseGermanNumber_2(depositAmount))
+
+
     document.getElementById('edit_rent').value = rent ? parseFloat(depositAmount).toFixed(2) : '0.00' ;
 
     document.getElementById('edit_ust_type').value = ustType || '';
