@@ -24,6 +24,8 @@
     </div>
 </div>
 
+
+
 <!-- Search Modal -->
 <dialog aria-label="Modal" class="modal" id="search_modal">
     <div class="modal-box p-0">
@@ -101,7 +103,7 @@
                 <label class="label"><span class="label-text">Vermieter</span></label>
                 <select name="landlords" class="select select-bordered w-full" multiple>
                     {% for landlord in landlords %}
-                    <option value="{{ landlord.id }}">{{ landlord.name }}</option>
+                    <option value="{{ landlord.id }}">{{ landlord.name }}-{{ landlord.object}}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -141,7 +143,8 @@
 <!-- Property Cards -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
     {% for property in page_obj %}
-    <a href="{% url 'property_detail' property.id %}" class="block">
+    <a href="{% url 'property_detail' property.id %}" class="block" data-property-id="{{ property.id }}">
+
         <div class="card bg-base-100 image-full shadow-xl w-full h-48 cursor-pointer transform transition-transform duration-150 hover:scale-105 hover:shadow-2xl relative">
             <figure class="h-48 w-full overflow-hidden">
                 {% if property.image %}
@@ -154,6 +157,14 @@
             <div class="card-body">
                 <h1 class="font-bold text-xl text-white">{{ property.name }}</h1>
                 <p>{{ property.street }}, {{ property.city }}</p>
+                
+                <p class="text-sm text-warning mt-1 lock-status">
+                    {% if property.locked_by %}
+                        🔒 Wird derzeit bearbeitet von: <strong>{{ property.locked_by.username }}</strong>
+                    {% endif %}
+                </p>
+                
+                
                 <!-- Badge Positioned to Top-Right -->
                 <div class="absolute top-2 right-2">
                     <div class="badge badge-accent">
@@ -212,4 +223,33 @@
         });
     });
 </script>
+<script>
+    function updateLockStatus() {
+        fetch("{% url 'property_locks' %}")
+            .then(response => response.json())
+            .then(data => {
+                // Reset all lock-status fields
+                document.querySelectorAll(".lock-status").forEach(el => {
+                    el.innerHTML = "";
+                });
+    
+                data.forEach(lock => {
+                    const card = document.querySelector(`[data-property-id='${lock.id}']`);
+                    if (card) {
+                        const status = card.querySelector(".lock-status");
+                        if (status) {
+                            status.innerHTML = `🔒 Wird derzeit bearbeitet von: <strong>${lock.locked_by__username}</strong>`;
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error("Fehler beim Abrufen der Sperrstatusdaten:", error);
+            });
+    }
+    
+    // Poll every 10 seconds
+    setInterval(updateLockStatus, 5000);
+    </script>
+    
 {% endblock %}

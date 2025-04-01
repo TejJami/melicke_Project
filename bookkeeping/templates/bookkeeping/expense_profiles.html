@@ -229,7 +229,7 @@
                                         '{{ expense.id }}',
                                         
                                         '{{ expense.transaction_type }}',
-                                        '{{ expense.amount }}',
+                                        '{{ expense.amount |format_german_number }}',
                                         '{{ expense.date }}',
                                         '{{ expense.recurring }}',
                                         '{{ expense.frequency }}',
@@ -399,14 +399,23 @@
 
 <script>
 function openEditExpenseModal(id, transactionType, amount, date, recurring, frequency, propertyId, leaseId, accountName, bookingNo , ust) {
-
+    console.log(id, transactionType, amount, date, recurring, frequency, propertyId, leaseId, accountName, bookingNo , ust);
     const form = document.getElementById('edit_expense_form');
     form.action = `/edit_expense_profile/${id}/`;
+
+        // --- 💶 Parse German-style formatted amount like "1.500,50" ---
+        let parsedAmount = '';
+    if (amount) {
+        // Remove thousands separator (.) and replace decimal comma with dot
+        parsedAmount = amount.replace(/\./g, '').replace(',', '.');
+        parsedAmount = parseFloat(parsedAmount).toFixed(2);
+    }
+
 
     // Populate fields
     // document.getElementById('edit_profile_name_1').value = profileName;
     document.getElementById('edit_transaction_type_1').value = transactionType;
-    document.getElementById('edit_amount_1').value = amount ? parseFloat(amount).toFixed(2) : '';
+    document.getElementById('edit_amount_1').value = parsedAmount;
     const dt = new Date(date);
     const formattedDate = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
     document.getElementById('edit_date_1').value = formattedDate;

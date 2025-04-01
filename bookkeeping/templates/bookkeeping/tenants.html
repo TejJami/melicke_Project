@@ -117,7 +117,7 @@
 <div class="flex justify-end mb-3">
     <label class="flex items-center gap-2 cursor-pointer">
         <input type="checkbox" id="toggleLeaseDetails" class="toggle toggle-primary">
-        <span class="font-semibold">Mietdetails anzeigen</span>
+        <span class="font-semibold">Sollstellung</span>
     </label>
 </div>
 
@@ -139,7 +139,8 @@
                 <th class="lease-columns hidden">Startdatum</th>
                 <th class="lease-columns hidden">Enddatum</th>
                 <th class="lease-columns hidden">Miete</th>
-                <th class="lease-columns hidden">Kaution</th>
+                <th class="lease-columns hidden">NebenKosten</th>
+                <th class="lease-columns hidden">Bürgschaft</th>
                 <th class="lease-columns hidden">USt Typ</th>
         
                 <th>Aktionen</th>
@@ -148,49 +149,97 @@
         
         <tbody>
             {% for tenant in tenants %}
-            <tr>
-                <td>{{ tenant.name }}</td>
-                <td>
-                    {% if tenant.leases.all %}
-                        {% for lease in tenant.leases.all %}
-                            {{ lease.unit.unit_name }}
+                {% with leases=tenant.leases.all %}
+                    {% if leases %}
+                        {% for lease in leases %}
+                            <tr>
+                                {% if forloop.first %}
+                                    <td rowspan="{{ leases|length }}">{{ tenant.name }}</td>
+                                {% endif %}
+                                <td>{{ lease.unit.unit_name }}</td>
+            
+                                <!-- Contact Columns -->
+                                <td class="contact-columns">{{ tenant.phone_number }}</td>
+                                <td class="contact-columns">{{ tenant.email }}</td>
+                                <td class="contact-columns">{{ tenant.address }}</td>
+            
+                                <!-- Lease Columns -->
+                                <td class="lease-columns hidden">{{ lease.start_date|default:"-" }}</td>
+                                <td class="lease-columns hidden">{{ lease.end_date|default:"-" }}</td>
+                                <td class="lease-columns hidden">€{{ lease.rent|floatformat:2 }}</td>
+                                <td class="lease-columns hidden">€{{ lease.additional_costs|floatformat:2 }}</td>
+                                <td class="lease-columns hidden">€{{ lease.deposit_amount|floatformat:2 }}</td>
+                                <td class="lease-columns hidden">{{ lease.ust_type }}</td>
+            
+                                {% if forloop.first %}
+                                    <td rowspan="{{ leases|length }}">
+                                        <button 
+                                            class="btn btn-circle btn-outline btn-warning btn-sm mr-2" 
+                                            onclick="openEditTenantModal(
+                                                '{{ tenant.id }}', 
+                                                '{{ tenant.name|escapejs }}', 
+                                                '{{ tenant.other_account_names|default:''|escapejs }}', 
+                                                '{{ tenant.phone_number|default:''|escapejs }}', 
+                                                '{{ tenant.email|default:''|escapejs }}', 
+                                                '{{ tenant.address|default:''|escapejs }}', 
+                                                '{{ tenant.iban|default:''|escapejs }}', 
+                                                '{{ tenant.bic|default:''|escapejs }}', 
+                                                '{{ tenant.notes|default:''|escapejs }}'
+                                            )">
+                                            ✏️
+                                        </button>
+                                        <button 
+                                            class="btn btn-circle btn-outline btn-error btn-sm hover:bg-error hover:text-white" 
+                                            onclick="openDeleteTenantModal('{{ tenant.id }}', '{{ tenant.name|escapejs }}')">
+                                            ✕
+                                        </button>
+                                    </td>
+                                {% endif %}
+                            </tr>
                         {% endfor %}
                     {% else %}
-                        <span class="text-gray-500">Kein Mietvertrag</span>
+                        <tr>
+                            <td>{{ tenant.name }}</td>
+                            <td><span class="text-gray-500">Kein Mietvertrag</span></td>
+            
+                            <!-- Contact Columns -->
+                            <td class="contact-columns">{{ tenant.phone_number }}</td>
+                            <td class="contact-columns">{{ tenant.email }}</td>
+                            <td class="contact-columns">{{ tenant.address }}</td>
+            
+                            <!-- Lease Columns -->
+                            <td class="lease-columns hidden" colspan="5">-</td>
+            
+                            <!-- Actions -->
+                            <td>
+                                <button 
+                                    class="btn btn-circle btn-outline btn-warning btn-sm mr-2" 
+                                    onclick="openEditTenantModal(
+                                        '{{ tenant.id }}', 
+                                        '{{ tenant.name|escapejs }}', 
+                                        '{{ tenant.other_account_names|default:''|escapejs }}', 
+                                        '{{ tenant.phone_number|default:''|escapejs }}', 
+                                        '{{ tenant.email|default:''|escapejs }}', 
+                                        '{{ tenant.address|default:''|escapejs }}', 
+                                        '{{ tenant.iban|default:''|escapejs }}', 
+                                        '{{ tenant.bic|default:''|escapejs }}', 
+                                        '{{ tenant.notes|default:''|escapejs }}'
+                                    )">
+                                    ✏️
+                                </button>
+                                <button 
+                                    class="btn btn-circle btn-outline btn-error btn-sm hover:bg-error hover:text-white" 
+                                    onclick="openDeleteTenantModal('{{ tenant.id }}', '{{ tenant.name|escapejs }}')">
+                                    ✕
+                                </button>
+                            </td>
+                        </tr>
                     {% endif %}
-                </td>
-        
-                <!-- Contact Columns -->
-                <td class="contact-columns">{{ tenant.phone_number }}</td>
-                <td class="contact-columns">{{ tenant.email }}</td>
-                <td class="contact-columns">{{ tenant.address }}</td>
-        
-                <!-- Lease Details (Hidden by Default) -->
-                {% if tenant.leases.all %}
-                    {% for lease in tenant.leases.all %}
-                        <td class="lease-columns hidden">{{ lease.start_date|default:"-" }}</td>
-                        <td class="lease-columns hidden">{{ lease.end_date|default:"-" }}</td>
-                        <td class="lease-columns hidden">€{{ lease.rent|floatformat:2 }}</td>
-                        <td class="lease-columns hidden">€{{ lease.deposit_amount|floatformat:2 }}</td>
-                        <td class="lease-columns hidden">{{ lease.ust_type }}</td>
-                    {% endfor %}
-                {% else %}
-                    <td class="lease-columns hidden" colspan="5">-</td>
-                {% endif %}
-        
-                <!-- Actions Column -->
-                <!-- Updated Delete Button to correctly call the modal -->
-                <td>
-                    <button 
-                        class="btn btn-circle btn-outline btn-error btn-sm hover:bg-error hover:text-white" 
-                        onclick="openDeleteTenantModal('{{ tenant.id }}', '{{ tenant.name|escapejs }}')">
-                        ✕
-                    </button>
-                </td>
-
-            </tr>
+                {% endwith %}
             {% endfor %}
-        </tbody>
+            </tbody>
+            
+        
         
     </table>
 </div>

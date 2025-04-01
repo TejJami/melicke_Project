@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField  # For account names and IBANs as tags
 import psycopg2
+from django.contrib.auth.models import User
 
 # Model to represent tenants within a property
 class Tenant(models.Model):
@@ -69,6 +70,8 @@ class Property(models.Model):
         max_length=15, choices=TAX_CALCULATION_CHOICES, default='none', null=True, blank=True
     )
 
+    locked_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='locked_properties')
+
     @staticmethod
     def get_next_default_image():
         default_images = [
@@ -113,7 +116,7 @@ class Unit(models.Model):
     position = models.CharField(max_length=10, choices=POSITION_CHOICES, default='Middle', help_text="Unit position (Left, Middle, Right)", null=True, blank=True,)  # New choice field
 
     def __str__(self):
-        return f"{self.unit_name} - {self.property.name} (Floor {self.floor}, {self.position})"
+        return f"{self.unit_name} - {self.property.name})"
     
     
 # Model to represent parsed transactions after categorization
@@ -188,7 +191,7 @@ class Lease(models.Model):
     ibans = ArrayField(models.CharField(max_length=34), blank=True, default=list)
 
     def __str__(self):
-        return f"Lease: {self.property.name} - {self.unit.unit_name} ({self.tenants.name})"
+        return f"Lease: {self.property.name} - {self.unit.unit_name}"
 
 # Model to represent expense categories
 class ExpenseProfile(models.Model):

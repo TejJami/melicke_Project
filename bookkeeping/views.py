@@ -21,7 +21,7 @@ from datetime import datetime
 from django.urls import reverse
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
-
+from django.http import HttpResponseForbidden
 
 # Dashboard: Displays Earmarked and Parsed Transactions
 @login_required
@@ -44,7 +44,42 @@ def upload_bank_statement(request, property_id=None):
     property_obj = get_object_or_404(Property, id=property_id)  # Ensure property exists
 
     if request.method == 'POST' and request.FILES.get('statement'):
+        duplicate_count = 0
+
+        # Check if the file is a PDF
         statement = request.FILES['statement']
+        from PyPDF2 import PdfReader
+
+        # Get all landlord IBANs for this property
+        property_landlord_ibans = list(property_obj.landlords.values_list('iban', flat=True))
+
+        # Read the first page of the uploaded PDF to extract IBAN
+        reader = PdfReader(statement)
+        first_page_text = reader.pages[0].extract_text()
+        iban_match = re.search(r"IBAN:\s*([A-Z0-9\s]+)", first_page_text)
+
+        if not iban_match:
+            return render(request, 'bookkeeping/upload_statement.html', {
+                'property': property_obj,
+                'error': "⚠️ IBAN konnte im PDF nicht gefunden werden.",
+            })
+
+        extracted_iban = re.sub(r"\s+", "", iban_match.group(1))[:22] # Normalize format
+
+        # Normalize property landlord IBANs
+        normalized_ibans = [iban.replace(" ", "") for iban in property_landlord_ibans if iban]
+        print(f"Extracted IBAN: {extracted_iban}")
+        print(f"Normalized IBANs: {normalized_ibans}")
+
+        # Check if extracted IBAN matches any of the property's landlord IBANs
+        if extracted_iban not in normalized_ibans:
+            from django.contrib import messages
+
+            messages.error(request, f"❌ Die IBAN {extracted_iban} stimmt nicht mit den IBANs der Vermieter überein.")
+            return redirect(f"{reverse('property_detail', args=[property_id])}?tab=dashboard")
+
+        # Now continue with earmarked transaction parsing...
+            
         earmarked_transactions = []
         current_buchungsdatum = None  # To store the current `Buchungsdatum`
 
@@ -187,18 +222,37 @@ def upload_bank_statement(request, property_id=None):
             if current_transaction and 'amount' in current_transaction:
                 current_transaction['description'] = " ".join(multiline_description).strip()
                 try:
-                    txn = EarmarkedTransaction(
+                    # Check for duplicates (fast lookup by date, account name, and amount only)
+                    exists = EarmarkedTransaction.objects.filter(
                         date=current_transaction['date'],
                         account_name=current_transaction['account_name'],
-                        amount=current_transaction['amount'],
-                        is_income=current_transaction['is_income'],
-                        description=current_transaction['description'],
-                        property=property_obj,  # Assign the property
-                    )
-                    earmarked_transactions.append(txn)
+                        amount=current_transaction['amount']
+                    ).exists()
+
+                    if not exists:
+                        txn = EarmarkedTransaction(
+                            date=current_transaction['date'],
+                            account_name=current_transaction['account_name'],
+                            amount=current_transaction['amount'],
+                            is_income=current_transaction['is_income'],
+                            description=current_transaction['description'],
+                            property=property_obj,
+                        )
+                        earmarked_transactions.append(txn)
+                    else:
+                        duplicate_count += 1
                 except Exception as e:
                     print(f"Error saving last transaction on page {page_number + 1}: {e}")
+        
+        if duplicate_count > 0:
+            from django.contrib import messages
+            # Display a warning message for skipped transactions
+            messages.warning(
+                request, 
+                f"Einige Transaktionen wurden möglicherweise übersprungen, weil sie bereits vorhanden sind."
 
+            )
+            
         # Save all transactions to the database
         for txn in earmarked_transactions:
             txn.save()  # This will trigger the `post_save` signal
@@ -226,70 +280,6 @@ def properties(request):
         'landlords': landlords,
     })
 
-# # Add Property
-# def add_property(request):
-#     if request.method == 'POST':
-#         # Get property fields
-#         property_type = request.POST.get('property_type')
-#         name = request.POST.get('name')
-#         street = request.POST.get('street')
-#         building_no = request.POST.get('building_no')
-#         city = request.POST.get('city')
-#         zip_code = request.POST.get('zip')
-#         country = request.POST.get('country')
-#         landlord_ids = request.POST.getlist('landlords')
-#         partial_tax_rate = request.POST.get('partial_tax_rate')
-
-#         # Get property image from request.FILES
-#         image = request.FILES.get('image')  # Extract the uploaded image file
-
-#         # Create the Property object
-#         property_obj = Property.objects.create(
-#             property_type=property_type,
-#             name=name,
-#             street=street,
-#             building_no=building_no,
-#             city=city,
-#             zip=zip_code,
-#             country=country,
-#             # ust_type=ust_type,
-#             partial_tax_rate=partial_tax_rate,
-#             image=image,  # Assign the uploaded image to the property
-#         )
-#         property_obj.landlords.set(landlord_ids)  # Set landlords for the property
-
-#         # Handle Units
-#         unit_data_keys = [key for key in request.POST.keys() if key.startswith('units-')]
-#         unit_data = {}
-
-#         # Organize unit data
-#         for key in unit_data_keys:
-#             match = re.match(r'units-(\d+)-(.+)', key)
-#             if match:
-#                 unit_index, field_name = match.groups()
-#                 if unit_index not in unit_data:
-#                     unit_data[unit_index] = {}
-#                 unit_data[unit_index][field_name] = request.POST.get(key)
-
-#         # Create Unit objects
-#         for unit_index, unit_fields in unit_data.items():
-#             if unit_fields.get('unit_name'):  # Check if unit has a name (to avoid blank entries)
-#                 Unit.objects.create(
-#                     property=property_obj,
-#                     unit_name=unit_fields.get('unit_name'),
-#                     floor_area=unit_fields.get('floor_area'),
-#                     rooms=unit_fields.get('rooms'),
-#                     baths=unit_fields.get('baths'),
-#                     market_rent=unit_fields.get('market_rent'),
-#                 )
-
-#         return redirect('properties')
-
-#     landlords = Landlord.objects.all()
-
-#     return render(request, 'bookkeeping/add_property.html', {
-#         'landlords': landlords,
-#     })
 def add_property(request):
     if request.method == 'POST':
         # Get property fields
@@ -334,14 +324,11 @@ def add_property(request):
         'landlords': landlords,
     })
 
-
-# # Edit Property
 # def edit_property(request, pk):
 #     property_obj = get_object_or_404(Property, id=pk)
-#     UnitFormSet = modelformset_factory(Unit, fields=('unit_name', 'floor_area', 'rooms', 'baths', 'market_rent'), extra=0, can_delete=True)
 
 #     if request.method == 'POST':
-#         # Update the main property fields
+#         # Update property fields
 #         property_obj.property_type = request.POST.get('property_type')
 #         property_obj.name = request.POST.get('name')
 #         property_obj.street = request.POST.get('street')
@@ -350,75 +337,38 @@ def add_property(request):
 #         property_obj.zip = request.POST.get('zip')
 #         property_obj.country = request.POST.get('country')
 
-#         # property_obj.ust_type = request.POST.get('ust_type')
-#         property_obj.partial_tax_rate = request.POST.get('partial_tax_rate')
+#         # Convert German-formatted numbers
+#         partial_tax_rate = request.POST.get('partial_tax_rate', '0')  # Default to '0' if None
+#         partial_tax_rate = partial_tax_rate.replace(',', '.')  # Replace German comma with a dot
+#         # property_obj.partial_tax_rate = float(partial_tax_rate)  # Ensure valid float format
+
+#         auto_calculate_tax = request.POST.get('auto_calculate_tax') == "on"
+#         tax_calculation_method = request.POST.get('tax_calculation_method', 'none')
+#         partial_tax_rate = request.POST.get('partial_tax_rate', '0').replace(',', '.')
+#         partial_tax_rate = float(partial_tax_rate) if not auto_calculate_tax else None
+
+#         property_obj.auto_calculate_tax = auto_calculate_tax
+#         property_obj.tax_calculation_method = tax_calculation_method
+#         property_obj.partial_tax_rate = partial_tax_rate
 
 
-#         # Update landlords
+#         # Handle landlords update
 #         landlord_ids = request.POST.getlist('landlords')
 #         property_obj.landlords.set(landlord_ids)
 
-#         # Save the property
+#         # Save updated property
 #         property_obj.save()
 
-#         # Process the formset for existing units
-#         unit_formset = UnitFormSet(request.POST, queryset=property_obj.units.all(), prefix='units')
-#         if unit_formset.is_valid():
-#             units = unit_formset.save(commit=False)
-#             # Save updated and existing units
-#             for unit in units:
-#                 unit.property = property_obj
-#                 unit.save()
-
-#             # Delete any units marked for deletion
-#             for deleted_unit in unit_formset.deleted_objects:
-#                 deleted_unit.delete()
-#         else:
-#             print(unit_formset.errors)  # Debugging: print errors if formset validation fails
-
-#         # Process dynamically added units
-#         unit_data_keys = [key for key in request.POST.keys() if key.startswith('units-')]
-#         print("unit_data_keys",unit_data_keys)
-#         new_unit_data = {}
-
-#         for key in unit_data_keys:
-#             match = re.match(r'units-(\d+)-(.+)', key)
-#             if match:
-#                 unit_index, field_name = match.groups()
-#                 if unit_index not in new_unit_data:
-#                     new_unit_data[unit_index] = {}
-#                 new_unit_data[unit_index][field_name] = request.POST.get(key)
-
-#         for unit_index, unit_fields in new_unit_data.items():
-#             # Ensure all required fields are present and create new units
-#             unit_name = unit_fields.get('unit_name')
-#             floor_area = unit_fields.get('floor_area', '0')  # Default to '0' if missing
-#             rooms = unit_fields.get('rooms', '0')  # Default to '0' if missing
-#             baths = unit_fields.get('baths', '0')  # Default to '0' if missing
-#             market_rent = unit_fields.get('market_rent', '0.0')  # Default to '0.0' if missing
-
-#             if unit_name:  # Only create units with a valid name
-#                 Unit.objects.create(
-#                     property=property_obj,
-#                     unit_name=unit_name,
-#                     floor_area=floor_area,
-#                     rooms=rooms,
-#                     baths=baths,
-#                     market_rent=market_rent,
-#                 )
+#         property.locked_by = None
+#         property.save(update_fields=['locked_by'])
 
 #         return redirect('property_detail', property_id=pk)
 
-#     # Prepopulate the formsets for existing units
 #     landlords = Landlord.objects.all()
-#     unit_formset = UnitFormSet(queryset=property_obj.units.all(), prefix='units')
-
 #     return render(request, 'bookkeeping/edit_property.html', {
 #         'property': property_obj,
 #         'landlords': landlords,
-#         'unit_formset': unit_formset,
 #     })
-
 def edit_property(request, pk):
     property_obj = get_object_or_404(Property, id=pk)
 
@@ -433,10 +383,6 @@ def edit_property(request, pk):
         property_obj.country = request.POST.get('country')
 
         # Convert German-formatted numbers
-        partial_tax_rate = request.POST.get('partial_tax_rate', '0')  # Default to '0' if None
-        partial_tax_rate = partial_tax_rate.replace(',', '.')  # Replace German comma with a dot
-        # property_obj.partial_tax_rate = float(partial_tax_rate)  # Ensure valid float format
-
         auto_calculate_tax = request.POST.get('auto_calculate_tax') == "on"
         tax_calculation_method = request.POST.get('tax_calculation_method', 'none')
         partial_tax_rate = request.POST.get('partial_tax_rate', '0').replace(',', '.')
@@ -446,12 +392,12 @@ def edit_property(request, pk):
         property_obj.tax_calculation_method = tax_calculation_method
         property_obj.partial_tax_rate = partial_tax_rate
 
-
-        # Handle landlords update
+        # Update landlords
         landlord_ids = request.POST.getlist('landlords')
         property_obj.landlords.set(landlord_ids)
 
-        # Save updated property
+        # Save and release lock
+        property_obj.locked_by = None  # FIXED: was `property.locked_by`
         property_obj.save()
 
         return redirect('property_detail', property_id=pk)
@@ -809,6 +755,7 @@ def landlords(request):
 # Add Landlord
 def add_landlord(request):
     if request.method == 'POST':
+        print(request.POST)
         name = request.POST.get('name')
         phone_number = request.POST.get('phone_number')
         email = request.POST.get('email')
@@ -816,7 +763,7 @@ def add_landlord(request):
         iban = request.POST.get('iban')
         bic = request.POST.get('bic')
         tax_id = request.POST.get('tax_id')
-        object  = request.POST.get('company_name')
+        objects  = request.POST.get('object')
         notes = request.POST.get('notes')
 
         # Create the landlord
@@ -828,7 +775,7 @@ def add_landlord(request):
             iban=iban,
             bic=bic,
             tax_id=tax_id,
-            object =object ,
+            object =objects ,
             notes=notes,
         )
         return redirect('landlords')
@@ -1190,8 +1137,120 @@ def lease_profiles(request, lease_id):
 from django.db.models import Sum, Avg
 from django.utils.timezone import now, timedelta
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from .models import Property
+
+def get_property_locks(request):
+    if request.user.is_authenticated:
+        locks = Property.objects.filter(locked_by__isnull=False).values('id', 'locked_by__username')
+        return JsonResponse(list(locks), safe=False)
+    return JsonResponse({"error": "Unauthorized"}, status=403)
+
+
+@csrf_exempt
+def unlock_property(request, property_id):
+    if request.method == "POST" and request.user.is_authenticated:
+        try:
+            prop = Property.objects.get(id=property_id)
+            if prop.locked_by == request.user:
+                prop.locked_by = None
+                prop.save(update_fields=["locked_by"])
+                print(f"[unlock_property] 🔓 Unlocked property {property_id} by {request.user.username}")
+                return JsonResponse({"status": "unlocked"})
+        except Property.DoesNotExist:
+            pass
+    return JsonResponse({"status": "error"}, status=400)
+
+
+# def property_detail(request, property_id):
+#     property_obj = get_object_or_404(Property, id=property_id)
+    
+#         # If locked by another user, forbid access
+#     if property.locked_by and property.locked_by != request.user:
+#         return HttpResponseForbidden("This property is currently being edited by another user.")
+
+#     # Lock the property for the current user
+#     if property.locked_by != request.user:
+#         property.locked_by = request.user
+#         property.save(update_fields=['locked_by'])
+
+#     leases = property_obj.leases.all()
+#     income_profiles = IncomeProfile.objects.filter(property=property_obj)
+#     expense_profiles = ExpenseProfile.objects.filter(property=property_obj)
+#     earmarked_transactions = EarmarkedTransaction.objects.filter(property=property_obj).order_by('-date')
+#     parsed_transactions = ParsedTransaction.objects.filter(related_property=property_obj).order_by('-date')
+#     landlords = Landlord.objects.all()
+#     tenants = Tenant.objects.all()
+#     property_landlords = property_obj.landlords.all()
+
+#     # Financial Overview
+#     total_revenue = income_profiles.aggregate(total=Sum('amount'))['total'] or 0
+#     total_expenses = expense_profiles.aggregate(total=Sum('amount'))['total'] or 0
+#     net_income = total_revenue - total_expenses
+
+#     # Unit Statistics
+#     total_units = property_obj.units.count()
+#     leased_units = leases.count()
+#     occupancy_rate = (leased_units / total_units) * 100 if total_units else 0
+#     avg_rent = leases.aggregate(average=Avg('rent'))['average'] or 0
+
+#     # Example: Last 6 months data
+#     chart_data = {
+#         "labels": [],  # Months or other periods
+#         "revenue": [],
+#         "expenses": []
+#     }
+
+#     current_date = now()
+#     for i in range(6):
+#         month = (current_date - timedelta(days=30 * i)).strftime("%B %Y")
+#         revenue = income_profiles.filter(date__month=(current_date - timedelta(days=30 * i)).month).aggregate(total=Sum('amount'))['total'] or 0
+#         expense = expense_profiles.filter(date__month=(current_date - timedelta(days=30 * i)).month).aggregate(total=Sum('amount'))['total'] or 0
+#         chart_data["labels"].append(month)
+#         chart_data["revenue"].append(revenue)
+#         chart_data["expenses"].append(expense)
+
+#     context = {
+#         'property': property_obj,
+#         'units': property_obj.units.all(),
+#         'leases': leases,
+#         'income_profiles': income_profiles,
+#         'expense_profiles': expense_profiles,
+#         'earmarked_transactions': earmarked_transactions,
+#         'parsed_transactions': parsed_transactions,
+#         'financial_overview': {
+#             'total_revenue': total_revenue,
+#             'total_expenses': total_expenses,
+#             'net_income': net_income,
+#         },
+#         'unit_stats': {
+#             'total_units': total_units,
+#             'leased_units': leased_units,
+#             'occupancy_rate': occupancy_rate,
+#             'avg_rent': avg_rent,
+#         },
+#         "chart_data": chart_data,
+#         'landlords': landlords,
+#         'tenants': tenants,
+#         'property_landlords': property_landlords,
+#     }
+
+#     return render(request, 'bookkeeping/property_detail.html', context)
 def property_detail(request, property_id):
     property_obj = get_object_or_404(Property, id=property_id)
+
+    # FIXED: reference was to `property`, changed to `property_obj`
+    locked_by_another_user = False
+    if property_obj.locked_by and property_obj.locked_by != request.user:
+        locked_by_another_user = True
+    else:
+        if property_obj.locked_by != request.user:
+            property_obj.locked_by = request.user
+            property_obj.save(update_fields=['locked_by'])
+
+    # Related data
     leases = property_obj.leases.all()
     income_profiles = IncomeProfile.objects.filter(property=property_obj)
     expense_profiles = ExpenseProfile.objects.filter(property=property_obj)
@@ -1201,20 +1260,20 @@ def property_detail(request, property_id):
     tenants = Tenant.objects.all()
     property_landlords = property_obj.landlords.all()
 
-    # Financial Overview
+    # Financial overview
     total_revenue = income_profiles.aggregate(total=Sum('amount'))['total'] or 0
     total_expenses = expense_profiles.aggregate(total=Sum('amount'))['total'] or 0
     net_income = total_revenue - total_expenses
 
-    # Unit Statistics
+    # Unit statistics
     total_units = property_obj.units.count()
     leased_units = leases.count()
     occupancy_rate = (leased_units / total_units) * 100 if total_units else 0
     avg_rent = leases.aggregate(average=Avg('rent'))['average'] or 0
 
-    # Example: Last 6 months data
+    # Chart data
     chart_data = {
-        "labels": [],  # Months or other periods
+        "labels": [],
         "revenue": [],
         "expenses": []
     }
@@ -1251,8 +1310,9 @@ def property_detail(request, property_id):
         'landlords': landlords,
         'tenants': tenants,
         'property_landlords': property_landlords,
+        'locked_by_another_user': locked_by_another_user,
     }
-
+    print(f"[property_detail] 🔒 Property {property_obj.id} locked by {property_obj.locked_by}")
     return render(request, 'bookkeeping/property_detail.html', context)
 
 

@@ -63,7 +63,7 @@
                 </div>
                 <div class="mb-4">
                     <label class="label"><span class="label-text">Objekt *</span></label>
-                    <input type="text" name="object " class="input input-bordered w-full" placeholder="Objekt Name" required>
+                    <input type="text" id="object " name="object" class="input input-bordered w-full" placeholder="Objekt Name" required>
                 </div>
                 <div class="mb-4">
                     <label class="label"><span class="label-text">Telefonnummer</span></label>
@@ -122,21 +122,7 @@
             {% for landlord in landlords %}
             <tr>
                 <td>
-                    <a href="#" class="font-semibold hover:text-primary hover:underline transition-all" 
-                    onclick="openEditLandlordModal(
-                        '{{ landlord.id|escapejs }}', 
-                        '{{ landlord.name|escapejs }}', 
-                        '{{ landlord.phone_number|escapejs }}', 
-                        '{{ landlord.email|escapejs }}', 
-                        '{{ landlord.address|escapejs }}', 
-                        '{{ landlord.iban|escapejs }}', 
-                        '{{ landlord.bic|escapejs }}', 
-                        '{{ landlord.tax_id|escapejs }}', 
-                        '{{ landlord.object |escapejs }}', 
-                        '{{ landlord.notes|escapejs }}'
-                    )">                    
-                        {{ landlord.name }} - {{ landlord.object }}
-                    </a>
+                    <span class="font-semibold">{{ landlord.name }}</span> – <span>{{ landlord.object }}</span>
                 </td>
                 <td>
                     {% for property in landlord.owned_properties.all %}
@@ -147,26 +133,39 @@
                         <span class="text-gray-500">Kein Eigentum zugewiesen</span>
                     {% endfor %}
                 </td>
-                
-                          
                 <td>{{ landlord.phone_number }}</td>
                 <td>{{ landlord.email }}</td>
                 <td>{{ landlord.address }}</td>
                 <td>{{ landlord.iban }}</td>
                 <td>{{ landlord.bic }}</td>
-                <td>{{ landlord.tax_id }}</td>
-                <td>
-                    <!-- Delete Form with Circular Button -->
-                    <form method="post" action="{% url 'delete_landlord' landlord.id %}" class="inline" onsubmit="return confirm('Sind Sie sicher, dass Sie diesen Vermieter löschen möchten?');">
-                        {% csrf_token %}
-                        <button type="button" 
+                <td class="flex items-center gap-2">
+                    <!-- Edit button -->
+                    <button 
+                        class="btn btn-circle btn-outline btn-warning btn-sm" 
+                        onclick="openEditLandlordModal(
+                            '{{ landlord.id|escapejs }}', 
+                            '{{ landlord.name|escapejs }}', 
+                            '{{ landlord.phone_number|escapejs }}', 
+                            '{{ landlord.email|escapejs }}', 
+                            '{{ landlord.address|escapejs }}', 
+                            '{{ landlord.iban|escapejs }}', 
+                            '{{ landlord.bic|escapejs }}', 
+                            '{{ landlord.tax_id|escapejs }}', 
+                            '{{ landlord.object|escapejs }}', 
+                            '{{ landlord.notes|escapejs }}'
+                        )"
+                        aria-label="Edit Landlord">
+                        ✏️
+                    </button>
+            
+                    <!-- Delete button -->
+                    <button 
+                        type="button" 
                         class="btn btn-circle btn-outline btn-error btn-sm hover:bg-error hover:text-white hover:border-transparent transition-all" 
-                        aria-label="Delete Landlord"
-                        onclick="openDeleteLandlordModal('{{ landlord.id }}', '{{ landlord.name|escapejs }}')">
-                    ✕
-                </button>
-                
-                    </form>
+                        onclick="openDeleteLandlordModal('{{ landlord.id }}', '{{ landlord.name|escapejs }}')"
+                        aria-label="Delete Landlord">
+                        ✕
+                    </button>
                 </td>
             </tr>
             {% empty %}
@@ -174,7 +173,8 @@
                 <td colspan="10" class="text-center text-base-content/50">Keine Vermieter verfügbar.</td>
             </tr>
             {% endfor %}
-        </tbody>
+            </tbody>
+            
     </table>
 </div>
 

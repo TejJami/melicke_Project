@@ -25,6 +25,7 @@
                 <div class="mb-4">
                     <label class="label"><span class="label-text">Transaktionstyp *</span></label>
                     <select name="transaction_type" class="select select-bordered w-full" required>
+                        <option value="" disabled selected>Transaktionstyp auswählen</option>
                         <option value="rent">Miete</option>
                         <option value="bk_advance_payments">BK Vorauszahlungen</option>
                         <option value="security_deposit">Kaution</option>
@@ -217,19 +218,28 @@
 </dialog>
 
 <script>
-    function openEditIncomeModal(id, transactionType, amount, date, recurring, frequency, leaseId, accountName, bookingNo) {
-        const form = document.getElementById('edit_income_form');
-        form.action = `/edit_income_profile/${id}/`;
+function openEditIncomeModal(id, transactionType, amount, date, recurring, frequency, leaseId, accountName, bookingNo) {
+    console.log(id, transactionType, amount, date, recurring, frequency, leaseId, accountName, bookingNo);
 
-        // document.getElementById('edit_profile_name').value = profileName;
-        document.getElementById('edit_transaction_type').value = transactionType;
-        document.getElementById('edit_amount').value = amount ? parseFloat(amount).toFixed(2) : '';
-        document.getElementById('edit_date').value = date || '';
-        document.getElementById('edit_recurring').checked = recurring === "True";
-        document.getElementById('edit_lease').value = leaseId || '';
-        document.getElementById('edit_account_name').value = accountName || '';
-        document.getElementById('edit_booking_no').value = bookingNo || '';
+    const form = document.getElementById('edit_income_form');
+    form.action = `/edit_income_profile/${id}/`;
 
-        document.getElementById('edit_income_modal').showModal();
+    // 💶 Parse German-formatted amount (e.g. "1.500,50" -> "1500.50")
+    let parsedAmount = '';
+    if (amount) {
+        parsedAmount = amount.replace(/\./g, '').replace(',', '.');
+        parsedAmount = parseFloat(parsedAmount).toFixed(2);
     }
+
+    document.getElementById('edit_transaction_type').value = transactionType;
+    document.getElementById('edit_amount').value = parsedAmount;
+    document.getElementById('edit_date').value = date || '';
+    document.getElementById('edit_recurring').checked = recurring === "True";
+    document.getElementById('edit_lease').value = leaseId || '';
+    document.getElementById('edit_account_name').value = accountName || '';
+    document.getElementById('edit_booking_no').value = bookingNo || '';
+
+    document.getElementById('edit_income_modal').showModal();
+}
+
 </script>

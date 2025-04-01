@@ -38,7 +38,7 @@
                     </label>
                     <input type="number" name="floor" class="input input-bordered w-full" required>
                 </div>
-                <div class="mb-4">
+                <!-- <div class="mb-4">
                     <label class="label">
                         <span class="label-text">Position</span>
                     </label>
@@ -47,7 +47,7 @@
                         <option value="Middle" selected>Mitte</option>
                         <option value="Right">Rechts</option>
                     </select>
-                </div>
+                </div> -->
                 <div class="mb-4">
                     <label class="label">
                         <span class="label-text">Miete</span>
@@ -91,7 +91,7 @@
                     <th>Mieter</th> 
                     <th>Fläche</th>
                     <th>Etage</th>
-                    <th>Position</th>
+                    <!-- <th>Position</th> -->
                     <th>Miete</th>
                     <th>NebenKosten</th>
                     <th>Aktionen</th>
@@ -131,13 +131,13 @@
                     
                     <td>{{ unit.floor_area|floatformat:"1" }} sq.m.</td>
                     <td>{{ unit.floor }}</td>
-                    <td>
+                    <!-- <td>
                         {% if unit.position == "Left" %} Links
                         {% elif unit.position == "Middle" %} Mitte
                         {% elif unit.position == "Right" %} Rechts
                         {% else %} - {% endif %}
                     </td>
-                    
+                     -->
                     <td>€{{ unit.rent|floatformat:"2" }}</td>
                     <td>€{{ unit.additional_costs|default:0|floatformat:"2" }}</td>
 
@@ -173,9 +173,15 @@ function openunitEditModal(id, unitName, floorArea, floor, position, rent, addit
     document.getElementById('edit_unit_name').value = unitName;
     document.getElementById('edit_floor_area').value = floorArea ? parseFloat(floorArea).toFixed(1) : '';
     document.getElementById('edit_floor').value = floor ? parseInt(floor, 10) : '';
-    document.getElementById('edit_position').value = position;
-    document.getElementById('edit_rent').value = rent ? parseFloat(rent).toFixed(2) : '';
-    document.getElementById('edit_additional_costs').value = additionalCosts ? parseFloat(additionalCosts).toFixed(2) : '';
+    // document.getElementById('edit_position').value = position;
+    document.getElementById('edit_rent').value = rent
+        ? parseFloat(rent.replace(/\./g, '').replace(',', '.')).toFixed(2)
+        : '';
+
+    document.getElementById('edit_additional_costs').value = additionalCosts
+        ? parseFloat(additionalCosts.replace(/\./g, '').replace(',', '.')).toFixed(2)
+        : '';
+
     document.getElementById('edit_unit_modal').showModal();
 }
 

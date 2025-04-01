@@ -28,6 +28,8 @@ urlpatterns = [
     path('add_property/', views.add_property, name='add_property'),
     path('edit_property/<int:pk>/', views.edit_property, name='edit_property'),
     path('delete_property/<int:pk>/', views.delete_property, name='delete_property'),
+    path('properties/<int:property_id>/unlock/', views.unlock_property, name='unlock_property'),
+    path('properties/locks/', views.get_property_locks, name='property_locks'),
 
     # Units
     path('units/', views.units, name='units'),

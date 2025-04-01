@@ -5,6 +5,11 @@
     <!-- Upload Bank Statement Button -->
     <button class="btn w-64 btn-sm btn-outline mb-5" onclick="upload_modal.showModal()">Bankauszug hochladen</button>
 
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-error mt-4">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
     
     <!-- Upload Modal -->
     <dialog id="upload_modal" class="modal">
@@ -15,7 +20,10 @@
                 {% csrf_token %}
                 <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="upload_modal.close()">✕</button>
                 <h1 class="text-lg font-bold mb-4">Bankauszug hochladen</h1>
+                
 
+              
+                
                 <!-- Spinner Animation -->
                 <div id="spinner" class="hidden flex justify-center items-center mb-4">
                     <span class="loading loading-dots loading-xs"></span>
