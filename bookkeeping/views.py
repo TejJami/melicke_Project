@@ -37,6 +37,7 @@ class CustomLoginView(LoginView):
 
         # Check for existing sessions of this user
         existing_sessions = Session.objects.filter(expire_date__gte=timezone.now())
+        print(f"Existing sessions: {existing_sessions}")
         for session in existing_sessions:
             data = session.get_decoded()
             if data.get('_auth_user_id') == str(user.id):
