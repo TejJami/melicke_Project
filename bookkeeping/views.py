@@ -34,18 +34,27 @@ class CustomLoginView(LoginView):
 
     def form_valid(self, form):
         user = form.get_user()
+        request = self.request
+        force_login = request.POST.get("force_login") == "1"
 
-        # Check for existing sessions of this user
         existing_sessions = Session.objects.filter(expire_date__gte=timezone.now())
-        print(f"Existing sessions: {existing_sessions}")
+        user_has_session = False
+
         for session in existing_sessions:
             data = session.get_decoded()
             if data.get('_auth_user_id') == str(user.id):
-                # Block login
-                form.add_error(None, "Sie sind bereits in einer anderen Sitzung angemeldet.")
-                return self.form_invalid(form)
+                if not force_login:
+                    user_has_session = True
+                    break
+                else:
+                    session.delete()
+
+        if user_has_session:
+            form.add_error(None, "already_logged_in")  # key only, used in template
+            return self.form_invalid(form)
 
         return super().form_valid(form)
+
 
 
 

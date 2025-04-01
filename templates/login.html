@@ -18,20 +18,25 @@
     <div class="card bg-white shadow-xl rounded-lg p-6 w-96">
         <h2 class="text-3xl font-bold text-center text-gray-700 mb-6">mei-services.de</h2>
         <form method="post">
-            {% if form.non_field_errors %}
-            <input   type="checkbox" id="session-modal" class="modal-toggle" checked />
-            <div class="modal">
-              <div class="modal-box">
+            <input type="hidden" id="force-login" name="force_login" value="0">
+
+            {% if form.non_field_errors and form.non_field_errors.0 == 'already_logged_in' %}
+            <input type="checkbox" id="session-modal" class="modal-toggle" checked />
+            <div class="modal modal-open">
+            <div class="modal-box">
                 <h3 class="font-bold text-lg">Sitzung bereits aktiv</h3>
                 <p class="py-4">
-                  {{ form.non_field_errors.0 }}
+                Eine andere Sitzung ist für dieses Konto aktiv.<br>
+                Möchten Sie die andere Sitzung beenden und hier fortfahren?
                 </p>
-                <div class="modal-action">
-                  <label for="session-modal" class="btn">Schließen</label>
+                <div class="modal-action flex gap-2">
+                <label for="session-modal" class="btn" onclick="document.getElementById('force-login').value = '1'; document.forms[0].submit();">Ja</label>
+                <label for="session-modal" class="btn btn-ghost" onclick="window.location.href='{% url 'login' %}'">Nein</label>
                 </div>
-              </div>
+            </div>
             </div>
             {% endif %}
+
             
             
 
