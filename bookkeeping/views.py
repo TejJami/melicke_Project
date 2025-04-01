@@ -23,6 +23,31 @@ from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 
+from django.contrib.auth.views import LoginView
+from django.contrib.auth import authenticate
+from django.contrib.sessions.models import Session
+from django.utils import timezone
+from django.contrib import messages
+
+class CustomLoginView(LoginView):
+    template_name = 'login.html'
+
+    def form_valid(self, form):
+        user = form.get_user()
+
+        # Check for existing sessions of this user
+        existing_sessions = Session.objects.filter(expire_date__gte=timezone.now())
+        for session in existing_sessions:
+            data = session.get_decoded()
+            if data.get('_auth_user_id') == str(user.id):
+                # Block login
+                form.add_error(None, "Sie sind bereits in einer anderen Sitzung angemeldet.")
+                return self.form_invalid(form)
+
+        return super().form_valid(form)
+
+
+
 # Dashboard: Displays Earmarked and Parsed Transactions
 @login_required
 def dashboard(request):
