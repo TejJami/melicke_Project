@@ -195,3 +195,59 @@ def create_income_profiles_for_lease(sender, instance, created, **kwargs):
                 frequency='monthly',
                 ust=ust_value  # Use the mapped numeric UST value
             )
+
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+from .models import Lease, Property, Unit
+from decimal import Decimal
+
+
+def recalculate_partial_tax_rate(property_obj):
+    if not property_obj.auto_calculate_tax:
+        return
+
+    leases = Lease.objects.filter(property=property_obj)
+
+    if property_obj.tax_calculation_method == 'sq_meterage':
+        area_with_ust = sum(
+            lease.unit.floor_area for lease in leases
+            if lease.ust_type == 'Mit' and lease.unit and lease.unit.floor_area
+        )
+        total_area = sum(
+            lease.unit.floor_area for lease in leases
+            if lease.unit and lease.unit.floor_area
+        )
+        new_rate = (area_with_ust / total_area) * 100 if total_area > 0 else 0.0
+
+    elif property_obj.tax_calculation_method == 'income':
+        income_with_ust = sum(
+            (lease.rent + (lease.additional_costs or 0) + lease.deposit_amount)
+            for lease in leases if lease.ust_type == 'Mit'
+        )
+        total_income = sum(
+            (lease.rent + (lease.additional_costs or 0) + lease.deposit_amount)
+            for lease in leases
+        )
+        new_rate = (income_with_ust / total_income) * 100 if total_income > 0 else 0.0
+
+    else:
+        return  # Manual entry, skip
+
+    property_obj.partial_tax_rate = Decimal(str(round(new_rate, 2)))
+    property_obj.save()
+
+
+@receiver(post_save, sender=Lease)
+def on_lease_saved(sender, instance, **kwargs):
+    recalculate_partial_tax_rate(instance.property)
+
+
+@receiver(post_delete, sender=Lease)
+def on_lease_deleted(sender, instance, **kwargs):
+    recalculate_partial_tax_rate(instance.property)
+
+
+@receiver(post_save, sender=Unit)
+def on_unit_saved(sender, instance, **kwargs):
+    property_obj = instance.property
+    recalculate_partial_tax_rate(property_obj)

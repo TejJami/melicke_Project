@@ -55,9 +55,6 @@ class CustomLoginView(LoginView):
 
         return super().form_valid(form)
 
-
-
-
 # Dashboard: Displays Earmarked and Parsed Transactions
 @login_required
 def dashboard(request):
@@ -331,9 +328,31 @@ def add_property(request):
 
 
         auto_calculate_tax = request.POST.get('auto_calculate_tax') == "on"  # Checkbox returns "on" if checked
+        print(auto_calculate_tax)
         tax_calculation_method = request.POST.get('tax_calculation_method', 'none')  # Default to manual entry
-        partial_tax_rate = request.POST.get('partial_tax_rate', '0').replace(',', '.')  # Ensure valid decimal format
-        partial_tax_rate = float(partial_tax_rate) if not auto_calculate_tax else None  # Null if auto-calculated
+        
+        partial_tax_rate_input = request.POST.get('partial_tax_rate', '0').replace(',', '.')
+        partial_tax_rate = float(partial_tax_rate_input) if not auto_calculate_tax else None
+
+        # Auto-calculation logic
+        if auto_calculate_tax:
+            if tax_calculation_method == 'sq_meterage':
+                leases = Lease.objects.filter(property__id=property_obj.id)
+                area_with_ust = sum(lease.unit.floor_area for lease in leases if lease.ust_type == 'Mit' and lease.unit.floor_area)
+                total_area = sum(lease.unit.floor_area for lease in leases if lease.unit.floor_area)
+                partial_tax_rate = round((area_with_ust / total_area) * 100, 2) if total_area > 0 else 0.0
+
+            elif tax_calculation_method == 'income':
+                leases = Lease.objects.filter(property__id=property_obj.id)
+                income_with_ust = sum(
+                    (lease.rent + (lease.additional_costs or 0) + lease.deposit_amount)
+                    for lease in leases if lease.ust_type == 'Mit'
+                )
+                total_income = sum(
+                    (lease.rent + (lease.additional_costs or 0) + lease.deposit_amount)
+                    for lease in leases
+                )
+                partial_tax_rate = round((income_with_ust / total_income) * 100, 2) if total_income > 0 else 0.0
 
         # Create the Property object
         property_obj = Property.objects.create(
@@ -359,51 +378,6 @@ def add_property(request):
         'landlords': landlords,
     })
 
-# def edit_property(request, pk):
-#     property_obj = get_object_or_404(Property, id=pk)
-
-#     if request.method == 'POST':
-#         # Update property fields
-#         property_obj.property_type = request.POST.get('property_type')
-#         property_obj.name = request.POST.get('name')
-#         property_obj.street = request.POST.get('street')
-#         property_obj.building_no = request.POST.get('building_no')
-#         property_obj.city = request.POST.get('city')
-#         property_obj.zip = request.POST.get('zip')
-#         property_obj.country = request.POST.get('country')
-
-#         # Convert German-formatted numbers
-#         partial_tax_rate = request.POST.get('partial_tax_rate', '0')  # Default to '0' if None
-#         partial_tax_rate = partial_tax_rate.replace(',', '.')  # Replace German comma with a dot
-#         # property_obj.partial_tax_rate = float(partial_tax_rate)  # Ensure valid float format
-
-#         auto_calculate_tax = request.POST.get('auto_calculate_tax') == "on"
-#         tax_calculation_method = request.POST.get('tax_calculation_method', 'none')
-#         partial_tax_rate = request.POST.get('partial_tax_rate', '0').replace(',', '.')
-#         partial_tax_rate = float(partial_tax_rate) if not auto_calculate_tax else None
-
-#         property_obj.auto_calculate_tax = auto_calculate_tax
-#         property_obj.tax_calculation_method = tax_calculation_method
-#         property_obj.partial_tax_rate = partial_tax_rate
-
-
-#         # Handle landlords update
-#         landlord_ids = request.POST.getlist('landlords')
-#         property_obj.landlords.set(landlord_ids)
-
-#         # Save updated property
-#         property_obj.save()
-
-#         property.locked_by = None
-#         property.save(update_fields=['locked_by'])
-
-#         return redirect('property_detail', property_id=pk)
-
-#     landlords = Landlord.objects.all()
-#     return render(request, 'bookkeeping/edit_property.html', {
-#         'property': property_obj,
-#         'landlords': landlords,
-#     })
 def edit_property(request, pk):
     property_obj = get_object_or_404(Property, id=pk)
 
@@ -419,9 +393,33 @@ def edit_property(request, pk):
 
         # Convert German-formatted numbers
         auto_calculate_tax = request.POST.get('auto_calculate_tax') == "on"
+        print('auto',auto_calculate_tax)
         tax_calculation_method = request.POST.get('tax_calculation_method', 'none')
-        partial_tax_rate = request.POST.get('partial_tax_rate', '0').replace(',', '.')
-        partial_tax_rate = float(partial_tax_rate) if not auto_calculate_tax else None
+        print('method',tax_calculation_method)
+
+        partial_tax_rate_input = request.POST.get('partial_tax_rate', '0').replace(',', '.')
+        partial_tax_rate = float(partial_tax_rate_input) if not auto_calculate_tax else None
+
+        # Auto-calculation logic
+        if auto_calculate_tax:
+            if tax_calculation_method == 'sq_meterage':
+                leases = Lease.objects.filter(property=property_obj)
+                area_with_ust = sum(lease.unit.floor_area for lease in leases if lease.ust_type == 'Mit' and lease.unit.floor_area)
+                total_area = sum(lease.unit.floor_area for lease in leases if lease.unit.floor_area)
+                partial_tax_rate = round((area_with_ust / total_area) * 100, 2) if total_area > 0 else 0.0
+
+            elif tax_calculation_method == 'income':
+                leases = Lease.objects.filter(property=property_obj)
+                income_with_ust = sum(
+                    (lease.rent + (lease.additional_costs or 0) + lease.deposit_amount)
+                    for lease in leases if lease.ust_type == 'Mit'
+                )
+                total_income = sum(
+                    (lease.rent + (lease.additional_costs or 0) + lease.deposit_amount)
+                    for lease in leases
+                )
+                partial_tax_rate = round((income_with_ust / total_income) * 100, 2) if total_income > 0 else 0.0
+
 
         property_obj.auto_calculate_tax = auto_calculate_tax
         property_obj.tax_calculation_method = tax_calculation_method
@@ -622,7 +620,6 @@ def edit_expense_profile(request, pk):
 
     return redirect('dashboard')  # Default fallback
 
-
 # Helper Functions
 
 def get_ust_from_lease_or_property(lease, property_obj):
@@ -785,8 +782,6 @@ def landlords(request):
         'landlords': landlords,
     })
 
-
-    
 # Add Landlord
 def add_landlord(request):
     if request.method == 'POST':
@@ -1154,7 +1149,6 @@ def fetch_unit_tenant_data(request):
 
     return JsonResponse(response)
 
-
 #################################################################
 
 # AJAX endpoint to fetch lease profiles
@@ -1198,81 +1192,6 @@ def unlock_property(request, property_id):
             pass
     return JsonResponse({"status": "error"}, status=400)
 
-
-# def property_detail(request, property_id):
-#     property_obj = get_object_or_404(Property, id=property_id)
-    
-#         # If locked by another user, forbid access
-#     if property.locked_by and property.locked_by != request.user:
-#         return HttpResponseForbidden("This property is currently being edited by another user.")
-
-#     # Lock the property for the current user
-#     if property.locked_by != request.user:
-#         property.locked_by = request.user
-#         property.save(update_fields=['locked_by'])
-
-#     leases = property_obj.leases.all()
-#     income_profiles = IncomeProfile.objects.filter(property=property_obj)
-#     expense_profiles = ExpenseProfile.objects.filter(property=property_obj)
-#     earmarked_transactions = EarmarkedTransaction.objects.filter(property=property_obj).order_by('-date')
-#     parsed_transactions = ParsedTransaction.objects.filter(related_property=property_obj).order_by('-date')
-#     landlords = Landlord.objects.all()
-#     tenants = Tenant.objects.all()
-#     property_landlords = property_obj.landlords.all()
-
-#     # Financial Overview
-#     total_revenue = income_profiles.aggregate(total=Sum('amount'))['total'] or 0
-#     total_expenses = expense_profiles.aggregate(total=Sum('amount'))['total'] or 0
-#     net_income = total_revenue - total_expenses
-
-#     # Unit Statistics
-#     total_units = property_obj.units.count()
-#     leased_units = leases.count()
-#     occupancy_rate = (leased_units / total_units) * 100 if total_units else 0
-#     avg_rent = leases.aggregate(average=Avg('rent'))['average'] or 0
-
-#     # Example: Last 6 months data
-#     chart_data = {
-#         "labels": [],  # Months or other periods
-#         "revenue": [],
-#         "expenses": []
-#     }
-
-#     current_date = now()
-#     for i in range(6):
-#         month = (current_date - timedelta(days=30 * i)).strftime("%B %Y")
-#         revenue = income_profiles.filter(date__month=(current_date - timedelta(days=30 * i)).month).aggregate(total=Sum('amount'))['total'] or 0
-#         expense = expense_profiles.filter(date__month=(current_date - timedelta(days=30 * i)).month).aggregate(total=Sum('amount'))['total'] or 0
-#         chart_data["labels"].append(month)
-#         chart_data["revenue"].append(revenue)
-#         chart_data["expenses"].append(expense)
-
-#     context = {
-#         'property': property_obj,
-#         'units': property_obj.units.all(),
-#         'leases': leases,
-#         'income_profiles': income_profiles,
-#         'expense_profiles': expense_profiles,
-#         'earmarked_transactions': earmarked_transactions,
-#         'parsed_transactions': parsed_transactions,
-#         'financial_overview': {
-#             'total_revenue': total_revenue,
-#             'total_expenses': total_expenses,
-#             'net_income': net_income,
-#         },
-#         'unit_stats': {
-#             'total_units': total_units,
-#             'leased_units': leased_units,
-#             'occupancy_rate': occupancy_rate,
-#             'avg_rent': avg_rent,
-#         },
-#         "chart_data": chart_data,
-#         'landlords': landlords,
-#         'tenants': tenants,
-#         'property_landlords': property_landlords,
-#     }
-
-#     return render(request, 'bookkeeping/property_detail.html', context)
 def property_detail(request, property_id):
     property_obj = get_object_or_404(Property, id=property_id)
 
@@ -1396,8 +1315,6 @@ def ust_view(request, property_id):
     return render(request, 'bookkeeping/ust.html', context)
 
 #################################################################
-
-
 
 import requests
 import json
