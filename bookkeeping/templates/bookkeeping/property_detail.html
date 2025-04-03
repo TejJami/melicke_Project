@@ -73,7 +73,7 @@
         <p>
           <span class="font-semibold">Vermieter:</span>
           {% for landlord in property_landlords %}
-              {{ landlord.name }}{% if not forloop.last %}, {% endif %}
+              {{ landlord.name }}-{{ landlord.object}}    {% if not forloop.last %}, {% endif %}
           {% endfor %}
         </p>
       </div>
@@ -222,7 +222,7 @@
                 {% for landlord in landlords %}
                     <option value="{{ landlord.id }}"
                         {% if landlord in property_landlords %} selected {% endif %}>
-                        {{ landlord.name }}
+                        {{ landlord.name }}-{{ landlord.object}}
                     </option>
                 {% endfor %}
             </select>
