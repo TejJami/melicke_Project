@@ -179,8 +179,4 @@ repository-name/
 
 ---
 
-## Author
-- **Name**: [Your Name]
-- **Email**: [Your Email]
-- **GitHub**: [GitHub Profile Link]
 
