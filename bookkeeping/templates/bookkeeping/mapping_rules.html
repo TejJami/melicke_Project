@@ -1,0 +1,50 @@
+{% load custom_filters %}
+<div class="card bg-transparent p-5 w-full max-w-6xl mx-auto">
+
+    <div class = "join gap-2">
+        <button class="btn w-64 btn-sm btn-outline mb-5" onclick="add_lease_modal.showModal()">Mietvertrag hinzufügen</button>
+        <button class="btn w-64 btn-sm btn-outline mb-5" onclick="add_lease_modal.showModal()">Mietvertrag hinzufügen</button>
+    </div>
+
+
+
+    <h2 class="text-xl font-light mb-3">Mapping-Regeln für {{ property.name }}</h2>
+
+    <div class="overflow-x-auto">
+        <table class="table table-zebra w-full">
+            <thead>
+                <tr>
+                    <th>Typ</th>
+                    <th>Kontoname</th>
+                    <th>Transaktionstyp</th>
+                    <th>Betrag</th>
+                    <th>USt</th>
+                    <th>Datum</th>
+                    <th>Wiederkehrend</th>
+                    <th>Mietvertrag</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for profile in profiles %}
+                <tr>
+                    <!-- <td>
+                        {% if profile|model_name == 'ExpenseProfile' %}
+                            Ausgaben
+                        {% else %}
+                            Einnahmen
+                        {% endif %}
+                    </td> -->
+                    <td>{{ profile.account_name }}</td>
+                    <td>{{ profile.get_transaction_type_display }}</td>
+                    <td>€{{ profile.amount|floatformat:2 }}</td>
+                    <td>{{ profile.ust }}%</td>
+                    <td>{{ profile.date }}</td>
+                    <td>{% if profile.recurring %}✅{% else %}—{% endif %}</td>
+                    <td>{{ profile.lease }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+

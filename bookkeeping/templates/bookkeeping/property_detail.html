@@ -333,18 +333,13 @@
       <div role="tabpanel" class="tab-content">
         {% include 'bookkeeping/leases.html' with leases=leases %}
       </div>
+'
+      <!-- Leases Tab -->
+    <input type="radio" name="property_tabs" id="mapping_tab" role="tab" class="tab" aria-label="MappingRegeln">
+    <div role="tabpanel" class="tab-content">
+        {% include 'bookkeeping/mapping_rules.html' %}
+    </div>
 
-      <!-- Income Profiles Tab -->
-      <input type="radio" name="property_tabs" id="income_tab" role="tab" class="tab" aria-label="Einnahmen">
-      <div role="tabpanel" class="tab-content ">
-        {% include 'bookkeeping/income_profiles.html' with income_profiles=income_profiles %}
-      </div>
-
-      <!-- Expense Profiles Tab -->
-      <input type="radio" name="property_tabs" id="expense_tab" role="tab" class="tab" aria-label="Ausgaben">
-      <div role="tabpanel" class="tab-content ">
-        {% include 'bookkeeping/expense_profiles.html' with expense_profiles=expense_profiles %}
-      </div>
 
       <!-- Dashboard Tab -->
       <input type="radio" name="property_tabs" id="dashboard_tab" role="tab" class="tab" aria-label="Buchhaltung">
@@ -629,10 +624,10 @@
               <input type="text" id= "account_name_income" name="account_name" class="input input-bordered w-full" required>
           </div>
 
-          <div class="mb-4">
+          <!-- <div class="mb-4">
               <label class="label"><span class="label-text">Buchungsnummer (BN) *</span></label>
               <input type="text" name="booking_no" class="input input-bordered w-full" required>
-          </div>
+          </div> -->
 
           <div class="mb-4">
               <label class="label"><span class="label-text">Transaktionstyp *</span></label>
@@ -708,10 +703,10 @@
                 <input type="text" id="account_name_expense" name="account_name" class="input input-bordered w-full" placeholder="Account Name" required>
             </div>
 
-            <div class="mb-4">
+            <!-- <div class="mb-4">
                 <label class="label"><span class="label-text">Buchungsnummer (BN) *</span></label>
                 <input type="text" name="booking_no" id="booking_no_expense" class="input input-bordered w-full" placeholder="Booking Number" required>
-            </div>
+            </div> -->
 
             <div class="mb-4">
                 <label class="label"><span class="label-text">Transaktionstyp *</span></label>

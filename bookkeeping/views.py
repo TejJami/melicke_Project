@@ -496,27 +496,6 @@ def add_property(request):
         partial_tax_rate_input = request.POST.get('partial_tax_rate', '0').replace(',', '.')
         partial_tax_rate = float(partial_tax_rate_input) if not auto_calculate_tax else 0.0
 
-        # # Auto-calculation logic
-        # if auto_calculate_tax:
-        #     if tax_calculation_method == 'sq_meterage':
-        #         leases = Lease.objects.filter(property__id=property_obj.id)
-        #         area_with_ust = sum(lease.unit.floor_area for lease in leases if lease.ust_type == 'Mit' and lease.unit.floor_area)
-        #         total_area = sum(lease.unit.floor_area for lease in leases if lease.unit.floor_area)
-        #         partial_tax_rate = round((area_with_ust / total_area) * 100, 2) if total_area > 0 else 0.0
-
-        #     elif tax_calculation_method == 'income':
-        #         leases = Lease.objects.filter(property__id=property_obj.id)
-        #         income_with_ust = sum(
-        #             (lease.rent + (lease.additional_costs or 0) + lease.deposit_amount)
-        #             for lease in leases if lease.ust_type == 'Mit'
-        #         )
-        #         total_income = sum(
-        #             (lease.rent + (lease.additional_costs or 0) + lease.deposit_amount)
-        #             for lease in leases
-        #         )
-        #         partial_tax_rate = round((income_with_ust / total_income) * 100, 2) if total_income > 0 else 0.0
-
-        # Create the Property object
         property_obj = Property.objects.create(
             property_type=property_type,
             name=name,
@@ -688,6 +667,32 @@ def delete_tenant(request, pk):
 
 #################################################################
 
+
+from django.db.models import Q
+from itertools import chain
+from operator import attrgetter
+
+@login_required
+def mapping_rules(request, property_id):
+    property_obj = get_object_or_404(Property, id=property_id)
+
+    expense_profiles = ExpenseProfile.objects.filter(property=property_obj)
+    income_profiles = IncomeProfile.objects.filter(property=property_obj)
+
+    # Merge and sort by ID (or `date` if added later)
+    merged_profiles = sorted(
+        chain(expense_profiles, income_profiles),
+        key=attrgetter('id')  # Or use 'date' if consistent
+    )
+
+    return render(request, 'bookkeeping/mapping_rules.html', {
+        'property': property_obj,
+        'profiles': merged_profiles
+    })
+
+
+#################################################################
+
 # Expense Profiles
 def expense_profiles(request):
     properties = Property.objects.prefetch_related('leases', 'expense_profiles').all()
@@ -729,7 +734,7 @@ def add_expense_profile(request):
                 property=property_obj,
                 transaction_type=data.get('transaction_type'),
                 account_name=data.get('account_name'),
-                booking_no=data.get('booking_no'),
+                # booking_no=data.get('booking_no'),
                 amount=amount,
                 date=date,
                 recurring=data.get('recurring') == 'on',
@@ -771,7 +776,7 @@ def edit_expense_profile(request, pk):
         expense.frequency = data.get('frequency') if recurring else None
         expense.account_name = data.get('account_name')
         expense.ust = ust
-        expense.booking_no = data.get('booking_no')
+        # expense.booking_no = data.get('booking_no')
         
         # Safely parse optional fields
         expense.amount = safe_decimal(amount)
@@ -1222,7 +1227,7 @@ def add_income_profile(request):
             frequency=request.POST.get('frequency'),
             account_name=request.POST.get('account_name'),
             ust=ust,
-            booking_no=request.POST.get('booking_no'),
+            # booking_no=request.POST.get('booking_no'),
         )
         return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=income")
 
@@ -1267,7 +1272,7 @@ def edit_income_profile(request, pk):
         income.frequency = request.POST.get('frequency') if income.recurring else None
         income.account_name = request.POST.get('account_name')
         income.ust = ust
-        income.booking_no = request.POST.get('booking_no')
+        # income.booking_no = request.POST.get('booking_no')
 
         income.save()
         return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=income")
@@ -1370,8 +1375,13 @@ def property_detail(request, property_id):
     leases = property_obj.leases.all()
     income_profiles = IncomeProfile.objects.filter(property=property_obj)
     expense_profiles = ExpenseProfile.objects.filter(property=property_obj)
-    earmarked_transactions = EarmarkedTransaction.objects.filter(property=property_obj).order_by('booking_no')
-    parsed_transactions = ParsedTransaction.objects.filter(related_property=property_obj).order_by('booking_no')
+    earmarked_transactions = EarmarkedTransaction.objects.filter(property=property_obj)
+    parsed_transactions = ParsedTransaction.objects.filter(related_property=property_obj)
+    # Combine and sort all mapping rules by creation order (fallback to ID if needed)
+    all_mapping_profiles = sorted(
+        chain(income_profiles, expense_profiles),
+        key=attrgetter('id')  # Use `date` if available later
+    )
     landlords = Landlord.objects.all()
     tenants = Tenant.objects.all()
     property_landlords = property_obj.landlords.all()
@@ -1409,6 +1419,7 @@ def property_detail(request, property_id):
         'leases': leases,
         'income_profiles': income_profiles,
         'expense_profiles': expense_profiles,
+        'profiles': all_mapping_profiles,
         'earmarked_transactions': earmarked_transactions,
         'parsed_transactions': parsed_transactions,
         'financial_overview': {

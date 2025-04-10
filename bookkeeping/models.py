@@ -138,12 +138,19 @@ class ParsedTransaction(models.Model):
         return f"{self.date} | {self.account_name} | {self.transaction_type} | {self.betrag_brutto}"
 
     def save(self, *args, **kwargs):
-        if not self.invoice and self.booking_no:
-            # Fetch the matching ExpenseProfile and copy the invoice path
-            expense_profile = ExpenseProfile.objects.filter(booking_no=self.booking_no).first()
-            if expense_profile and expense_profile.invoice:
-                self.invoice = expense_profile.invoice
+        if not self.invoice:
+            try:
+                matched = ExpenseProfile.objects.filter(
+                    account_name=self.account_name,
+                    amount=self.betrag_brutto,
+                    property=self.related_property
+                ).first()
+                if matched and matched.invoice:
+                    self.invoice = matched.invoice
+            except Exception as e:
+                logging.error(f"[ParsedTransaction.save] Failed to match invoice: {e}")
         super().save(*args, **kwargs)
+
         
     @property
     def ust(self):
@@ -237,7 +244,7 @@ class ExpenseProfile(models.Model):
     )
     account_name = models.CharField(max_length=255)
     ust = models.IntegerField(choices=[(0, '0%'), (7, '7%'), (19, '19%')], default=19)
-    booking_no = models.CharField(max_length=100, unique=False)
+    # booking_no = models.CharField(max_length=100, unique=False)
     invoice = models.FileField(upload_to='invoices/', null=True, blank=True, help_text="Attach invoice PDF")
 
     def __str__(self):
@@ -275,7 +282,7 @@ class IncomeProfile(models.Model):
     )
     account_name = models.CharField(max_length=255)
     ust = models.IntegerField(choices=[(0, '0%'), (7, '7%'), (19, '19%')], default=19)
-    booking_no = models.CharField(max_length=100, unique=False)
+    # booking_no = models.CharField(max_length=100, unique=False)
 
     def __str__(self):
         if self.lease:

@@ -134,7 +134,7 @@
         }
     }
 
-    function openExpenseModal(accountName , amount , booking_no) {
+    function openExpenseModal(accountName , amount ) {
         const input = document.getElementById('account_name_expense');
         const amountInput = document.getElementById('amount_expense');
         const bookingNoInput = document.getElementById('booking_no_expense');
@@ -143,7 +143,7 @@
         if (modal) {
             modal.showModal(); // Show the modal
             if (input) {
-                bookingNoInput.value = booking_no; // Set the booking number in the input field
+                // bookingNoInput.value = booking_no; // Set the booking number in the input field
                 input.value = accountName; // Set the account name in the input field
                 amountInput.value = amount
                     ? parseFloat(amount.replace(/\./g, '').replace(',', '.')).toFixed(2)

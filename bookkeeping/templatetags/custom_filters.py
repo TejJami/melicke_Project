@@ -13,3 +13,7 @@ def format_german_number(value):
         return "{:,.2f}".format(float(value)).replace(",", "X").replace(".", ",").replace("X", ".")
     except (ValueError, TypeError):
         return value
+
+@register.filter
+def model_name(obj):
+    return obj.__class__.__name__.lower()
