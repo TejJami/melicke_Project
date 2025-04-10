@@ -10,7 +10,38 @@
         <div class="alert alert-error mt-4">{{ message }}</div>
         {% endfor %}
     {% endif %}
-    
+    {% if skipped_duplicates %}
+        <dialog id="skipped_modal" class="modal " open>
+
+        <div class="modal-box">
+            <!-- add a close button -->
+             <div class="modal-action">
+                <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="skipped_modal.close()">✕</button>
+            </div>
+            
+            <h3 class="font-bold text-l">Bereits vorhandene Transaktionen</h3>
+            <table class="table table-xs mt-4">
+            <thead>
+                <tr>
+                <th>Datum</th>
+                <th>Kontoname</th>
+                <th>Betrag</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in skipped_duplicates %}
+                <tr>
+                <td>{{ tx.date }}</td>
+                <td>{{ tx.account_name }}</td>
+                <td>€{{ tx.amount|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            </table>
+        </div>
+        </dialog>
+    {% endif %}
+
     <!-- Upload Modal -->
     <dialog id="upload_modal" class="modal">
         <div class="modal-box bg-base-100 text-base-content">
@@ -39,10 +70,39 @@
                     <button type="submit" class="btn btn-outline">Hochladen</button>
                     <button type="button" class="btn btn-outline btn-error" onclick="upload_modal.close()">Abbrechen</button>
                 </div>
+                {% if skipped_duplicates %}
+                <hr class="my-3">
+                <h2 class="font-bold text-sm mb-2">⚠️ Bereits vorhandene Transaktionen</h2>
+                <div class="overflow-x-auto max-h-60">
+                    <table class="table table-xs w-full text-left bg-base-100 text-base-content">
+                        <thead>
+                            <tr>
+                                <th>Datum</th>
+                                <th>Kontoname</th>
+                                <th>Betrag</th>
+                                <th>Beschreibung</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in skipped_duplicates %}
+                            <tr>
+                                <td>{{ tx.date }}</td>
+                                <td>{{ tx.account_name }}</td>
+                                <td class="{% if tx.is_income %}text-success{% else %}text-error{% endif %}">
+                                    €{{ tx.amount|floatformat:2 }}
+                                </td>
+                                <td>{{ tx.description }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
             </form>
             {% else %}
             <form action="#" method="post"></form>
             {% endif %}
+            
         </div>
     </dialog>
 

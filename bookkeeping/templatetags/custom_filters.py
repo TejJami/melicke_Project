@@ -16,4 +16,5 @@ def format_german_number(value):
 
 @register.filter
 def model_name(obj):
+    print(obj.__class__.__name__.lower())
     return obj.__class__.__name__.lower()
