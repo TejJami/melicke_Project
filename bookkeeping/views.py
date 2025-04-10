@@ -58,8 +58,8 @@ class CustomLoginView(LoginView):
 # Dashboard: Displays Earmarked and Parsed Transactions
 @login_required
 def dashboard(request):
-    earmarked = EarmarkedTransaction.objects.all()
-    parsed = ParsedTransaction.objects.all()
+    earmarked = EarmarkedTransaction.objects.all().order_by('booking_no')  # ascending
+    parsed = ParsedTransaction.objects.all().order_by('booking_no')        # ascending
     properties = Property.objects.all()
     units = Unit.objects.all()
     leases = Lease.objects.all()
@@ -71,225 +71,387 @@ def dashboard(request):
         'leases': leases,
     })
 
-# Upload Bank Statement
+
+# # Generate Next Booking Number (4-digit only)
+# def generate_next_booking_no():
+#     latest = EarmarkedTransaction.objects.exclude(booking_no__isnull=True).order_by('-booking_no').first()
+#     if latest and latest.booking_no:
+#         try:
+#             last_num = int(re.sub(r'\D', '', latest.booking_no))
+#             return f"{last_num + 1:04d}"
+#         except ValueError:
+#             pass
+#     return "0001"
+
+
+# # Upload Bank Statement
+# def upload_bank_statement(request, property_id=None):
+#     property_obj = get_object_or_404(Property, id=property_id)  # Ensure property exists
+
+#     if request.method == 'POST' and request.FILES.get('statement'):
+#         duplicate_count = 0
+
+#         # Check if the file is a PDF
+#         statement = request.FILES['statement']
+#         from PyPDF2 import PdfReader
+
+#         # Get all landlord IBANs for this property
+#         property_landlord_ibans = list(property_obj.landlords.values_list('iban', flat=True))
+
+#         # Read the first page of the uploaded PDF to extract IBAN
+#         reader = PdfReader(statement)
+#         first_page_text = reader.pages[0].extract_text()
+#         iban_match = re.search(r"IBAN:\s*([A-Z0-9\s]+)", first_page_text)
+
+#         if not iban_match:
+#             return render(request, 'bookkeeping/upload_statement.html', {
+#                 'property': property_obj,
+#                 'error': "⚠️ IBAN konnte im PDF nicht gefunden werden.",
+#             })
+
+#         extracted_iban = re.sub(r"\s+", "", iban_match.group(1))[:22] # Normalize format
+
+#         # Normalize property landlord IBANs
+#         normalized_ibans = [iban.replace(" ", "") for iban in property_landlord_ibans if iban]
+#         print(f"Extracted IBAN: {extracted_iban}")
+#         print(f"Normalized IBANs: {normalized_ibans}")
+
+#         # Check if extracted IBAN matches any of the property's landlord IBANs
+#         if extracted_iban not in normalized_ibans:
+#             from django.contrib import messages
+
+#             messages.error(request, f"❌ Die IBAN {extracted_iban} stimmt nicht mit den IBANs der Vermieter überein.")
+#             return redirect(f"{reverse('property_detail', args=[property_id])}?tab=dashboard")
+
+#         # Now continue with earmarked transaction parsing...
+            
+#         earmarked_transactions = []
+#         current_buchungsdatum = None  # To store the current `Buchungsdatum`
+
+#         def split_pdf_into_pages(pdf_file):
+#             pdf_reader = PyPDF2.PdfReader(pdf_file)
+#             pages = []
+
+#             for page_num in range(len(pdf_reader.pages)):
+#                 pdf_writer = PyPDF2.PdfWriter()
+#                 pdf_writer.add_page(pdf_reader.pages[page_num])
+
+#                 # Save each page to a BytesIO object
+#                 page_stream = BytesIO()
+#                 pdf_writer.write(page_stream)
+#                 page_stream.seek(0)
+#                 pages.append(page_stream)
+
+#             return pages
+
+#         def extract_text_with_fallback(page_stream):
+#             text = None
+#             # Attempt pdfplumber first
+#             try:
+#                 with pdfplumber.open(page_stream) as pdf:
+#                     text = pdf.pages[0].extract_text()
+#             except Exception as e:
+#                 print(f"pdfplumber failed: {e}")
+
+#             if not text:
+#                 # Use PyMuPDF (fitz) for fallback
+#                 page_stream.seek(0)  # Reset the stream
+#                 with fitz.open(stream=page_stream.read(), filetype="pdf") as pdf:
+#                     text = pdf[0].get_text("text")
+#             return text
+
+#         # Split the PDF into individual pages
+#         pages = split_pdf_into_pages(statement)
+
+#         for page_number, page_stream in enumerate(pages):
+#             text = extract_text_with_fallback(page_stream)
+#             if not text:
+#                 print(f"No text found on page {page_number + 1} after fallback.")
+#                 continue
+
+#             # Process the text for this page
+#             lines = text.split('\n')
+#             current_transaction = {}
+#             multiline_description = []
+
+#             for line_number, line in enumerate(lines):
+#                 line = line.strip()
+#                 if not line:
+#                     continue  # Skip empty lines
+
+#                 # Check for `Buchungsdatum` to update the current reference date
+#                 if "Buchungsdatum:" in line:
+#                     date_match = re.search(r"\d{2}\.\d{2}\.\d{4}", line)
+#                     if date_match:
+#                         current_buchungsdatum = date_match.group(0)
+#                         try:
+#                             # Convert `current_buchungsdatum` (DD.MM.YYYY) to Django date format (YYYY-MM-DD)
+#                             formatted_buchungsdatum = datetime.strptime(current_buchungsdatum, "%d.%m.%Y").date()
+#                         except ValueError as e:
+#                             print(f"Error parsing Buchungsdatum: {e}")
+#                             formatted_buchungsdatum = None  # Handle the error if needed
+#                     continue  # Skip to the next line
+
+#                 # Skip invalid lines
+#                 if (
+#                     "Alter Kontostand vom" in line or
+#                     "Neuer Kontostand vom" in line or
+#                     re.search(r"Kontostand", line, re.IGNORECASE) or
+#                     "Änderung Freistellungsauftrag" in line
+#                 ):
+#                     continue
+
+#                 # Check for valid transactions only if `current_buchungsdatum` is set
+#                 if current_buchungsdatum:
+#                     # Check for a date in `dd.mm` format (e.g., `03.01`)
+#                     date_match = re.search(r"\d{2}\.\d{2}", line)
+#                     if date_match:
+#                         parsed_date = date_match.group(0)
+#                         try:
+#                             # Combine parsed date with the year from `formatted_buchungsdatum`
+#                             formatted_parsed_date = datetime.strptime(parsed_date, "%d.%m").date()
+#                             if formatted_buchungsdatum:
+#                                 formatted_parsed_date = formatted_parsed_date.replace(year=formatted_buchungsdatum.year)
+
+#                             # Validate the parsed date matches or is within the logical range of `Buchungsdatum`
+#                             if formatted_parsed_date != formatted_buchungsdatum:
+#                                 print(f"Invalid transaction date {formatted_parsed_date} for Buchungsdatum {formatted_buchungsdatum}. Skipping.")
+#                                 continue  # Skip invalid transaction
+#                         except ValueError as e:
+#                             print(f"Error parsing transaction date {parsed_date}: {e}")
+#                             continue  # Skip invalid transaction
+
+#                         # Save the previous transaction if it exists
+#                         if current_transaction and 'amount' in current_transaction:
+#                             current_transaction['description'] = " ".join(multiline_description).strip()
+#                             try:
+#                                 txn = EarmarkedTransaction(
+#                                     date=current_transaction['date'],
+#                                     account_name=current_transaction['account_name'],
+#                                     amount=current_transaction['amount'],
+#                                     is_income=current_transaction['is_income'],
+#                                     description=current_transaction['description'],
+#                                     property=property_obj,  # Assign the property
+#                                     booking_no=generate_next_booking_no(),  
+#                                 )
+#                                 earmarked_transactions.append(txn)
+#                             except Exception as e:
+#                                 print(f"Error saving transaction: {e}")
+
+#                         # Start a new transaction
+#                         current_transaction = {}
+#                         multiline_description = []
+
+#                         # Use the parsed date for the transaction
+#                         current_transaction['date'] = formatted_parsed_date
+
+#                         # Extract account name (text before the date)
+#                         account_name = line.split(parsed_date)[0].strip()
+#                         current_transaction['account_name'] = account_name
+
+#                         # Parse the amount and determine if it's income or expense
+#                         columns = re.split(r'\s{2,}', line)  # Splitting by whitespace columns
+#                         for col in columns:
+#                             amount_match = re.search(r"-?\d{1,3}(?:\.\d{3})*,\d{2}-?", col)
+#                             if amount_match:
+#                                 amount_str = amount_match.group(0).replace('.', '').replace(',', '.')
+#                                 current_transaction['amount'] = abs(float(amount_str.strip('-')))
+#                                 # Determine if it's income or expense based on the `-` at the end
+#                                 current_transaction['is_income'] = not col.strip().endswith('-')
+#                                 break
+
+#                     elif current_transaction:
+#                         # Append additional description lines
+#                         multiline_description.append(line)
+
+#             # Save the last transaction on the page
+#             if current_transaction and 'amount' in current_transaction:
+#                 current_transaction['description'] = " ".join(multiline_description).strip()
+#                 try:
+#                     # Check for duplicates (fast lookup by date, account name, and amount only)
+#                     exists = EarmarkedTransaction.objects.filter(
+#                         date=current_transaction['date'],
+#                         account_name=current_transaction['account_name'],
+#                         amount=current_transaction['amount']
+#                     ).exists()
+
+#                     if not exists:
+#                         txn = EarmarkedTransaction(
+#                             date=current_transaction['date'],
+#                             account_name=current_transaction['account_name'],
+#                             amount=current_transaction['amount'],
+#                             is_income=current_transaction['is_income'],
+#                             description=current_transaction['description'],
+#                             property=property_obj,
+#                             booking_no=generate_next_booking_no(), 
+#                         )
+#                         earmarked_transactions.append(txn)
+#                     else:
+#                         duplicate_count += 1
+#                 except Exception as e:
+#                     print(f"Error saving last transaction on page {page_number + 1}: {e}")
+        
+#         if duplicate_count > 0:
+#             from django.contrib import messages
+#             # Display a warning message for skipped transactions
+#             messages.warning(
+#                 request, 
+#                 f"Einige Transaktionen wurden möglicherweise übersprungen, weil sie bereits vorhanden sind."
+
+#             )
+            
+#         # Save all transactions to the database
+#         for txn in earmarked_transactions:
+#             txn.save()  # This will trigger the `post_save` signal
+
+#         # Redirect to the property detail view with the dashboard tab
+#         return redirect(f"{reverse('property_detail', args=[property_id])}?tab=dashboard")
+
+#     return render(request, 'bookkeeping/upload_statement.html', {'property': property_obj})
+
 def upload_bank_statement(request, property_id=None):
-    property_obj = get_object_or_404(Property, id=property_id)  # Ensure property exists
+    property_obj = get_object_or_404(Property, id=property_id)
 
     if request.method == 'POST' and request.FILES.get('statement'):
-        duplicate_count = 0
-
-        # Check if the file is a PDF
         statement = request.FILES['statement']
-        from PyPDF2 import PdfReader
+        duplicate_count = 0
+        earmarked_transactions = []
+        current_buchungsdatum = None
 
-        # Get all landlord IBANs for this property
-        property_landlord_ibans = list(property_obj.landlords.values_list('iban', flat=True))
-
-        # Read the first page of the uploaded PDF to extract IBAN
-        reader = PdfReader(statement)
+        # Extract IBAN from first page
+        reader = PyPDF2.PdfReader(statement)
         first_page_text = reader.pages[0].extract_text()
         iban_match = re.search(r"IBAN:\s*([A-Z0-9\s]+)", first_page_text)
 
         if not iban_match:
             return render(request, 'bookkeeping/upload_statement.html', {
                 'property': property_obj,
-                'error': "⚠️ IBAN konnte im PDF nicht gefunden werden.",
+                'error': "\u26a0\ufe0f IBAN konnte im PDF nicht gefunden werden.",
             })
 
-        extracted_iban = re.sub(r"\s+", "", iban_match.group(1))[:22] # Normalize format
+        extracted_iban = re.sub(r"\s+", "", iban_match.group(1))[:22]
+        landlord_ibans = [iban.replace(" ", "") for iban in property_obj.landlords.values_list('iban', flat=True) if iban]
 
-        # Normalize property landlord IBANs
-        normalized_ibans = [iban.replace(" ", "") for iban in property_landlord_ibans if iban]
-        print(f"Extracted IBAN: {extracted_iban}")
-        print(f"Normalized IBANs: {normalized_ibans}")
-
-        # Check if extracted IBAN matches any of the property's landlord IBANs
-        if extracted_iban not in normalized_ibans:
-            from django.contrib import messages
-
-            messages.error(request, f"❌ Die IBAN {extracted_iban} stimmt nicht mit den IBANs der Vermieter überein.")
+        if extracted_iban not in landlord_ibans:
+            messages.error(request, f"\u274c Die IBAN {extracted_iban} stimmt nicht mit den IBANs der Vermieter \u00fcberein.")
             return redirect(f"{reverse('property_detail', args=[property_id])}?tab=dashboard")
 
-        # Now continue with earmarked transaction parsing...
-            
-        earmarked_transactions = []
-        current_buchungsdatum = None  # To store the current `Buchungsdatum`
+        # Booking Number Counter Setup
+        latest_bn = EarmarkedTransaction.objects.exclude(booking_no__isnull=True).order_by('-booking_no').first()
+        base_bn = 1
+        if latest_bn and latest_bn.booking_no:
+            try:
+                base_bn = int(re.sub(r'\D', '', latest_bn.booking_no)) + 1
+            except ValueError:
+                pass
+        bn_counter = base_bn
 
         def split_pdf_into_pages(pdf_file):
             pdf_reader = PyPDF2.PdfReader(pdf_file)
             pages = []
-
             for page_num in range(len(pdf_reader.pages)):
-                pdf_writer = PyPDF2.PdfWriter()
-                pdf_writer.add_page(pdf_reader.pages[page_num])
-
-                # Save each page to a BytesIO object
-                page_stream = BytesIO()
-                pdf_writer.write(page_stream)
-                page_stream.seek(0)
-                pages.append(page_stream)
-
+                writer = PyPDF2.PdfWriter()
+                writer.add_page(pdf_reader.pages[page_num])
+                stream = BytesIO()
+                writer.write(stream)
+                stream.seek(0)
+                pages.append(stream)
             return pages
 
         def extract_text_with_fallback(page_stream):
-            text = None
-            # Attempt pdfplumber first
             try:
                 with pdfplumber.open(page_stream) as pdf:
-                    text = pdf.pages[0].extract_text()
-            except Exception as e:
-                print(f"pdfplumber failed: {e}")
-
-            if not text:
-                # Use PyMuPDF (fitz) for fallback
-                page_stream.seek(0)  # Reset the stream
+                    return pdf.pages[0].extract_text()
+            except Exception:
+                page_stream.seek(0)
                 with fitz.open(stream=page_stream.read(), filetype="pdf") as pdf:
-                    text = pdf[0].get_text("text")
-            return text
+                    return pdf[0].get_text("text")
 
-        # Split the PDF into individual pages
+        def save_transaction(tx_data):
+            nonlocal bn_counter
+            if tx_data and 'amount' in tx_data:
+                tx_data['description'] = " ".join(multiline_description).strip()
+                if not EarmarkedTransaction.objects.filter(
+                    date=tx_data['date'],
+                    account_name=tx_data['account_name'],
+                    amount=tx_data['amount']
+                ).exists():
+                    txn = EarmarkedTransaction(
+                        date=tx_data['date'],
+                        account_name=tx_data['account_name'],
+                        amount=tx_data['amount'],
+                        is_income=tx_data['is_income'],
+                        description=tx_data['description'],
+                        property=property_obj,
+                        booking_no=f"{bn_counter:04d}",
+                    )
+                    earmarked_transactions.append(txn)
+                    bn_counter += 1
+                    return True
+            return False
+
         pages = split_pdf_into_pages(statement)
-
-        for page_number, page_stream in enumerate(pages):
+        for page_stream in pages:
             text = extract_text_with_fallback(page_stream)
             if not text:
-                print(f"No text found on page {page_number + 1} after fallback.")
                 continue
-
-            # Process the text for this page
             lines = text.split('\n')
             current_transaction = {}
             multiline_description = []
 
-            for line_number, line in enumerate(lines):
+            for line in lines:
                 line = line.strip()
                 if not line:
-                    continue  # Skip empty lines
-
-                # Check for `Buchungsdatum` to update the current reference date
+                    continue
                 if "Buchungsdatum:" in line:
-                    date_match = re.search(r"\d{2}\.\d{2}\.\d{4}", line)
-                    if date_match:
-                        current_buchungsdatum = date_match.group(0)
+                    match = re.search(r"\d{2}\.\d{2}\.\d{4}", line)
+                    if match:
                         try:
-                            # Convert `current_buchungsdatum` (DD.MM.YYYY) to Django date format (YYYY-MM-DD)
+                            current_buchungsdatum = match.group(0)
                             formatted_buchungsdatum = datetime.strptime(current_buchungsdatum, "%d.%m.%Y").date()
-                        except ValueError as e:
-                            print(f"Error parsing Buchungsdatum: {e}")
-                            formatted_buchungsdatum = None  # Handle the error if needed
-                    continue  # Skip to the next line
-
-                # Skip invalid lines
-                if (
-                    "Alter Kontostand vom" in line or
-                    "Neuer Kontostand vom" in line or
-                    re.search(r"Kontostand", line, re.IGNORECASE) or
-                    "Änderung Freistellungsauftrag" in line
-                ):
+                        except ValueError:
+                            formatted_buchungsdatum = None
                     continue
 
-                # Check for valid transactions only if `current_buchungsdatum` is set
+                if any(skip in line for skip in ["Kontostand", "Alter Kontostand", "Neuer Kontostand", "Freistellungsauftrag"]):
+                    continue
+
                 if current_buchungsdatum:
-                    # Check for a date in `dd.mm` format (e.g., `03.01`)
                     date_match = re.search(r"\d{2}\.\d{2}", line)
                     if date_match:
-                        parsed_date = date_match.group(0)
                         try:
-                            # Combine parsed date with the year from `formatted_buchungsdatum`
+                            parsed_date = date_match.group(0)
                             formatted_parsed_date = datetime.strptime(parsed_date, "%d.%m").date()
-                            if formatted_buchungsdatum:
-                                formatted_parsed_date = formatted_parsed_date.replace(year=formatted_buchungsdatum.year)
-
-                            # Validate the parsed date matches or is within the logical range of `Buchungsdatum`
+                            formatted_parsed_date = formatted_parsed_date.replace(year=formatted_buchungsdatum.year)
                             if formatted_parsed_date != formatted_buchungsdatum:
-                                print(f"Invalid transaction date {formatted_parsed_date} for Buchungsdatum {formatted_buchungsdatum}. Skipping.")
-                                continue  # Skip invalid transaction
-                        except ValueError as e:
-                            print(f"Error parsing transaction date {parsed_date}: {e}")
-                            continue  # Skip invalid transaction
+                                continue
+                        except ValueError:
+                            continue
 
-                        # Save the previous transaction if it exists
-                        if current_transaction and 'amount' in current_transaction:
-                            current_transaction['description'] = " ".join(multiline_description).strip()
-                            try:
-                                txn = EarmarkedTransaction(
-                                    date=current_transaction['date'],
-                                    account_name=current_transaction['account_name'],
-                                    amount=current_transaction['amount'],
-                                    is_income=current_transaction['is_income'],
-                                    description=current_transaction['description'],
-                                    property=property_obj,  # Assign the property
-                                )
-                                earmarked_transactions.append(txn)
-                            except Exception as e:
-                                print(f"Error saving transaction: {e}")
+                        save_transaction(current_transaction)
 
-                        # Start a new transaction
-                        current_transaction = {}
+                        current_transaction = {'date': formatted_parsed_date}
                         multiline_description = []
 
-                        # Use the parsed date for the transaction
-                        current_transaction['date'] = formatted_parsed_date
-
-                        # Extract account name (text before the date)
-                        account_name = line.split(parsed_date)[0].strip()
-                        current_transaction['account_name'] = account_name
-
-                        # Parse the amount and determine if it's income or expense
-                        columns = re.split(r'\s{2,}', line)  # Splitting by whitespace columns
-                        for col in columns:
+                        current_transaction['account_name'] = line.split(parsed_date)[0].strip()
+                        for col in re.split(r'\s{2,}', line):
                             amount_match = re.search(r"-?\d{1,3}(?:\.\d{3})*,\d{2}-?", col)
                             if amount_match:
-                                amount_str = amount_match.group(0).replace('.', '').replace(',', '.')
-                                current_transaction['amount'] = abs(float(amount_str.strip('-')))
-                                # Determine if it's income or expense based on the `-` at the end
+                                amt = amount_match.group(0).replace('.', '').replace(',', '.')
+                                current_transaction['amount'] = abs(float(amt.strip('-')))
                                 current_transaction['is_income'] = not col.strip().endswith('-')
                                 break
-
                     elif current_transaction:
-                        # Append additional description lines
                         multiline_description.append(line)
 
-            # Save the last transaction on the page
-            if current_transaction and 'amount' in current_transaction:
-                current_transaction['description'] = " ".join(multiline_description).strip()
-                try:
-                    # Check for duplicates (fast lookup by date, account name, and amount only)
-                    exists = EarmarkedTransaction.objects.filter(
-                        date=current_transaction['date'],
-                        account_name=current_transaction['account_name'],
-                        amount=current_transaction['amount']
-                    ).exists()
+            save_transaction(current_transaction)
 
-                    if not exists:
-                        txn = EarmarkedTransaction(
-                            date=current_transaction['date'],
-                            account_name=current_transaction['account_name'],
-                            amount=current_transaction['amount'],
-                            is_income=current_transaction['is_income'],
-                            description=current_transaction['description'],
-                            property=property_obj,
-                        )
-                        earmarked_transactions.append(txn)
-                    else:
-                        duplicate_count += 1
-                except Exception as e:
-                    print(f"Error saving last transaction on page {page_number + 1}: {e}")
-        
         if duplicate_count > 0:
-            from django.contrib import messages
-            # Display a warning message for skipped transactions
-            messages.warning(
-                request, 
-                f"Einige Transaktionen wurden möglicherweise übersprungen, weil sie bereits vorhanden sind."
+            messages.warning(request, "Einige Transaktionen wurden möglicherweise übersprungen, weil sie bereits vorhanden sind.")
 
-            )
-            
-        # Save all transactions to the database
         for txn in earmarked_transactions:
-            txn.save()  # This will trigger the `post_save` signal
+            txn.save()
 
-        # Redirect to the property detail view with the dashboard tab
         return redirect(f"{reverse('property_detail', args=[property_id])}?tab=dashboard")
 
     return render(request, 'bookkeeping/upload_statement.html', {'property': property_obj})
@@ -332,27 +494,27 @@ def add_property(request):
         tax_calculation_method = request.POST.get('tax_calculation_method', 'none')  # Default to manual entry
         
         partial_tax_rate_input = request.POST.get('partial_tax_rate', '0').replace(',', '.')
-        partial_tax_rate = float(partial_tax_rate_input) if not auto_calculate_tax else None
+        partial_tax_rate = float(partial_tax_rate_input) if not auto_calculate_tax else 0.0
 
-        # Auto-calculation logic
-        if auto_calculate_tax:
-            if tax_calculation_method == 'sq_meterage':
-                leases = Lease.objects.filter(property__id=property_obj.id)
-                area_with_ust = sum(lease.unit.floor_area for lease in leases if lease.ust_type == 'Mit' and lease.unit.floor_area)
-                total_area = sum(lease.unit.floor_area for lease in leases if lease.unit.floor_area)
-                partial_tax_rate = round((area_with_ust / total_area) * 100, 2) if total_area > 0 else 0.0
+        # # Auto-calculation logic
+        # if auto_calculate_tax:
+        #     if tax_calculation_method == 'sq_meterage':
+        #         leases = Lease.objects.filter(property__id=property_obj.id)
+        #         area_with_ust = sum(lease.unit.floor_area for lease in leases if lease.ust_type == 'Mit' and lease.unit.floor_area)
+        #         total_area = sum(lease.unit.floor_area for lease in leases if lease.unit.floor_area)
+        #         partial_tax_rate = round((area_with_ust / total_area) * 100, 2) if total_area > 0 else 0.0
 
-            elif tax_calculation_method == 'income':
-                leases = Lease.objects.filter(property__id=property_obj.id)
-                income_with_ust = sum(
-                    (lease.rent + (lease.additional_costs or 0) + lease.deposit_amount)
-                    for lease in leases if lease.ust_type == 'Mit'
-                )
-                total_income = sum(
-                    (lease.rent + (lease.additional_costs or 0) + lease.deposit_amount)
-                    for lease in leases
-                )
-                partial_tax_rate = round((income_with_ust / total_income) * 100, 2) if total_income > 0 else 0.0
+        #     elif tax_calculation_method == 'income':
+        #         leases = Lease.objects.filter(property__id=property_obj.id)
+        #         income_with_ust = sum(
+        #             (lease.rent + (lease.additional_costs or 0) + lease.deposit_amount)
+        #             for lease in leases if lease.ust_type == 'Mit'
+        #         )
+        #         total_income = sum(
+        #             (lease.rent + (lease.additional_costs or 0) + lease.deposit_amount)
+        #             for lease in leases
+        #         )
+        #         partial_tax_rate = round((income_with_ust / total_income) * 100, 2) if total_income > 0 else 0.0
 
         # Create the Property object
         property_obj = Property.objects.create(
@@ -1208,8 +1370,8 @@ def property_detail(request, property_id):
     leases = property_obj.leases.all()
     income_profiles = IncomeProfile.objects.filter(property=property_obj)
     expense_profiles = ExpenseProfile.objects.filter(property=property_obj)
-    earmarked_transactions = EarmarkedTransaction.objects.filter(property=property_obj).order_by('-date')
-    parsed_transactions = ParsedTransaction.objects.filter(related_property=property_obj).order_by('-date')
+    earmarked_transactions = EarmarkedTransaction.objects.filter(property=property_obj).order_by('booking_no')
+    parsed_transactions = ParsedTransaction.objects.filter(related_property=property_obj).order_by('booking_no')
     landlords = Landlord.objects.all()
     tenants = Tenant.objects.all()
     property_landlords = property_obj.landlords.all()

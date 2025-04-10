@@ -180,9 +180,3 @@ repository-name/
   - Ensure PostgreSQL service is running.
 
 ---
-
-## Author
-- **Name**: [Your Name]
-- **Email**: [Your Email]
-- **GitHub**: [GitHub Profile Link]
-

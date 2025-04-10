@@ -52,6 +52,7 @@
         <table class="table w-full text-left bg-base-100 text-base-content">
             <thead>
                 <tr>
+                    <th>BN</th>
                     <th>Kontoname</th>
                     <th>Datum</th>
                     <th>Betrag</th>
@@ -62,6 +63,7 @@
             <tbody>
                 {% for transaction in earmarked_transactions %}
                 <tr>
+                    <td>{{ transaction.booking_no }}</td>
                     <td>{{ transaction.account_name }}</td>
                     <td>{{ transaction.date }}</td>
                     <td class="{% if transaction.is_income %}text-success{% else %}text-error{% endif %}">
@@ -74,7 +76,7 @@
                             + Einnahme
                         </button>
                         {% else %}
-                        <button class="btn btn-sm btn-outline btn-error" onclick="openExpenseModal('{{ transaction.account_name }}' , '{{ transaction.amount }}')">
+                        <button class="btn btn-sm btn-outline btn-error" onclick="openExpenseModal('{{ transaction.account_name }}' , '{{ transaction.amount }}', '{{ transaction.booking_no }}')">
                             + Ausgabe
                         </button>
                         {% endif %}
@@ -132,14 +134,16 @@
         }
     }
 
-    function openExpenseModal(accountName , amount) {
+    function openExpenseModal(accountName , amount , booking_no) {
         const input = document.getElementById('account_name_expense');
         const amountInput = document.getElementById('amount_expense');
+        const bookingNoInput = document.getElementById('booking_no_expense');
         const modal = document.getElementById('add_expense_modal_2');
 
         if (modal) {
             modal.showModal(); // Show the modal
             if (input) {
+                bookingNoInput.value = booking_no; // Set the booking number in the input field
                 input.value = accountName; // Set the account name in the input field
                 amountInput.value = amount
                     ? parseFloat(amount.replace(/\./g, '').replace(',', '.')).toFixed(2)

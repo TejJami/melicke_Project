@@ -158,12 +158,14 @@ class ParsedTransaction(models.Model):
 
 # Model to represent transactions that are not yet categorized
 class EarmarkedTransaction(models.Model):
+    
     property = models.ForeignKey(Property, on_delete=models.CASCADE, null=True, blank=True)  # Associate with a property
     date = models.CharField(max_length=10)  # Keep DD.MM.YYYY format as a string
     amount = models.FloatField()    
     description = models.TextField()
     is_income = models.BooleanField()
     account_name = models.CharField(max_length=255, null=True, blank=True)  # New field for account name
+    booking_no = models.CharField(max_length=20, blank=True, null=True)  # Add this field
 
     def __str__(self):
         return f"Earmarked {self.amount} on {self.date}"
