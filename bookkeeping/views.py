@@ -384,17 +384,39 @@ def delete_property(request, pk):
 #################################################################
 
 # Tenants
+from django.db.models import Sum, F, FloatField, ExpressionWrapper
 @login_required
 def tenants(request):
     query = request.GET.get('q', '')
+    property_id = request.GET.get('property')
+
     tenants = Tenant.objects.all()
 
     if query:
-        tenants = tenants.filter(name__icontains=query)  # Filter tenants by name
+        tenants = tenants.filter(name__icontains=query)
+
+    if property_id:
+        tenants = tenants.filter(leases__property_id=property_id).distinct()
+
+    # Annotate each tenant with total monthly debt (rent + additional costs)
+    tenants = tenants.annotate(
+        total_monthly_debt=Sum(
+            ExpressionWrapper(
+                F('leases__rent') + F('leases__additional_costs'),
+                output_field=FloatField()
+            )
+        )
+    )
+
+    properties = Property.objects.all()
 
     return render(request, 'bookkeeping/tenants.html', {
         'tenants': tenants,
+        'properties': properties,
+        'selected_property_id': property_id,
     })
+
+
 
 # Add Tenant
 @login_required
@@ -725,16 +747,22 @@ def delete_unit(request, pk):
 # Landlords View
 def landlords(request):
     query = request.GET.get('q', '')
+    property_id = request.GET.get('property')
 
-    # Prefetch properties using the correct reverse relation (from Property's landlords field)
     landlords = Landlord.objects.prefetch_related('owned_properties').all()
 
-
     if query:
-        landlords = landlords.filter(name__icontains=query)  # Filter landlords by name
+        landlords = landlords.filter(name__icontains=query)
+
+    if property_id:
+        landlords = landlords.filter(owned_properties__id=property_id).distinct()
+
+    properties = Property.objects.all()
 
     return render(request, 'bookkeeping/landlords.html', {
         'landlords': landlords,
+        'properties': properties,
+        'selected_property_id': property_id,
     })
 
 # Add Landlord
@@ -988,10 +1016,11 @@ def add_income_profile(request):
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
         property_obj = get_object_or_404(Property, id=property_id)
 
-        # Determine UST dynamically
-        ust = 0
-        if lease and lease.ust_type:
-            ust = {'Voll': 19, 'Teilw': 7, 'Nicht': 0}.get(lease.ust_type, 0)
+        # # Determine UST dynamically
+        # ust = 0
+        # if lease and lease.ust_type:
+        #     ust = {'Voll': 19, 'Teilw': 7, 'Nicht': 0}.get(lease.ust_type, 0)
+        ust = request.POST.get('ust', 0)  # Get UST from the form
 
         # Safely parse optional fields
         try:

@@ -20,9 +20,8 @@
                         <th>USt</th>
                         <th>USt(%)</th>
                         <th>Bruttobetrag</th>
-                        <th>Transaktionstyp</th>
-                        <th>Gebäude</th>
-                        <th>Mietvertrag</th>
+                        <th >Transaktionstyp</th>
+                        <th >Mietvertrag</th>
                         <th>Rechnung</th>
 
                     </tr>
@@ -43,7 +42,6 @@
                             €{{ transaction.betrag_brutto }}
                         </td>
                         <td>{{ transaction.transaction_type }}</td>
-                        <td>{{ transaction.related_property }}</td>
                         <td>{{ transaction.tenant }}</td>
                         <td>
                             {% if transaction.invoice %}

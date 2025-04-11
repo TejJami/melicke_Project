@@ -67,7 +67,15 @@
                             {{ profile.account_name }}
                         </td>
                     <td>{{ profile.get_transaction_type_display }}</td>
-                    <td>€{{ profile.amount|floatformat:2 }}</td>
+                    <!-- add colour to the amount based on the type of transaction
+                      -->
+                    <td class="{% if profile|model_name == 'expenseprofile' %}text-error{% else %}text-success{% endif %}">
+                        {% if profile|model_name == 'expenseprofile' %}
+                            €{{ profile.amount|floatformat:2 }}
+                        {% else %}
+                            €{{ profile.amount|floatformat:2 }}
+                        {% endif %}
+                    </td>
                     <td>{{ profile.ust }}%</td>
                     <td>{{ profile.date }}</td>
                     <td>{% if profile.recurring %}✅{% else %}—{% endif %}</td>
@@ -104,6 +112,16 @@
                     <option value="deposit_withdrawal">Einzahlung / Abhebung</option>
                 </select>
             </div>
+
+            <div class="mb-4">
+                <label for="ust">UST Type *</label>
+                <select name="ust" id="edit_ust_1"  class="select select-bordered w-full" required>
+                    <option value="0">0%</option>
+                    <option value="7">7%</option>
+                    <option value="19">19%</option>
+                </select>
+            </div>
+            
 
             <div class="mb-4">
                 <label class="label"><span class="label-text">Mietvertrag *</span></label>

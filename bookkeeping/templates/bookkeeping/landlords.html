@@ -105,6 +105,19 @@
 
 <!-- Landlords Table -->
 <div class="overflow-x-auto">
+    <form method="get" class="flex items-center gap-4 mb-4">
+        <select name="property" class="select select-sm select-bordered">
+            <option value="">Alle Objekte</option>
+            {% for prop in properties %}
+                <option value="{{ prop.id }}" {% if prop.id|stringformat:"s" == selected_property_id %}selected{% endif %}>
+                    {{ prop.name }}
+                </option>
+            {% endfor %}
+        </select>
+    
+        <button class="btn btn-sm btn-outline" type="submit">Filtern</button>
+    </form>
+    
     <table class="table w-full text-left bg-base-100 text-base-content">
         <thead>
             <tr class="border-b border-base-200">

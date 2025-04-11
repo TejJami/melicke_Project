@@ -124,11 +124,28 @@
 
 <!-- Tenant Table -->
 <div class="overflow-x-auto">
+    <form method="get" class="flex items-center gap-4 mb-4">
+
+        <select name="property" class="select select-bordered">
+          <option value="">Alle Objekte</option>
+          {% for prop in properties %}
+            <option value="{{ prop.id }}" {% if prop.id|stringformat:"s" == selected_property_id %}selected{% endif %}>
+              {{ prop.name }}
+            </option>
+          {% endfor %}
+        </select>
+      
+        <button class="btn btn-sm btn-outline" type="submit">Filtern</button>
+      </form>
+      
     <table class="table w-full text-left bg-base-100 text-base-content">
         <thead>
             <tr>
                 <th>Name</th>
+                <th class="lease-columns hidden">Gesamtschuld</th>
+
                 <th>Unit</th>
+
                 
                 <!-- Contact Columns (Hidden when Lease Details are Shown) -->
                 <th class="contact-columns">Telefon</th>
@@ -156,6 +173,16 @@
                                 {% if forloop.first %}
                                     <td rowspan="{{ leases|length }}">{{ tenant.name }}</td>
                                 {% endif %}
+                                {% if forloop.first %}
+                                    <td rowspan="{{ leases|length }}" class="lease-columns" style="display: none;">
+                                        {% if tenant.total_monthly_debt %}
+                                            €{{ tenant.total_monthly_debt|floatformat:2 }}
+                                        {% else %}
+                                            –
+                                        {% endif %}
+                                    </td>
+                                {% endif %}
+
                                 <td>{{ lease.unit.unit_name }}</td>
             
                                 <!-- Contact Columns -->
