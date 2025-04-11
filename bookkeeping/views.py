@@ -258,9 +258,13 @@ def upload_bank_statement(request, property_id=None):
 @login_required
 def properties(request):
     query = request.GET.get('q', '')
-    properties = Property.objects.filter(name__icontains=query) if query else Property.objects.all()
     
-    paginator = Paginator(properties, 6)  # Display 6 properties per page
+    if query:
+        properties = Property.objects.filter(name__icontains=query).order_by('-id')
+    else:
+        properties = Property.objects.all().order_by('-id')  # Newest first by ID
+    
+    paginator = Paginator(properties, 6)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 

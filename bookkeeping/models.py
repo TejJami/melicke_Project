@@ -83,11 +83,10 @@ class Property(models.Model):
             'property_images/default5.jpg',
             'property_images/default6.jpg',
         ]
-        counter = cache.get('default_image_counter', 0)
-        next_image = default_images[counter]
-        counter = (counter + 1) % len(default_images)
-        cache.set('default_image_counter', counter)
-        return next_image
+        count = Property.objects.count()
+        index = count % len(default_images)
+        return default_images[index]
+
 
     def save(self, *args, **kwargs):
         if not self.image:
