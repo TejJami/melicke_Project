@@ -1,8 +1,10 @@
 <div class="card bg-transparent p-5 w-full max-w-6xl mx-auto">
    
-    <button class="btn w-64 btn-sm btn-outline mb-5" onclick="window.location.href='{% url 'export_parsed_transactions' %}'">
-        Als Excel herunterladen
-    </button>
+    <button class="btn w-64 btn-sm btn-outline mb-5"
+    onclick="window.location.href='{% url 'export_parsed_transactions' property.id %}'">
+Als Excel herunterladen
+</button>
+
     
     <div class="overflow-x-auto h-96 mb-10">
 

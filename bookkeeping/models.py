@@ -13,6 +13,7 @@ class Tenant(models.Model):
     iban = models.CharField(max_length=34, blank=True, null=True)  # Bank account IBAN
     bic = models.CharField(max_length=11, blank=True, null=True)  # Optional BIC/SWIFT code
     notes = models.TextField(blank=True, null=True)  # Free text for additional notes
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00) 
 
     def __str__(self):
         return f"{self.name}"
@@ -173,6 +174,9 @@ class EarmarkedTransaction(models.Model):
     is_income = models.BooleanField()
     account_name = models.CharField(max_length=255, null=True, blank=True)  # New field for account name
     booking_no = models.CharField(max_length=20, blank=True, null=True)  # Add this field
+    flagged_for_review = models.BooleanField(default=False)
+    review_note = models.TextField(blank=True, null=True)
+    resolved = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Earmarked {self.amount} on {self.date}"
@@ -272,7 +276,7 @@ class IncomeProfile(models.Model):
     )
     # profile_name = models.CharField(max_length=255)
     transaction_type = models.CharField(
-        max_length=30, choices=TRANSACTION_TYPES, default='rent'
+        max_length=30, choices=TRANSACTION_TYPES, default='rent' , null=True, blank=True
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2,null=True, blank=True)
     date = models.DateField(null=True, blank=True)
@@ -283,7 +287,11 @@ class IncomeProfile(models.Model):
     account_name = models.CharField(max_length=255)
     ust = models.IntegerField(choices=[(0, '0%'), (7, '7%'), (19, '19%')], default=19)
     # booking_no = models.CharField(max_length=100, unique=False)
-
+    split_details = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Optional: define exact split for this profile, e.g. {'rent': 1500, 'bk_advance_payments': 250, 'security_deposit': 250}"
+    )
     def __str__(self):
         if self.lease:
             return f" ({self.lease.property.name} - {self.lease.unit.unit_name})"

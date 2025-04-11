@@ -70,7 +70,7 @@ urlpatterns = [
 
     # Transactions
     path('upload_statement/', views.upload_bank_statement, name='upload_statement'),
-    path('export_parsed_transactions/', views.export_parsed_transactions, name='export_parsed_transactions'),
+    path('export_parsed_transactions/<int:property_id>/', views.export_parsed_transactions, name='export_parsed_transactions'),
 
 
     path('property/<int:property_id>/ust/', views.ust_view, name='ust'),

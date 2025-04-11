@@ -113,19 +113,12 @@
         </div>
 </dialog>
 
-<!-- Toggle Button with DaisyUI -->
-<div class="flex justify-end mb-3">
-    <label class="flex items-center gap-2 cursor-pointer">
-        <input type="checkbox" id="toggleLeaseDetails" class="toggle toggle-primary">
-        <span class="font-semibold">Sollstellung</span>
-    </label>
-</div>
 
 
 <!-- Tenant Table -->
 <div class="overflow-x-auto">
-    <form method="get" class="flex items-center gap-4 mb-4">
 
+    <form method="get" class="flex items-center gap-4 mb-4">
         <select name="property" class="select select-bordered">
           <option value="">Alle Objekte</option>
           {% for prop in properties %}
@@ -136,8 +129,14 @@
         </select>
       
         <button class="btn btn-sm btn-outline" type="submit">Filtern</button>
+        <!-- pin sollstellung to righ corner in the form-->
+        <label class="label cursor-pointer flex items-center gap-2 ml-auto">
+            <input type="checkbox" id="toggleLeaseDetails" class="toggle toggle-primary">
+            <span class="font-semibold">Sollstellung</span>
+        </label>
       </form>
       
+
     <table class="table w-full text-left bg-base-100 text-base-content">
         <thead>
             <tr>

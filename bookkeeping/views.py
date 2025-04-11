@@ -22,14 +22,22 @@ from django.urls import reverse
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
-
+from django.db.models import Q
+from itertools import chain
+from operator import attrgetter
 from django.contrib.auth.views import LoginView
 from django.contrib.auth import authenticate
 from django.contrib.sessions.models import Session
 from django.utils import timezone
 from django.contrib import messages
 from datetime import date
-
+from django.db.models import Sum, F, FloatField, ExpressionWrapper
+from django.core.exceptions import ValidationError
+from decimal import Decimal
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Unit, Property
+from openpyxl import Workbook
+from django.http import HttpResponse
 
 class CustomLoginView(LoginView):
     template_name = 'login.html'
@@ -73,7 +81,8 @@ def dashboard(request):
         'leases': leases,
     })
 
-
+# Helper function to serialize transactions for session storage
+# This function converts date objects to ISO format strings for session storage.
 def serialize_for_session(tx_list):
     serialized = []
     for tx in tx_list:
@@ -83,6 +92,7 @@ def serialize_for_session(tx_list):
         serialized.append(tx_copy)
     return serialized
 
+# Upload Bank Statement 
 def upload_bank_statement(request, property_id=None):
     property_obj = get_object_or_404(Property, id=property_id)
 
@@ -241,12 +251,10 @@ def upload_bank_statement(request, property_id=None):
 
         return redirect(f"{reverse('property_detail', args=[property_id])}?tab=dashboard")
 
-
-
-
 #################################################################
 
-# Properties
+# All views for Properties
+# Property List View
 @login_required
 def properties(request):
     query = request.GET.get('q', '')
@@ -262,6 +270,7 @@ def properties(request):
         'landlords': landlords,
     })
 
+# Add Property
 def add_property(request):
     if request.method == 'POST':
         # Get property fields
@@ -278,7 +287,7 @@ def add_property(request):
 
 
         auto_calculate_tax = request.POST.get('auto_calculate_tax') == "on"  # Checkbox returns "on" if checked
-        print(auto_calculate_tax)
+        
         tax_calculation_method = request.POST.get('tax_calculation_method', 'none')  # Default to manual entry
         
         partial_tax_rate_input = request.POST.get('partial_tax_rate', '0').replace(',', '.')
@@ -307,6 +316,7 @@ def add_property(request):
         'landlords': landlords,
     })
 
+# Edit Property
 def edit_property(request, pk):
     property_obj = get_object_or_404(Property, id=pk)
 
@@ -370,7 +380,6 @@ def edit_property(request, pk):
         'landlords': landlords,
     })
 
-
 # Delete Property
 def delete_property(request, pk):
     property_obj = get_object_or_404(Property, pk=pk)
@@ -383,8 +392,8 @@ def delete_property(request, pk):
 
 #################################################################
 
-# Tenants
-from django.db.models import Sum, F, FloatField, ExpressionWrapper
+# All views for Tenants
+# Tenant List View
 @login_required
 def tenants(request):
     query = request.GET.get('q', '')
@@ -415,8 +424,6 @@ def tenants(request):
         'properties': properties,
         'selected_property_id': property_id,
     })
-
-
 
 # Add Tenant
 @login_required
@@ -477,11 +484,6 @@ def delete_tenant(request, pk):
 
 #################################################################
 
-
-from django.db.models import Q
-from itertools import chain
-from operator import attrgetter
-
 @login_required
 def mapping_rules(request, property_id):
     property_obj = get_object_or_404(Property, id=property_id)
@@ -500,7 +502,6 @@ def mapping_rules(request, property_id):
         'profiles': merged_profiles
     })
 
-
 #################################################################
 
 # Expense Profiles
@@ -510,13 +511,12 @@ def expense_profiles(request):
         'properties': properties,
     })
 
-from django.core.exceptions import ValidationError
-
+# Add Expense Profile
 def add_expense_profile(request):
     if request.method == 'POST':
         data = request.POST
         invoice_file = request.FILES.get('invoice')  # Get uploaded file
-        print(invoice_file)
+        
 
         # Validate Property ID
         property_id = data.get('property')
@@ -560,7 +560,7 @@ def add_expense_profile(request):
 
     return redirect('dashboard')  # Default fallback
 
-
+# Edit Expense Profile
 def edit_expense_profile(request, pk):
     expense = get_object_or_404(ExpenseProfile, id=pk)
     property_obj = expense.property
@@ -597,8 +597,7 @@ def edit_expense_profile(request, pk):
 
     return redirect('dashboard')  # Default fallback
 
-# Helper Functions
-
+# Helper function to determine UST based on lease or property
 def get_ust_from_lease_or_property(lease, property_obj):
     """
     Determines UST based on lease if available, otherwise defaults to the property UST.
@@ -608,7 +607,7 @@ def get_ust_from_lease_or_property(lease, property_obj):
         return ust_mapping.get(lease.ust_type, 0)
     return ust_mapping.get(property_obj.ust_type, 0)
 
-
+# Helper function to safely convert values to Decimal and date
 def safe_decimal(value):
     """
     Safely converts a value to Decimal. Returns None if conversion fails.
@@ -618,7 +617,7 @@ def safe_decimal(value):
     except (ValueError, TypeError, Decimal.InvalidOperation):
         return None
 
-
+# Helper function to safely parse date strings
 def safe_date(value):
     """
     Safely parses a date string into a datetime object. Returns None if parsing fails.
@@ -652,10 +651,6 @@ def units(request):
      })
 
 # Add Unit
-from decimal import Decimal
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import Unit, Property
-
 def add_unit(request):
     if request.method == 'POST':
         property_id = request.POST.get('property')
@@ -692,7 +687,6 @@ def add_unit(request):
     # Fetch properties for the dropdown
     properties = Property.objects.all()
     return render(request, 'bookkeeping/add_unit.html', {'properties': properties})
-
 
 # Edit Unit
 def edit_unit(request, pk):
@@ -768,7 +762,7 @@ def landlords(request):
 # Add Landlord
 def add_landlord(request):
     if request.method == 'POST':
-        print(request.POST)
+        
         name = request.POST.get('name')
         phone_number = request.POST.get('phone_number')
         email = request.POST.get('email')
@@ -827,36 +821,125 @@ def delete_landlord(request, pk):
 
 #################################################################
 
-# Export Parsed Transactions
-def export_parsed_transactions(request):
-    # Create a workbook and a sheet
-    wb = openpyxl.Workbook()
+# Export parsed transactions to Excel
+
+from openpyxl import Workbook
+from openpyxl.worksheet.table import Table, TableStyleInfo
+from openpyxl.styles import numbers
+from django.http import HttpResponse
+from django.utils.timezone import now
+from django.utils.text import slugify
+
+def export_parsed_transactions(request, property_id):
+    import calendar
+    # German month names
+    german_months = [
+        "", "Januar", "Februar", "März", "April", "Mai", "Juni",
+        "Juli", "August", "September", "Oktober", "November", "Dezember"
+    ]
+
+    # Get property
+    property_obj = Property.objects.get(id=property_id)
+
+    # Filter transactions by property
+    parsed_transactions = ParsedTransaction.objects.filter(related_property=property_obj)
+
+    # Create workbook and worksheet
+    wb = Workbook()
     ws = wb.active
     ws.title = "Parsed Transactions"
 
-    # Add header row
-    headers = ["Date", "Account Name", "Transaction Type", "Betrag Brutto", "Ust.", "Betrag Netto"]
+    # Header row
+    headers = [
+        "BN", "Datum", "Kontoname", "Einheit",
+        "Bank", "Nettobetrag", "Betrag Aufw", "USt (%)", "USt",
+        "Bruttobetrag", "Gggkto", "Mieter", "Rechnung",
+        "Monat", "L-Monat", "Objekt"
+    ]
     ws.append(headers)
 
-    # Retrieve parsed transactions
-    parsed_transactions = ParsedTransaction.objects.all()
+    # Append data rows
+    for tx in parsed_transactions:
+        month_int = tx.date.month if tx.date else None
+        month_name = german_months[month_int] if month_int else "N/A"
 
-    # Add data rows
-    for transaction in parsed_transactions:
         ws.append([
-            transaction.date.strftime("%Y-%m-%d") if transaction.date else "N/A",
-            transaction.account_name or "N/A",
-            transaction.transaction_type or "N/A",
-            transaction.betrag_brutto if transaction.betrag_brutto is not None else "N/A",
-            transaction.ust,  # Calculated UST property
-            transaction.betrag_netto,  # Calculated Net Amount property
+            tx.booking_no or "N/A",
+            tx.date.strftime("%Y-%m-%d") if tx.date else "N/A",
+            tx.account_name or "N/A",
+            tx.unit_name or "N/A",
+
+            tx.betrag_brutto if tx.betrag_brutto is not None else None,  # Bank
+            tx.betrag_netto if tx.betrag_netto is not None else None,    # Nettobetrag
+            tx.betrag_netto if tx.betrag_netto is not None else None,    # Betrag Aufw
+
+            f"{tx.ust_type}%" if tx.ust_type is not None else "N/A",     # USt %
+            tx.ust if tx.ust is not None else None,                      # USt
+
+            tx.betrag_brutto if tx.betrag_brutto is not None else None,  # Bruttobetrag
+            tx.transaction_type or "N/A",     # Gggkto
+            tx.tenant or "N/A",               # Mieter
+            tx.invoice.name if tx.invoice else "-",
+
+            month_int or "N/A",
+            month_name,
+            property_obj.name
         ])
 
-    # Prepare the HTTP response
-    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    response['Content-Disposition'] = 'attachment; filename=parsed_transactions.xlsx'
+    # Format numeric cells (2 decimals) for appropriate columns
+    for row in ws.iter_rows(min_row=2, min_col=5, max_col=10):  # Bank to Bruttobetrag
+        for cell in row:
+            if isinstance(cell.value, (float, int)):
+                cell.number_format = numbers.FORMAT_NUMBER_00
 
-    # Save workbook to the response
+    # Define Excel table
+    num_rows = ws.max_row
+    num_cols = ws.max_column
+
+    # Handle multi-letter column names
+    def col_letter(n):
+        result = ""
+        while n:
+            n, rem = divmod(n - 1, 26)
+            result = chr(65 + rem) + result
+        return result
+
+    last_col_letter = col_letter(num_cols)
+    table_ref = f"A1:{last_col_letter}{num_rows}"
+
+    table = Table(displayName="ParsedTransactionsTable", ref=table_ref)
+    style = TableStyleInfo(
+        name="TableStyleLight1",
+        showFirstColumn=False,
+        showLastColumn=False,
+        showRowStripes=True,
+        showColumnStripes=False
+    )
+    table.tableStyleInfo = style
+    ws.add_table(table)
+
+    # Auto-fit column widths
+    for column_cells in ws.columns:
+        max_length = 0
+        column_letter = column_cells[0].column_letter
+        for cell in column_cells:
+            try:
+                cell_value = str(cell.value) if cell.value is not None else ""
+                max_length = max(max_length, len(cell_value))
+            except:
+                pass
+        ws.column_dimensions[column_letter].width = max_length + 2  # Add padding
+
+    # Format filename
+    today = now().strftime("%Y-%m-%d")
+    property_name_slug = slugify(property_obj.name)
+    filename = f"FiBu_{property_name_slug}_{today}.xlsx"
+
+    # Return response
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
     wb.save(response)
     return response
 
@@ -1009,46 +1092,80 @@ def add_income_profile(request):
     if request.method == 'POST':
         lease_id = request.POST.get('lease')
         property_id = request.POST.get('property')
-        amount = request.POST.get('amount')
         date = request.POST.get('date')
+        ust = int(request.POST.get('ust', 0))
+        recurring = request.POST.get('recurring') == 'on'
+        frequency = request.POST.get('frequency')
+        account_name = request.POST.get('account_name')
 
-        # Fetch Lease and Property
-        lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
+        lease = get_object_or_404(Lease, id=lease_id)
         property_obj = get_object_or_404(Property, id=property_id)
 
-        # # Determine UST dynamically
-        # ust = 0
-        # if lease and lease.ust_type:
-        #     ust = {'Voll': 19, 'Teilw': 7, 'Nicht': 0}.get(lease.ust_type, 0)
-        ust = request.POST.get('ust', 0)  # Get UST from the form
-
-        # Safely parse optional fields
-        try:
-            amount = Decimal(amount) if amount else None
-        except Exception:
-            amount = None
         try:
             date = datetime.strptime(date, "%Y-%m-%d").date() if date else None
         except Exception:
             date = None
 
-        # Create Income Profile
-        IncomeProfile.objects.create(
-            lease=lease,
-            property=property_obj,
-            # profile_name=request.POST.get('profile_name'),
-            transaction_type=request.POST.get('transaction_type'),
-            amount=amount,
-            date=date,
-            recurring=request.POST.get('recurring') == 'on',
-            frequency=request.POST.get('frequency'),
-            account_name=request.POST.get('account_name'),
-            ust=ust,
-            # booking_no=request.POST.get('booking_no'),
-        )
+        try:
+            total_amount = Decimal(request.POST.get('amount', '0'))
+        except Exception:
+            total_amount = Decimal("0.00")
+
+        split_enabled = request.POST.get("split_income") == "on"
+        apply_remainder = request.POST.get("apply_remainder") == "on"
+
+        if split_enabled:
+            selected_types = request.POST.getlist("split_types[]")
+            split_total = Decimal("0.00")
+            split_map = {}
+
+            for tx_type in selected_types:
+                field_key = f"split_amount_{tx_type}"
+                try:
+                    split_amount = Decimal(request.POST.get(field_key, "0"))
+                except Exception:
+                    split_amount = Decimal("0.00")
+
+                if split_amount > 0:
+                    split_map[tx_type] = float(split_amount)  # Store as float for JSON serializability
+                    split_total += split_amount
+
+            remainder = total_amount - split_total
+
+            IncomeProfile.objects.create(
+                lease=lease,
+                property=property_obj,
+                transaction_type=None,  # Since this is a split, no single type applies
+                amount=total_amount,
+                date=date,
+                recurring=recurring,
+                frequency=frequency,
+                account_name=account_name,
+                ust=ust,
+                split_details=split_map
+            )
+
+            if remainder > 0 and apply_remainder:
+                messages.info(request, f"Restbetrag von €{remainder:.2f} wurde nicht zugewiesen.")
+
+        else:
+            # Standard single entry
+            IncomeProfile.objects.create(
+                lease=lease,
+                property=property_obj,
+                transaction_type=request.POST.get('transaction_type'),
+                amount=total_amount,
+                date=date,
+                recurring=recurring,
+                frequency=frequency,
+                account_name=account_name,
+                ust=ust,
+                split_details=None  # Not a split
+            )
+
         return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=mapping_tab")
 
-    return redirect('dashboard')  # Default fallback
+    return redirect('dashboard')
 
 
 # Edit Income Profile
@@ -1136,16 +1253,46 @@ def fetch_unit_tenant_data(request):
 #################################################################
 
 # AJAX endpoint to fetch lease profiles
+from django.http import JsonResponse
+
+from django.http import JsonResponse
+from decimal import Decimal
+
 def lease_profiles(request, lease_id):
     lease = get_object_or_404(Lease, id=lease_id)
-    income_profiles = IncomeProfile.objects.filter(lease=lease)
-    expense_profiles = ExpenseProfile.objects.filter(lease=lease)
 
-    return render(request, 'bookkeeping/lease.html', {
-        'lease': lease,
-        'income_profiles': income_profiles,
-        'expense_profiles': expense_profiles,
+    income_data = []
+
+    # Rent
+    if lease.rent:
+        income_data.append({
+            "type": "rent",
+            "label": "Miete",
+            "amount": float(lease.rent)
+        })
+
+    # BK / Additional Costs
+    additional = lease.additional_costs or (lease.unit.additional_costs if lease.unit else Decimal("0.00"))
+    if additional:
+        income_data.append({
+            "type": "bk_advance_payments",
+            "label": "Nebenkosten",
+            "amount": float(additional)
+        })
+
+    # Deposit
+    if lease.deposit_amount:
+        income_data.append({
+            "type": "security_deposit",
+            "label": "Kaution",
+            "amount": float(lease.deposit_amount)
+        })
+
+    return JsonResponse({
+        "lease_id": lease.id,
+        "incomes": income_data
     })
+
 
 from django.db.models import Sum, Avg
 from django.utils.timezone import now, timedelta
