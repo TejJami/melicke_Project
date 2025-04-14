@@ -2,6 +2,11 @@ from django.db import models
 from django.contrib.postgres.fields import ArrayField  # For account names and IBANs as tags
 import psycopg2
 from django.contrib.auth.models import User
+from django.db import models
+from decimal import Decimal
+from django.core.cache import cache
+from django.db import models
+
 
 # Model to represent tenants within a property
 class Tenant(models.Model):
@@ -33,12 +38,7 @@ class Landlord(models.Model):
     def __str__(self):
         return f"{self.name} - {self.object if self.object else 'No Object'}"
 
-
-
-from django.db import models
-from decimal import Decimal
-from django.core.cache import cache
-
+# Model to represent properties
 class Property(models.Model):
     PROPERTY_TYPE_CHOICES = [
         ('Residential', 'Residential'),
@@ -98,8 +98,7 @@ class Property(models.Model):
 
         super().save(*args, **kwargs)
 
-from django.db import models
-
+# Model to represent units within a property
 class Unit(models.Model):
     POSITION_CHOICES = [
         ('Left', 'Left'),
@@ -117,8 +116,7 @@ class Unit(models.Model):
 
     def __str__(self):
         return f"{self.unit_name} - {self.property.name})"
-    
-    
+     
 # Model to represent parsed transactions after categorization
 class ParsedTransaction(models.Model):
     date = models.DateField()  # Date of transaction

@@ -40,37 +40,40 @@ from openpyxl import Workbook
 from django.http import HttpResponse
 from bookkeeping.utils.onedrive_utils import upload_to_onedrive
 
+# Custom Login View
 class CustomLoginView(LoginView):
-    template_name = 'login.html'
+    template_name = 'login.html' # Path to your login template
 
     def form_valid(self, form):
-        user = form.get_user()
-        request = self.request
-        force_login = request.POST.get("force_login") == "1"
+        user = form.get_user() 
+        request = self.request # Get the request object
+        force_login = request.POST.get("force_login") == "1" # Check if force_login is set
 
-        existing_sessions = Session.objects.filter(expire_date__gte=timezone.now())
-        user_has_session = False
+        existing_sessions = Session.objects.filter(expire_date__gte=timezone.now()) # Get all active sessions
+        user_has_session = False # Flag to check if user has an existing session
 
+        # Check if the user already has an active session
+        # Iterate through all active sessions and check if the user ID matches
         for session in existing_sessions:
             data = session.get_decoded()
-            if data.get('_auth_user_id') == str(user.id):
-                if not force_login:
-                    user_has_session = True
+            if data.get('_auth_user_id') == str(user.id): # Check if the user ID matches
+                if not force_login: 
+                    user_has_session = True # Set the flag to True if user has an existing session
                     break
                 else:
-                    session.delete()
+                    session.delete() # Delete the existing session if force_login is set
 
-        if user_has_session:
+        if user_has_session: # If the user has an existing session and force_login is not set
             form.add_error(None, "already_logged_in")  # key only, used in template
-            return self.form_invalid(form)
+            return self.form_invalid(form) 
 
         return super().form_valid(form)
 
 # Dashboard: Displays Earmarked and Parsed Transactions
 @login_required
 def dashboard(request):
-    earmarked = EarmarkedTransaction.objects.all().order_by('booking_no')  # ascending
-    parsed = ParsedTransaction.objects.all().order_by('booking_no')        # ascending
+    earmarked = EarmarkedTransaction.objects.all().order_by('booking_no')  # Order by booking number
+    parsed = ParsedTransaction.objects.all().order_by('booking_no')        # Order by booking number
     properties = Property.objects.all()
     units = Unit.objects.all()
     leases = Lease.objects.all()
@@ -95,10 +98,10 @@ def serialize_for_session(tx_list):
 
 # Upload Bank Statement 
 def upload_bank_statement(request, property_id=None):
-    property_obj = get_object_or_404(Property, id=property_id)
+    property_obj = get_object_or_404(Property, id=property_id) # Get the property object
 
-    if request.method == 'POST' and request.FILES.get('statement'):
-        statement = request.FILES['statement']
+    if request.method == 'POST' and request.FILES.get('statement'): 
+        statement = request.FILES['statement'] 
         duplicate_count = 0
         earmarked_transactions = []
         current_buchungsdatum = None
@@ -114,41 +117,41 @@ def upload_bank_statement(request, property_id=None):
                 'error': "\u26a0\ufe0f IBAN konnte im PDF nicht gefunden werden.",
             })
 
-        extracted_iban = re.sub(r"\s+", "", iban_match.group(1))[:22]
-        landlord_ibans = [iban.replace(" ", "") for iban in property_obj.landlords.values_list('iban', flat=True) if iban]
+        extracted_iban = re.sub(r"\s+", "", iban_match.group(1))[:22] # Clean and limit to 22 characters
+        landlord_ibans = [iban.replace(" ", "") for iban in property_obj.landlords.values_list('iban', flat=True) if iban] # Get all IBANs of landlords associated with the property
 
         if extracted_iban not in landlord_ibans:
-            messages.error(request, f"\u274c Die IBAN {extracted_iban} stimmt nicht mit den IBANs der Vermieter \u00fcberein.")
-            return redirect(f"{reverse('property_detail', args=[property_id])}?tab=dashboard")
+            messages.error(request, f"\u274c Die IBAN {extracted_iban} stimmt nicht mit den IBANs der Vermieter \u00fcberein.") 
+            return redirect(f"{reverse('property_detail', args=[property_id])}?tab=dashboard") # Redirect to property detail page with error message
 
         # Booking Number Counter Setup
         latest_bn = EarmarkedTransaction.objects.filter(
             property=property_obj
-        ).exclude(booking_no__isnull=True).order_by('-booking_no').first()
+        ).exclude(booking_no__isnull=True).order_by('-booking_no').first() # Get the latest booking number for the property
         base_bn = 1
         if latest_bn and latest_bn.booking_no:
             try:
-                base_bn = int(re.sub(r'\D', '', latest_bn.booking_no)) + 1
+                base_bn = int(re.sub(r'\D', '', latest_bn.booking_no)) + 1 # Increment booking number
             except ValueError:
                 pass
         bn_counter = base_bn
 
         def split_pdf_into_pages(pdf_file):
-            pdf_reader = PyPDF2.PdfReader(pdf_file)
+            pdf_reader = PyPDF2.PdfReader(pdf_file) # Read the PDF file
             pages = []
             for page_num in range(len(pdf_reader.pages)):
-                writer = PyPDF2.PdfWriter()
-                writer.add_page(pdf_reader.pages[page_num])
-                stream = BytesIO()
-                writer.write(stream)
-                stream.seek(0)
-                pages.append(stream)
+                writer = PyPDF2.PdfWriter() # Create a PDF writer object
+                writer.add_page(pdf_reader.pages[page_num]) # Add each page to the writer
+                stream = BytesIO() # Create a stream to hold the page
+                writer.write(stream) # Write the page to the stream
+                stream.seek(0)   # Reset the stream position to the beginning
+                pages.append(stream)  # Append the stream to the pages list
             return pages
 
         def extract_text_with_fallback(page_stream):
             try:
                 with pdfplumber.open(page_stream) as pdf:
-                    return pdf.pages[0].extract_text()
+                    return pdf.pages[0].extract_text()  # Extract text using pdfplumber
             except Exception:
                 page_stream.seek(0)
                 with fitz.open(stream=page_stream.read(), filetype="pdf") as pdf:
@@ -159,7 +162,7 @@ def upload_bank_statement(request, property_id=None):
         def save_transaction(tx_data):
             nonlocal bn_counter
             if tx_data and 'amount' in tx_data:
-                tx_data['description'] = " ".join(multiline_description).strip()
+                tx_data['description'] = " ".join(multiline_description).strip() # Join multiline description
                 exists = EarmarkedTransaction.objects.filter(
                     date=tx_data['date'],
                     account_name=tx_data['account_name'],
@@ -176,9 +179,9 @@ def upload_bank_statement(request, property_id=None):
                         property=property_obj,
                         booking_no=f"{bn_counter:04d}",
                     )
-                    earmarked_transactions.append(txn)
-                    bn_counter += 1
-                    return True
+                    earmarked_transactions.append(txn) # Append to earmarked transactions
+                    bn_counter += 1 
+                    return True 
                 else:
                     skipped_duplicates.append(tx_data.copy())
             return False
@@ -197,8 +200,8 @@ def upload_bank_statement(request, property_id=None):
                 line = line.strip()
                 if not line:
                     continue
-                if "Buchungsdatum:" in line:
-                    match = re.search(r"\d{2}\.\d{2}\.\d{4}", line)
+                if "Buchungsdatum:" in line: # Check for booking date
+                    match = re.search(r"\d{2}\.\d{2}\.\d{4}", line) # Match date format
                     if match:
                         try:
                             current_buchungsdatum = match.group(0)
@@ -290,7 +293,6 @@ def add_property(request):
         # partial_tax_rate = request.POST.get('partial_tax_rate')
         image = request.FILES.get('image')
 
-
         auto_calculate_tax = request.POST.get('auto_calculate_tax') == "on"  # Checkbox returns "on" if checked
         
         tax_calculation_method = request.POST.get('tax_calculation_method', 'none')  # Default to manual entry
@@ -364,7 +366,7 @@ def edit_property(request, pk):
                 )
                 partial_tax_rate = round((income_with_ust / total_income) * 100, 2) if total_income > 0 else 0.0
 
-
+        # Update the property object with new values
         property_obj.auto_calculate_tax = auto_calculate_tax
         property_obj.tax_calculation_method = tax_calculation_method
         property_obj.partial_tax_rate = partial_tax_rate
@@ -405,10 +407,10 @@ def tenants(request):
     property_id = request.GET.get('property')
 
     tenants = Tenant.objects.all()
-
+    # Filter tenants based on query and property
     if query:
         tenants = tenants.filter(name__icontains=query)
-
+    # Filter by property if provided
     if property_id:
         tenants = tenants.filter(leases__property_id=property_id).distinct()
 
@@ -421,9 +423,9 @@ def tenants(request):
             )
         )
     )
-
+    # Get all properties for the dropdown
     properties = Property.objects.all()
-
+    
     return render(request, 'bookkeeping/tenants.html', {
         'tenants': tenants,
         'properties': properties,
@@ -460,7 +462,7 @@ def add_tenant(request):
 
 # Edit Tenant
 def edit_tenant(request, pk):
-    tenant = get_object_or_404(Tenant, id=pk)
+    tenant = get_object_or_404(Tenant, id=pk) # Fetch the tenant using the primary key
 
     if request.method == 'POST':
         tenant.name = request.POST.get('name')
@@ -491,10 +493,10 @@ def delete_tenant(request, pk):
 
 @login_required
 def mapping_rules(request, property_id):
-    property_obj = get_object_or_404(Property, id=property_id)
+    property_obj = get_object_or_404(Property, id=property_id) # Get the property object
 
-    expense_profiles = ExpenseProfile.objects.filter(property=property_obj)
-    income_profiles = IncomeProfile.objects.filter(property=property_obj)
+    expense_profiles = ExpenseProfile.objects.filter(property=property_obj) # Fetch expense profiles for the property
+    income_profiles = IncomeProfile.objects.filter(property=property_obj) # Fetch income profiles for the property
 
     # Merge and sort by ID (or `date` if added later)
     merged_profiles = sorted(
@@ -567,20 +569,27 @@ def expense_profiles(request):
 
 def add_expense_profile(request):
     if request.method == 'POST':
-        data = request.POST
-        invoice_file = request.FILES.get('invoice')  # Uploaded file object
-        invoice_url = None
+        data = request.POST # Get the POST data 
+        invoice_file = request.FILES.get('invoice') # Get the uploaded file object
+        invoice_url = None # Initialize invoice URL
+
+        print("POST data received:", data)
+        print("Uploaded file object:", invoice_file)
 
         # Validate Property
         property_id = data.get('property')
         if not property_id:
+            print("Missing property ID.")
             return redirect('dashboard')
 
         property_obj = get_object_or_404(Property, id=property_id)
+        print("Found property:", property_obj)
 
         # Optional Lease
         lease_id = data.get('lease')
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
+        if lease:
+            print("Found lease:", lease)
 
         # Safe parsing
         amount = safe_decimal(data.get('amount'))
@@ -589,20 +598,28 @@ def add_expense_profile(request):
         frequency = data.get('frequency')
         ust = int(data.get('ust') or 19)
 
-        # Required fields
+        print("Parsed amount:", amount)
+        print("Parsed date:", date)
+        print("Parsed ust:", ust)
+        print("Recurring:", recurring)
+        print("Frequency:", frequency)
+
+        # Required fields check
         if not data.get('transaction_type') or not data.get('account_name'):
+            print("Missing transaction_type or account_name.")
             return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=mapping_tab")
 
-        # Upload invoice to OneDrive (if provided)
+        # Upload to OneDrive
         if invoice_file:
             try:
+                print("Attempting OneDrive upload for:", invoice_file.name)
                 invoice_url = upload_to_onedrive(invoice_file, invoice_file.name)
+                print("Upload successful. OneDrive URL:", invoice_url)
             except Exception as e:
-                print(f"OneDrive upload failed: {e}")
+                print("OneDrive upload failed:", str(e))
 
         try:
-            # Create the Expense Profile
-            ExpenseProfile.objects.create(
+            profile = ExpenseProfile.objects.create(
                 lease=lease,
                 property=property_obj,
                 transaction_type=data.get('transaction_type'),
@@ -612,26 +629,29 @@ def add_expense_profile(request):
                 recurring=recurring,
                 frequency=frequency,
                 ust=ust,
-                invoice=invoice_url  # Store the OneDrive URL
+                invoice=invoice_url
             )
+            print("ExpenseProfile created:", profile)
         except ValidationError as e:
-            print(f"Validation Error: {e}")
+            print("Validation error during ExpenseProfile creation:", e)
 
         return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=mapping_tab")
 
-    return redirect('dashboard')  # fallback
+    print("Request method was not POST.")
+    return redirect('dashboard')
+
 
 # Edit Expense Profile
 def edit_expense_profile(request, pk):
-    expense = get_object_or_404(ExpenseProfile, id=pk)
-    property_obj = expense.property
+    expense = get_object_or_404(ExpenseProfile, id=pk) # Fetch the expense profile using the primary key
+    property_obj = expense.property # Get the property object
 
     if request.method == 'POST':
-        data = request.POST
-        lease_id = data.get('lease')
-        amount = data.get('amount')
-        date = data.get('date')
-        recurring = data.get('recurring') == 'on'
+        data = request.POST # Get the POST data
+        lease_id = data.get('lease') # Get the lease ID from the form data
+        amount = data.get('amount') # Get the amount from the form data
+        date = data.get('date') # Get the date from the form data
+        recurring = data.get('recurring') == 'on' # Check if the recurring checkbox is checked
 
         # Fetch Lease if provided
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
@@ -663,7 +683,7 @@ def get_ust_from_lease_or_property(lease, property_obj):
     """
     Determines UST based on lease if available, otherwise defaults to the property UST.
     """
-    ust_mapping = {'Voll': 19, 'Teilw': 7, 'Nicht': 0}
+    ust_mapping = {'Voll': 19, 'Teilw': 7, 'Nicht': 0} 
     if lease and lease.ust_type:
         return ust_mapping.get(lease.ust_type, 0)
     return ust_mapping.get(property_obj.ust_type, 0)
@@ -703,8 +723,8 @@ def delete_expense_profile(request, pk):
 
 # Units
 def units(request):
-    units = Unit.objects.select_related('property').all()
-    properties = Property.objects.all()
+    units = Unit.objects.select_related('property').all() # Fetch all units with related property data
+    properties = Property.objects.all() # Fetch all properties for the dropdown
 
     return render(request, 'bookkeeping/units.html',
      {'units': units,
@@ -801,18 +821,17 @@ def delete_unit(request, pk):
 
 # Landlords View
 def landlords(request):
-    query = request.GET.get('q', '')
-    property_id = request.GET.get('property')
+    query = request.GET.get('q', '') # Search query from the GET request 
+    property_id = request.GET.get('property') # Property ID from the GET request
 
-    landlords = Landlord.objects.prefetch_related('owned_properties').all()
+    landlords = Landlord.objects.prefetch_related('owned_properties').all() # Fetch all landlords with related properties
 
     if query:
-        landlords = landlords.filter(name__icontains=query)
+        landlords = landlords.filter(name__icontains=query) # Filter landlords by name
 
     if property_id:
-        landlords = landlords.filter(owned_properties__id=property_id).distinct()
-
-    properties = Property.objects.all()
+        landlords = landlords.filter(owned_properties__id=property_id).distinct() # Filter landlords by property ID
+    properties = Property.objects.all() # Fetch all properties for the dropdown
 
     return render(request, 'bookkeeping/landlords.html', {
         'landlords': landlords,
@@ -852,7 +871,7 @@ def add_landlord(request):
 
 # Edit Landlord
 def edit_landlord(request, pk):
-    landlord = get_object_or_404(Landlord, id=pk)
+    landlord = get_object_or_404(Landlord, id=pk) # Fetch the landlord using the primary key
 
     if request.method == 'POST':
         landlord.name = request.POST.get('name')
@@ -872,7 +891,7 @@ def edit_landlord(request, pk):
 
 # Delete Landlord
 def delete_landlord(request, pk):
-    landlord = get_object_or_404(Landlord, id=pk)
+    landlord = get_object_or_404(Landlord, id=pk) # Fetch the landlord using the primary key
 
     if request.method == 'POST':
         landlord.delete()
@@ -938,8 +957,8 @@ def export_parsed_transactions(request, property_id):
             tx.ust if tx.ust is not None else None,                      # USt
 
             tx.betrag_brutto if tx.betrag_brutto is not None else None,  # Bruttobetrag
-            tx.transaction_type or "N/A",     # Gggkto
-            tx.tenant or "N/A",               # Mieter
+            tx.transaction_type or "N/A",                                # Gggkto
+            tx.tenant or "N/A",                                          # Mieter
             tx.invoice.name if tx.invoice else "-",
 
             month_int or "N/A",
@@ -1134,7 +1153,7 @@ def delete_lease(request, pk):
     property_id = lease.property.id  # Store the associated property ID before deletion
 
     if request.method == 'POST':
-        lease.delete()
+        lease.delete() # Delete the lease object 
 
         # Redirect to property detail view
         return redirect(f"{reverse('property_detail', args=[lease.property.id])}?tab=leases")
@@ -1231,8 +1250,8 @@ def add_income_profile(request):
 
 # Edit Income Profile
 def edit_income_profile(request, pk):
-    income = get_object_or_404(IncomeProfile, id=pk)
-    property_obj = income.property
+    income = get_object_or_404(IncomeProfile, id=pk) # Fetch the income profile using the primary key
+    property_obj = income.property # Get the property object
 
     if request.method == 'POST':
         lease_id = request.POST.get('lease')
@@ -1315,15 +1334,13 @@ def fetch_unit_tenant_data(request):
 
 # AJAX endpoint to fetch lease profiles
 from django.http import JsonResponse
-
 from django.http import JsonResponse
 from decimal import Decimal
 
 def lease_profiles(request, lease_id):
-    lease = get_object_or_404(Lease, id=lease_id)
-
-    income_data = []
-
+    lease = get_object_or_404(Lease, id=lease_id) # Fetch the lease object
+    # Check if the user is authenticated
+    income_data = [] # Initialize income data list
     # Rent
     if lease.rent:
         income_data.append({
@@ -1331,7 +1348,6 @@ def lease_profiles(request, lease_id):
             "label": "Miete",
             "amount": float(lease.rent)
         })
-
     # BK / Additional Costs
     additional = lease.additional_costs or (lease.unit.additional_costs if lease.unit else Decimal("0.00"))
     if additional:
@@ -1340,7 +1356,6 @@ def lease_profiles(request, lease_id):
             "label": "Nebenkosten",
             "amount": float(additional)
         })
-
     # Deposit
     if lease.deposit_amount:
         income_data.append({
@@ -1348,16 +1363,13 @@ def lease_profiles(request, lease_id):
             "label": "Kaution",
             "amount": float(lease.deposit_amount)
         })
-
     return JsonResponse({
         "lease_id": lease.id,
         "incomes": income_data
     })
 
-
 from django.db.models import Sum, Avg
 from django.utils.timezone import now, timedelta
-
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
@@ -1430,7 +1442,8 @@ def property_detail(request, property_id):
         "revenue": [],
         "expenses": []
     }
-
+    # Get the last 6 months of data
+    # Assuming the date is in the format YYYY-MM-DD
     current_date = now()
     for i in range(6):
         month = (current_date - timedelta(days=30 * i)).strftime("%B %Y")
@@ -1441,7 +1454,7 @@ def property_detail(request, property_id):
         chart_data["expenses"].append(expense)
 
     skipped_duplicates = request.session.pop('skipped_duplicates', None)
-
+    
     context = {
         'property': property_obj,
         'units': property_obj.units.all(),
@@ -1469,7 +1482,7 @@ def property_detail(request, property_id):
         'locked_by_another_user': locked_by_another_user,
         'skipped_duplicates': skipped_duplicates,
     }
-    print(f"[property_detail] 🔒 Property {property_obj.id} locked by {property_obj.locked_by}")
+    print(f"[property_detail] Property {property_obj.id} locked by {property_obj.locked_by}")
     return render(request, 'bookkeeping/property_detail.html', context)
 
 
@@ -1536,10 +1549,10 @@ TOKEN_URL = f"{AUTH_BASE_URL}/token"
 
 def authorize_commerzbank(request, property_id):
     """Redirects user to Commerzbank OAuth2 login."""
-    print(f"[authorize_commerzbank] 🔄 Redirecting for authorization (Property ID: {property_id})")
+    print(f"[authorize_commerzbank] Redirecting for authorization (Property ID: {property_id})")
 
     if not settings.COMMERZBANK_CLIENT_ID or not settings.COMMERZBANK_CLIENT_SECRET:
-        return JsonResponse({"error": "Missing API credentials"}, status=500)
+        return JsonResponse({"error": "Missing API credentials"}, status=500) # Check for credentials
 
     request.session["property_id"] = property_id  # Store property ID for later
 
@@ -1550,41 +1563,41 @@ def authorize_commerzbank(request, property_id):
         "state": "secure_random_string"
     }
 
-    auth_url = f"{AUTHORIZE_URL}?{requests.compat.urlencode(params)}"
-    print(f"[authorize_commerzbank] 🔗 Redirecting to: {auth_url}")
+    auth_url = f"{AUTHORIZE_URL}?{requests.compat.urlencode(params)}" # Construct the authorization URL
+    print(f"[authorize_commerzbank] Redirecting to: {auth_url}")
 
     return redirect(auth_url)
 
 def commerzbank_callback(request):
     """Handles OAuth2 callback and retrieves the access token."""
-    print("[commerzbank_callback] 🔄 Handling OAuth2 callback...")
+    print("[commerzbank_callback] Handling OAuth2 callback...")
 
-    code = request.GET.get("code")
-    property_id = request.session.get("property_id")
+    code = request.GET.get("code") # Authorization code from the callback
+    property_id = request.session.get("property_id") # Retrieve property ID from session
 
     if not code:
-        return JsonResponse({"error": "No authorization code received."}, status=400)
+        return JsonResponse({"error": "No authorization code received."}, status=400) # Handle missing code
 
     if not property_id:
-        return JsonResponse({"error": "Property ID missing."}, status=400)
+        return JsonResponse({"error": "Property ID missing."}, status=400)  # Handle missing property ID
 
     # Exchange authorization code for access token
     data = {
         "grant_type": "authorization_code",
         "code": code,
         "redirect_uri": settings.COMMERZBANK_REDIRECT_URI,
-        "client_id": settings.COMMERZBANK_CLIENT_ID,
-        "client_secret": settings.COMMERZBANK_CLIENT_SECRET,
+        "client_id": settings.COMMERZBANK_CLIENT_ID,   # Use secure storage for secrets in production
+        "client_secret": settings.COMMERZBANK_CLIENT_SECRET, # Use secure storage for secrets in production
     }
 
-    headers = {"Content-Type": "application/x-www-form-urlencoded"}
-    response = requests.post(TOKEN_URL, data=data, headers=headers)
+    headers = {"Content-Type": "application/x-www-form-urlencoded"} # Set headers for the request
+    response = requests.post(TOKEN_URL, data=data, headers=headers) # Send POST request to get access token
 
     if response.status_code == 200:
-        token_data = response.json()
-        access_token = token_data.get("access_token")
-        request.session["access_token"] = access_token
-        print(f"[commerzbank_callback] ✅ Access Token Retrieved: {access_token[:10]}...")
+        token_data = response.json() # Parse the response
+        access_token = token_data.get("access_token")  # Extract access token
+        request.session["access_token"] = access_token # Store in session
+        print(f"[commerzbank_callback] Access Token Retrieved: {access_token[:10]}...") # Log only part of the token for security
 
         # Redirect to property page with success flag
         return redirect(f"/property/{property_id}/?auth_success=true")
@@ -1608,7 +1621,7 @@ def fetch_commerzbank_messages(access_token):
     if response.status_code == 200:
         try:
             messages_data = response.json()
-            print(f"[fetch_commerzbank_messages] ✅ Bank Statements Retrieved: {json.dumps(messages_data, indent=2)}")
+            print(f"[fetch_commerzbank_messages] Bank Statements Retrieved: {json.dumps(messages_data, indent=2)}")
             return messages_data
         except json.JSONDecodeError:
             return {"error": "Invalid JSON response from Commerzbank API."}
@@ -1644,13 +1657,13 @@ def get_commerzbank_transactions(request):
 
     messages_data = response.json()
 
-    # ✅ Check if response is a list
+    # Check if response is a list
     if isinstance(messages_data, list):
         messages = messages_data  # Assign it directly
     else:
         messages = messages_data.get("messages", [])  # Fallback if API changes
 
-    transactions = []
+    transactions = [] ## List to store transactions
 
     # Step 2: Fetch bank statement details for each message ID
     for message in messages:
@@ -1664,7 +1677,7 @@ def get_commerzbank_transactions(request):
         if statement_response.status_code == 200:
             transactions.append(statement_response.text)  # XML response (camt.053 format)
         else:
-            print(f"[get_commerzbank_transactions] ❌ Failed to fetch statement {message_id}, Status: {statement_response.status_code}")
+            print(f"[get_commerzbank_transactions] Failed to fetch statement {message_id}, Status: {statement_response.status_code}")
 
         # Step 3: Confirm retrieval
         confirm_url = f"{COMMERZBANK_BASE_URL}/messages/{message_id}"
@@ -1672,7 +1685,7 @@ def get_commerzbank_transactions(request):
         confirm_response = requests.put(confirm_url, headers=headers, json=confirm_data)
 
         if confirm_response.status_code != 200:
-            print(f"[get_commerzbank_transactions] ⚠️ Failed to confirm retrieval of {message_id}")
+            print(f"[get_commerzbank_transactions] Failed to confirm retrieval of {message_id}")
 
     return JsonResponse({"transactions": transactions})
 
@@ -1701,5 +1714,5 @@ def extract_transactions_from_camt(statement_details):
 
         return transactions
     except Exception as e:
-        print(f"[extract_transactions_from_camt] ❌ Error parsing camt.053: {e}")
+        print(f"[extract_transactions_from_camt] Error parsing camt.053: {e}")
         return []

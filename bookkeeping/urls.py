@@ -72,13 +72,13 @@ urlpatterns = [
     path('upload_statement/', views.upload_bank_statement, name='upload_statement'),
     path('export_parsed_transactions/<int:property_id>/', views.export_parsed_transactions, name='export_parsed_transactions'),
 
-
+    # USt (Umsatzsteuer) view
     path('property/<int:property_id>/ust/', views.ust_view, name='ust'),
-
 
     # Fetch unit tenant data
     path('fetch_unit_tenant_data/', views.fetch_unit_tenant_data, name='fetch_unit_tenant_data'),
     
+    # Commerzbank integration
     path('authorize_commerzbank/<int:property_id>/', views.authorize_commerzbank, name='authorize_commerzbank'),
     path('commerzbank/callback/', views.commerzbank_callback, name='commerzbank_callback'),
     path('commerzbank/get_transactions/', views.get_commerzbank_transactions, name='get_commerzbank_transactions'),
