@@ -38,6 +38,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .models import Unit, Property
 from openpyxl import Workbook
 from django.http import HttpResponse
+from bookkeeping.utils.onedrive_utils import upload_to_onedrive
 
 class CustomLoginView(LoginView):
     template_name = 'login.html'
@@ -516,53 +517,109 @@ def expense_profiles(request):
     })
 
 # Add Expense Profile
+# def add_expense_profile(request):
+#     if request.method == 'POST':
+#         data = request.POST
+#         invoice_file = request.FILES.get('invoice')  # Get uploaded file
+        
+
+#         # Validate Property ID
+#         property_id = data.get('property')
+#         if not property_id:
+#             return redirect('dashboard')  # Redirect if property is missing
+
+#         property_obj = get_object_or_404(Property, id=property_id)
+
+#         # Fetch Lease if provided
+#         lease_id = data.get('lease')
+#         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
+
+#         # Safely parse optional fields
+#         amount = safe_decimal(data.get('amount'))
+#         date = safe_date(data.get('date'))
+
+#         # Validate mandatory fields
+#         if not data.get('transaction_type') or not data.get('account_name'):
+#             return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=mapping_tab")
+
+#         try:
+#             # Create Expense Profile
+#             ExpenseProfile.objects.create(
+#                 lease=lease,
+#                 property=property_obj,
+#                 transaction_type=data.get('transaction_type'),
+#                 account_name=data.get('account_name'),
+#                 # booking_no=data.get('booking_no'),
+#                 amount=amount,
+#                 date=date,
+#                 recurring=data.get('recurring') == 'on',
+#                 frequency=data.get('frequency'),
+#                 ust=data.get('ust'),
+#                 invoice=invoice_file  # Attach invoice if provided
+#             )
+#         except ValidationError as e:
+#             print(f"Validation Error: {e}")  # Log error
+#             return redirect('dashboard')  # Redirect on error
+
+#         return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=mapping_tab")
+
+#     return redirect('dashboard')  # Default fallback
+
 def add_expense_profile(request):
     if request.method == 'POST':
         data = request.POST
-        invoice_file = request.FILES.get('invoice')  # Get uploaded file
-        
+        invoice_file = request.FILES.get('invoice')  # Uploaded file object
+        invoice_url = None
 
-        # Validate Property ID
+        # Validate Property
         property_id = data.get('property')
         if not property_id:
-            return redirect('dashboard')  # Redirect if property is missing
+            return redirect('dashboard')
 
         property_obj = get_object_or_404(Property, id=property_id)
 
-        # Fetch Lease if provided
+        # Optional Lease
         lease_id = data.get('lease')
         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
 
-        # Safely parse optional fields
+        # Safe parsing
         amount = safe_decimal(data.get('amount'))
         date = safe_date(data.get('date'))
+        recurring = data.get('recurring') == 'on'
+        frequency = data.get('frequency')
+        ust = int(data.get('ust') or 19)
 
-        # Validate mandatory fields
+        # Required fields
         if not data.get('transaction_type') or not data.get('account_name'):
             return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=mapping_tab")
 
+        # Upload invoice to OneDrive (if provided)
+        if invoice_file:
+            try:
+                invoice_url = upload_to_onedrive(invoice_file, invoice_file.name)
+            except Exception as e:
+                print(f"OneDrive upload failed: {e}")
+
         try:
-            # Create Expense Profile
+            # Create the Expense Profile
             ExpenseProfile.objects.create(
                 lease=lease,
                 property=property_obj,
                 transaction_type=data.get('transaction_type'),
                 account_name=data.get('account_name'),
-                # booking_no=data.get('booking_no'),
                 amount=amount,
                 date=date,
-                recurring=data.get('recurring') == 'on',
-                frequency=data.get('frequency'),
-                ust=data.get('ust'),
-                invoice=invoice_file  # Attach invoice if provided
+                recurring=recurring,
+                frequency=frequency,
+                ust=ust,
+                invoice=invoice_url  # Store the OneDrive URL
             )
         except ValidationError as e:
-            print(f"Validation Error: {e}")  # Log error
-            return redirect('dashboard')  # Redirect on error
+            print(f"Validation Error: {e}")
 
         return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=mapping_tab")
 
-    return redirect('dashboard')  # Default fallback
+    return redirect('dashboard')  # fallback
 
 # Edit Expense Profile
 def edit_expense_profile(request, pk):
