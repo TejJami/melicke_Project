@@ -909,27 +909,27 @@ from openpyxl.styles import numbers
 from django.http import HttpResponse
 from django.utils.timezone import now
 from django.utils.text import slugify
+import calendar
 
 def export_parsed_transactions(request, property_id):
-    import calendar
-    # German month names
+
+
     german_months = [
         "", "Januar", "Februar", "März", "April", "Mai", "Juni",
         "Juli", "August", "September", "Oktober", "November", "Dezember"
     ]
 
-    # Get property
     property_obj = Property.objects.get(id=property_id)
 
-    # Filter transactions by property
-    parsed_transactions = ParsedTransaction.objects.filter(related_property=property_obj)
+    # ✅ Sort by booking_no
+    parsed_transactions = ParsedTransaction.objects.filter(
+        related_property=property_obj
+    ).order_by('booking_no')
 
-    # Create workbook and worksheet
     wb = Workbook()
     ws = wb.active
     ws.title = "Parsed Transactions"
 
-    # Header row
     headers = [
         "BN", "Datum", "Kontoname", "Einheit",
         "Bank", "Nettobetrag", "Betrag Aufw", "USt (%)", "USt",
@@ -938,10 +938,17 @@ def export_parsed_transactions(request, property_id):
     ]
     ws.append(headers)
 
-    # Append data rows
     for tx in parsed_transactions:
         month_int = tx.date.month if tx.date else None
         month_name = german_months[month_int] if month_int else "N/A"
+
+        # ✅ Safely calculate VAT
+        calculated_ust = None
+        if tx.betrag_brutto and tx.ust_type:
+            try:
+                calculated_ust = round(tx.betrag_brutto - (tx.betrag_brutto / (1 + tx.ust_type / 100)), 2)
+            except:
+                calculated_ust = None
 
         ws.append([
             tx.booking_no or "N/A",
@@ -954,29 +961,25 @@ def export_parsed_transactions(request, property_id):
             tx.betrag_netto if tx.betrag_netto is not None else None,    # Betrag Aufw
 
             f"{tx.ust_type}%" if tx.ust_type is not None else "N/A",     # USt %
-            tx.ust if tx.ust is not None else None,                      # USt
+            calculated_ust,                                              # Corrected USt
 
             tx.betrag_brutto if tx.betrag_brutto is not None else None,  # Bruttobetrag
             tx.transaction_type or "N/A",                                # Gggkto
             tx.tenant or "N/A",                                          # Mieter
-            tx.invoice.name if tx.invoice else "-",
+            tx.invoice.name if tx.invoice else "-",                      # Rechnung
 
             month_int or "N/A",
             month_name,
             property_obj.name
         ])
 
-    # Format numeric cells (2 decimals) for appropriate columns
+    # Format numeric cells
     for row in ws.iter_rows(min_row=2, min_col=5, max_col=10):  # Bank to Bruttobetrag
         for cell in row:
             if isinstance(cell.value, (float, int)):
                 cell.number_format = numbers.FORMAT_NUMBER_00
 
-    # Define Excel table
-    num_rows = ws.max_row
-    num_cols = ws.max_column
-
-    # Handle multi-letter column names
+    # Excel table formatting
     def col_letter(n):
         result = ""
         while n:
@@ -984,8 +987,9 @@ def export_parsed_transactions(request, property_id):
             result = chr(65 + rem) + result
         return result
 
-    last_col_letter = col_letter(num_cols)
-    table_ref = f"A1:{last_col_letter}{num_rows}"
+    num_rows = ws.max_row
+    num_cols = ws.max_column
+    table_ref = f"A1:{col_letter(num_cols)}{num_rows}"
 
     table = Table(displayName="ParsedTransactionsTable", ref=table_ref)
     style = TableStyleInfo(
@@ -998,7 +1002,7 @@ def export_parsed_transactions(request, property_id):
     table.tableStyleInfo = style
     ws.add_table(table)
 
-    # Auto-fit column widths
+    # Adjust column widths
     for column_cells in ws.columns:
         max_length = 0
         column_letter = column_cells[0].column_letter
@@ -1008,20 +1012,19 @@ def export_parsed_transactions(request, property_id):
                 max_length = max(max_length, len(cell_value))
             except:
                 pass
-        ws.column_dimensions[column_letter].width = max_length + 2  # Add padding
+        ws.column_dimensions[column_letter].width = max_length + 2
 
-    # Format filename
     today = now().strftime("%Y-%m-%d")
     property_name_slug = slugify(property_obj.name)
     filename = f"FiBu_{property_name_slug}_{today}.xlsx"
 
-    # Return response
     response = HttpResponse(
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     wb.save(response)
     return response
+
 
 
 #################################################################
@@ -1489,45 +1492,157 @@ def property_detail(request, property_id):
 from django.db.models import Sum, F, FloatField
 
 
+# def ust_view(request, property_id):
+#     # Get the Property object
+#     property_instance = get_object_or_404(Property, id=property_id)
+
+#     # Filter transactions by related_property and aggregate by month
+#     monthly_data = ParsedTransaction.objects.filter(related_property_id=property_id).annotate(
+#         month=F('date__month')  # Assuming `date` stores the transaction date
+#     ).values(
+#         'month'
+#     ).annotate(
+#         umzu19_netto=Sum(F('betrag_brutto') / (1 + F('ust_type') / 100), output_field=FloatField()),
+#         vorsteuer=Sum(
+#             (F('betrag_brutto') - (F('betrag_brutto') / (1 + F('ust_type') / 100))),
+#             output_field=FloatField()
+#         ),
+#         saldo_ust=Sum(
+#             (F('betrag_brutto') * F('ust_type') / 100) - 
+#             (F('betrag_brutto') - (F('betrag_brutto') / (1 + F('ust_type') / 100))),
+#             output_field=FloatField()
+#         )
+#     ).order_by('month')
+
+#     # Calculate totals for the summary row
+#     totals = monthly_data.aggregate(
+#         total_umzu19_netto=Sum('umzu19_netto'),
+#         total_vorsteuer=Sum('vorsteuer'),
+#         total_saldo_ust=Sum('saldo_ust')
+#     )
+
+#     # Add 19% calculation
+#     total_19_percent = totals['total_umzu19_netto'] * 0.19 if totals['total_umzu19_netto'] else 0
+
+#     # Pass data to the context
+#     context = {
+#         'property': property_instance,
+#         'monthly_data': monthly_data,
+#         'totals': totals,
+#         'total_19_percent': total_19_percent, 
+#     }
+#     return render(request, 'bookkeeping/ust.html', context)
+
+from collections import defaultdict
+from calendar import month_name
+from django.db.models import Sum, F, FloatField, Case, When, Value as V
+from django.shortcuts import render, get_object_or_404
+from .models import Property, ParsedTransaction, IncomeProfile
+
 def ust_view(request, property_id):
-    # Get the Property object
     property_instance = get_object_or_404(Property, id=property_id)
 
-    # Filter transactions by related_property and aggregate by month
-    monthly_data = ParsedTransaction.objects.filter(related_property_id=property_id).annotate(
-        month=F('date__month')  # Assuming `date` stores the transaction date
-    ).values(
-        'month'
-    ).annotate(
-        umzu19_netto=Sum(F('betrag_brutto') / (1 + F('ust_type') / 100), output_field=FloatField()),
-        vorsteuer=Sum(
-            (F('betrag_brutto') - (F('betrag_brutto') / (1 + F('ust_type') / 100))),
-            output_field=FloatField()
-        ),
-        saldo_ust=Sum(
-            (F('betrag_brutto') * F('ust_type') / 100) - 
-            (F('betrag_brutto') - (F('betrag_brutto') / (1 + F('ust_type') / 100))),
-            output_field=FloatField()
-        )
-    ).order_by('month')
+    default_types = ['rent', 'bk_advance_payment']
+    selected_types = request.GET.getlist('transaction_types') or default_types
 
-    # Calculate totals for the summary row
-    totals = monthly_data.aggregate(
-        total_umzu19_netto=Sum('umzu19_netto'),
-        total_vorsteuer=Sum('vorsteuer'),
-        total_saldo_ust=Sum('saldo_ust')
+    income_qs = ParsedTransaction.objects.filter(
+        related_property_id=property_id,
+        is_income=True,
+        transaction_type__in=selected_types
     )
 
-    # Add 19% calculation
-    total_19_percent = totals['total_umzu19_netto'] * 0.19 if totals['total_umzu19_netto'] else 0
+    expense_qs = ParsedTransaction.objects.filter(
+        related_property_id=property_id,
+        is_income=False
+    )
 
-    # Pass data to the context
+    # Annotate income transactions by month/year
+    income_data = income_qs.annotate(
+        year=F('date__year'),
+        month=F('date__month')
+    ).values('year', 'month').annotate(
+        umzu19_brutto=Sum(
+            Case(When(ust_type=19, then=F('betrag_brutto')), default=V(0), output_field=FloatField())
+        ),
+        umzu7_brutto=Sum(
+            Case(When(ust_type=7, then=F('betrag_brutto')), default=V(0), output_field=FloatField())
+        ),
+        ust_output=Sum(
+            Case(
+                When(ust_type=19, then=F('betrag_brutto') - (F('betrag_brutto') / 1.19)),
+                When(ust_type=7, then=F('betrag_brutto') - (F('betrag_brutto') / 1.07)),
+                default=V(0),
+                output_field=FloatField()
+            )
+        )
+    )
+
+    # Annotate expense transactions by month/year
+    expense_data = expense_qs.annotate(
+        year=F('date__year'),
+        month=F('date__month')
+    ).values('year', 'month').annotate(
+        vorsteuer=Sum(
+            Case(
+                When(ust_type=19, then=F('betrag_brutto') - (F('betrag_brutto') / 1.19)),
+                When(ust_type=7, then=F('betrag_brutto') - (F('betrag_brutto') / 1.07)),
+                default=V(0),
+                output_field=FloatField()
+            )
+        )
+    )
+
+    # Merge both income and expense data
+    monthly_map = defaultdict(lambda: {
+        'umzu19_brutto': 0,
+        'umzu7_brutto': 0,
+        'ust_output': 0,
+        'vorsteuer': 0,
+    })
+
+    # Add income data
+    for row in income_data:
+        key = (row['year'], row['month'])
+        monthly_map[key]['year'] = row['year']
+        monthly_map[key]['month'] = row['month']
+        monthly_map[key]['umzu19_brutto'] += row['umzu19_brutto'] or 0
+        monthly_map[key]['umzu7_brutto'] += row['umzu7_brutto'] or 0
+        monthly_map[key]['ust_output'] += row['ust_output'] or 0
+
+    # Add expense data
+    for row in expense_data:
+        key = (row['year'], row['month'])
+        monthly_map[key]['year'] = row['year']
+        monthly_map[key]['month'] = row['month']
+        monthly_map[key]['vorsteuer'] += row['vorsteuer'] or 0
+
+    # Final list of merged monthly data with saldo and label
+    monthly_data = []
+    for key in sorted(monthly_map):
+        row = monthly_map[key]
+        row['saldo_ust'] = row['ust_output'] - row['vorsteuer']
+        row['month_label'] = f"{month_name[row['month']]} {row['year']}"
+        monthly_data.append(row)
+
+    # Totals
+    totals = {
+        'total_umzu19_brutto': sum(d['umzu19_brutto'] for d in monthly_data),
+        'total_umzu7_brutto': sum(d['umzu7_brutto'] for d in monthly_data),
+        'total_ust_output': sum(d['ust_output'] for d in monthly_data),
+        'total_vorsteuer': sum(d['vorsteuer'] for d in monthly_data),
+        'total_saldo_ust': sum(d['saldo_ust'] for d in monthly_data),
+    }
+
     context = {
         'property': property_instance,
         'monthly_data': monthly_data,
         'totals': totals,
-        'total_19_percent': total_19_percent,
+        'total_19_percent': totals['total_umzu19_brutto'] * 0.19 if totals['total_umzu19_brutto'] else 0,
+        'all_transaction_types': IncomeProfile.TRANSACTION_TYPES,
+        'selected_types': selected_types,
+        'default_types': default_types,
     }
+
     return render(request, 'bookkeeping/ust.html', context)
 
 #################################################################

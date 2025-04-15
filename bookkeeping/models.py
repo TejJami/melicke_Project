@@ -149,17 +149,20 @@ class ParsedTransaction(models.Model):
                 logging.error(f"[ParsedTransaction.save] Failed to match invoice: {e}")
         super().save(*args, **kwargs)
 
-        
     @property
     def ust(self):
-        """Calculate UST dynamically based on the UST type."""
-        ust_rate = float(self.ust_type) / 100
-        return round(self.betrag_brutto * ust_rate, 2)
+        try:
+            return round(self.betrag_brutto - (self.betrag_brutto / (1 + self.ust_type / 100)), 2)
+        except (TypeError, ZeroDivisionError):
+            return 0
 
     @property
     def betrag_netto(self):
-        """Calculate Net Amount dynamically."""
-        return round(self.betrag_brutto - self.ust, 2)
+        try:
+            return round(self.betrag_brutto / (1 + self.ust_type / 100), 2)
+        except (TypeError, ZeroDivisionError):
+            return 0
+
 
 # Model to represent transactions that are not yet categorized
 class EarmarkedTransaction(models.Model):
