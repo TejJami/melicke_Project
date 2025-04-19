@@ -1215,6 +1215,20 @@ def add_income_profile(request):
 
             remainder = total_amount - split_total
 
+            # Add remainder to account balance if requested
+            if remainder > 0 and apply_remainder:
+                split_map["account_balance"] = float(remainder)
+
+                # Update the tenant's balance
+                if lease.tenants.exists():
+                    tenant = lease.tenants.first()
+                    tenant.balance += remainder
+                    tenant.save()
+
+                messages.info(request, f"Restbetrag von €{remainder:.2f} wurde dem Saldo des Mieters gutgeschrieben.")
+            elif remainder > 0:
+                messages.info(request, f"Restbetrag von €{remainder:.2f} wurde nicht zugewiesen.")
+
             IncomeProfile.objects.create(
                 lease=lease,
                 property=property_obj,
@@ -1227,9 +1241,6 @@ def add_income_profile(request):
                 ust=ust,
                 split_details=split_map
             )
-
-            if remainder > 0 and apply_remainder:
-                messages.info(request, f"Restbetrag von €{remainder:.2f} wurde nicht zugewiesen.")
 
         else:
             # Standard single entry

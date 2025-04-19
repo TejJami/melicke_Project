@@ -142,10 +142,8 @@
             <tr>
                 <th>Name</th>
                 <th class="lease-columns hidden">Gesamtschuld</th>
-
                 <th>Unit</th>
-
-                
+                <th>Kontostand</th> 
                 <!-- Contact Columns (Hidden when Lease Details are Shown) -->
                 <th class="contact-columns">Telefon</th>
                 <th class="contact-columns">Email</th>
@@ -183,7 +181,8 @@
                                 {% endif %}
 
                                 <td>{{ lease.unit.unit_name }}</td>
-            
+                                <!-- get account balance from the tenant object -->
+                                <td>€{{ tenant.balance }}</td>
                                 <!-- Contact Columns -->
                                 <td class="contact-columns">{{ tenant.phone_number }}</td>
                                 <td class="contact-columns">{{ tenant.email }}</td>

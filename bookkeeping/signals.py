@@ -10,14 +10,20 @@ logger = logging.getLogger(__name__)
 def create_split_parsed_transactions(txn, profile):
     """
     Create multiple ParsedTransactions based on split_details.
-    Also handles booking_no postfix like 0004.01, 0004.02 etc.
-    Flags transaction if there's a mismatch.
+    Skips 'account_balance' from transaction creation.
     """
-    split_total = sum(Decimal(str(v)) for v in profile.split_details.values())
+    split_details = profile.split_details or {}
     base_booking = txn.booking_no
 
-    if abs(Decimal(str(txn.amount)) - split_total) < Decimal("0.01"):
-        for idx, (tx_type, amt) in enumerate(profile.split_details.items(), start=1):
+    # Only include actual transaction types in split_total, not 'account_balance'
+    split_total = sum(Decimal(str(v)) for k, v in split_details.items() if k != "account_balance")
+    full_total = sum(Decimal(str(v)) for v in split_details.values())
+
+    if abs(Decimal(str(txn.amount)) - full_total) < Decimal("0.01"):
+        idx = 1
+        for tx_type, amt in split_details.items():
+            if tx_type == "account_balance":
+                continue  # Do not create ParsedTransaction for balance remainder
             ParsedTransaction.objects.create(
                 date=txn.date,
                 account_name=txn.account_name,
@@ -30,19 +36,23 @@ def create_split_parsed_transactions(txn, profile):
                 is_income=txn.is_income,
                 tenant=profile.lease.tenants.first().name if profile.lease and profile.lease.tenants.exists() else None,
             )
+            idx += 1
+
+        # Update tenant balance if 'account_balance' was stored
+        remainder = Decimal(str(split_details.get("account_balance", 0)))
+        if remainder > 0 and profile.lease and profile.lease.tenants.exists():
+            tenant = profile.lease.tenants.first()
+            tenant.balance += remainder
+            tenant.save()
+
         txn.delete()
         return True
     else:
-        remainder = Decimal(str(txn.amount)) - split_total
-        if remainder > 0 and profile.lease and profile.lease.tenants.exists():
-            tenant = profile.lease.tenants.first()
-            tenant.balance = (tenant.balance or Decimal("0.00")) + remainder
-            tenant.save()
-
         txn.flagged_for_review = True
-        txn.review_note = f"Split mismatch: expected {txn.amount}, got {split_total}"
+        txn.review_note = f"Split mismatch: expected {txn.amount}, got {full_total}"
         txn.save()
         return False
+
 
 def generate_split_booking_nos(base_bn, count):
     """
@@ -105,10 +115,18 @@ def process_earmarked_transaction(sender, instance, created, **kwargs):
 
         elif income_profile:
             if income_profile.split_details:
-                split_total = sum(Decimal(str(v)) for v in income_profile.split_details.values())
-                if abs(Decimal(str(instance.amount)) - split_total) < Decimal("0.01"):
-                    suffixes = generate_split_booking_nos(instance.booking_no, len(income_profile.split_details))
-                    for i, (tx_type, amt) in enumerate(income_profile.split_details.items()):
+                split_details = income_profile.split_details
+                full_total = sum(Decimal(str(v)) for v in split_details.values())
+                transaction_keys = [k for k in split_details if k != "account_balance"]
+
+                if abs(Decimal(str(instance.amount)) - full_total) < Decimal("0.01"):
+                    suffixes = generate_split_booking_nos(instance.booking_no, len(transaction_keys))
+
+                    i = 0
+                    for tx_type, amt in split_details.items():
+                        if tx_type == "account_balance":
+                            continue
+
                         ParsedTransaction.objects.create(
                             date=instance.date,
                             account_name=instance.account_name,
@@ -121,17 +139,23 @@ def process_earmarked_transaction(sender, instance, created, **kwargs):
                             is_income=instance.is_income,
                             tenant=income_profile.lease.tenants.first().name if income_profile.lease and income_profile.lease.tenants.exists() else None,
                         )
+                        i += 1
+
+                    # Add account_balance to tenant if present
+                    balance_remainder = Decimal(str(split_details.get("account_balance", 0)))
+                    if balance_remainder > 0 and income_profile.lease and income_profile.lease.tenants.exists():
+                        tenant = income_profile.lease.tenants.first()
+                        tenant.balance += balance_remainder
+                        tenant.save()
+
                     instance.delete()
                 else:
-                    remainder = Decimal(str(instance.amount)) - split_total
-                    if remainder > 0 and income_profile.lease and income_profile.lease.tenants.exists():
-                        tenant = income_profile.lease.tenants.first()
-                        tenant.balance = (tenant.balance or Decimal("0.00")) + remainder
-                        tenant.save()
                     instance.flagged_for_review = True
-                    instance.review_note = f"Split mismatch: expected {instance.amount}, got {split_total}"
+                    instance.review_note = f"Split mismatch: expected {instance.amount}, got {full_total}"
                     instance.save()
+
             else:
+                # Non-split income
                 ParsedTransaction.objects.create(
                     date=instance.date,
                     account_name=instance.account_name,
@@ -145,6 +169,7 @@ def process_earmarked_transaction(sender, instance, created, **kwargs):
                     tenant=income_profile.lease.tenants.first().name if income_profile.lease and income_profile.lease.tenants.exists() else None,
                 )
                 instance.delete()
+
         else:
             logger.info(f"No profile matched for EarmarkedTransaction {instance.id}")
 
@@ -205,10 +230,16 @@ def match_earmarked_transactions_for_income(sender, instance, created, **kwargs)
     for txn in earmarked_transactions:
         try:
             if instance.split_details:
-                total_split = sum(Decimal(str(v)) for v in instance.split_details.values())
-                if abs(Decimal(str(txn.amount)) - total_split) < Decimal("0.01"):
-                    suffixes = generate_split_booking_nos(txn.booking_no, len(instance.split_details))
-                    for i, (tx_type, amt) in enumerate(instance.split_details.items()):
+                split_details = instance.split_details
+                split_total = sum(Decimal(str(v)) for k, v in split_details.items() if k != "account_balance")
+                full_total = sum(Decimal(str(v)) for v in split_details.values())
+
+                if abs(Decimal(str(txn.amount)) - full_total) < Decimal("0.01"):
+                    suffixes = generate_split_booking_nos(txn.booking_no, len([k for k in split_details if k != "account_balance"]))
+                    i = 0
+                    for tx_type, amt in split_details.items():
+                        if tx_type == "account_balance":
+                            continue
                         ParsedTransaction.objects.create(
                             date=txn.date,
                             account_name=txn.account_name,
@@ -221,15 +252,19 @@ def match_earmarked_transactions_for_income(sender, instance, created, **kwargs)
                             is_income=txn.is_income,
                             tenant=instance.lease.tenants.first().name if instance.lease and instance.lease.tenants.exists() else None,
                         )
-                    txn.delete()
-                else:
-                    remainder = Decimal(str(txn.amount)) - total_split
+                        i += 1
+
+                    # Update balance from 'account_balance' remainder
+                    remainder = Decimal(str(split_details.get("account_balance", 0)))
                     if remainder > 0 and instance.lease and instance.lease.tenants.exists():
                         tenant = instance.lease.tenants.first()
-                        tenant.balance = (tenant.balance or Decimal("0.00")) + remainder
+                        tenant.balance += remainder
                         tenant.save()
+
+                    txn.delete()
+                else:
                     txn.flagged_for_review = True
-                    txn.review_note = f"Split mismatch: expected {txn.amount}, got {total_split}"
+                    txn.review_note = f"Split mismatch: expected {txn.amount}, got {full_total}"
                     txn.save()
             else:
                 _, matched_profile = find_matching_profile(txn.account_name, txn.amount, txn.property)
@@ -250,7 +285,7 @@ def match_earmarked_transactions_for_income(sender, instance, created, **kwargs)
 
         except Exception as e:
             logger.error(f"Error linking EarmarkedTransaction {txn.id} to IncomeProfile {instance.id}: {e}")
-
+            print(f"[DEBUG] Exception occurred: {e}")   
 
 
 @receiver(post_save, sender=Lease)
