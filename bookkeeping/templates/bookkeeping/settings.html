@@ -69,4 +69,132 @@
         </div>
     </dialog>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        console.log("[Commerzbank JS] 🔄 Page Loaded, checking authentication status...");
+    
+        // Function to parse URL query parameters
+        function getQueryParams(url) {
+            let params = {};
+            let parser = new URL(url);
+            parser.searchParams.forEach((value, key) => {
+                params[key] = value;
+            });
+            return params;
+        }
+    
+        // Get DOM elements
+        const params = getQueryParams(window.location.href);
+        const commerzbankModal = document.getElementById("commerzbankModal");
+        const fetchTransactionsButton = document.getElementById("fetch-transactions");
+        const transactionList = document.getElementById("transaction-details");
+        const transactionError = document.getElementById("transaction-error");
+        const closeButtons = document.querySelectorAll(".close");
+    
+        console.log("[Commerzbank JS] 📩 Query Parameters:", params);
+    
+        // Handle authentication success
+        if (params.auth_success === "true") {
+            console.log("[Commerzbank JS] ✅ User successfully authenticated!");
+    
+            document.getElementById("auth-message").textContent = "Successfully Authenticated!";
+            document.getElementById("access-token").textContent = "Authenticated";
+            document.getElementById("expires-in").textContent = "Session Active";
+    
+            console.log("[Commerzbank JS] 🏦 Opening modal to display authentication.");
+            commerzbankModal.showModal();
+        } else {
+            console.log("[Commerzbank JS] ❌ Authentication failed or user not authenticated.");
+        }
+    
+        // Function to parse XML response and extract transaction details
+        async function fetchTransactions() {
+            console.log("[Commerzbank JS] 🔍 Fetching transactions...");
+    
+            // Show spinner and clear transaction list
+            document.getElementById("transaction-spinner").classList.remove("hidden");
+            transactionList.innerHTML = ""; 
+            transactionError.textContent = "";
+    
+            try {
+                let response = await fetch("{% url 'get_commerzbank_transactions' %}");
+                let data = await response.json();
+    
+                console.log("[Commerzbank JS] 📝 Raw Transaction Data:", data);
+    
+                if (!response.ok || data.error) {
+                    console.error("[Commerzbank JS] ❌ Error fetching transactions:", data.error || response.status);
+                    transactionError.textContent = "Failed to load transactions.";
+                    return;
+                }
+    
+                if (!data.transactions || data.transactions.length === 0) {
+                    transactionList.innerHTML = "<li>No transactions available.</li>";
+                    return;
+                }
+    
+                // Parse XML and populate transactions
+                data.transactions.forEach((txnXML, index) => {
+                    let parser = new DOMParser();
+                    let xmlDoc = parser.parseFromString(txnXML, "text/xml");
+    
+                    let transactions = xmlDoc.getElementsByTagName("Ntry");
+    
+                    Array.from(transactions).forEach((txn, idx) => {
+                        let amount = txn.getElementsByTagName("Amt")[0]?.textContent || "N/A";
+                        let currency = txn.getElementsByTagName("Amt")[0]?.getAttribute("Ccy") || "N/A";
+                        let type = txn.getElementsByTagName("CdtDbtInd")[0]?.textContent || "N/A";
+                        let bookingDate = txn.getElementsByTagName("BookgDt")[0]?.getElementsByTagName("Dt")[0]?.textContent || "N/A";
+                        let description = txn.getElementsByTagName("AddtlNtryInf")[0]?.textContent || "N/A";
+                        let reference = txn.getElementsByTagName("AcctSvcrRef")[0]?.textContent || "N/A";
+                        let accountName = xmlDoc.getElementsByTagName("Nm")[0]?.textContent || "N/A";
+    
+                        const formattedTransaction = `${bookingDate} | ${description} | ${amount} ${currency} | ${type} | ${reference} | ${accountName}`;
+    
+                        console.log(`[Commerzbank JS] 🔍 Transaction ${index + 1}.${idx + 1}:`, formattedTransaction);
+    
+                        const listItem = document.createElement("li");
+                        listItem.textContent = formattedTransaction;
+                        transactionList.appendChild(listItem);
+                    });
+                });
+    
+                commerzbankModal.showModal();
+                console.log("[Commerzbank JS] ✅ Transactions loaded successfully.");
+            } catch (error) {
+                console.error("[Commerzbank JS] ❌ Fetch error:", error);
+                transactionError.textContent = "An error occurred while fetching transactions.";
+            } finally {
+                // Hide spinner after fetching
+                document.getElementById("transaction-spinner").classList.add("hidden");
+            }
+        }
+    
+    
+        // Fetch transactions when the button is clicked
+        if (fetchTransactionsButton) {
+            fetchTransactionsButton.addEventListener("click", function (event) {
+                event.preventDefault(); // Prevent page navigation
+                fetchTransactions();
+            });
+        }
+    
+        // Open modal if transactions already exist
+        if (transactionList.children.length > 1) {
+            console.log("[Commerzbank JS] ✅ Transactions already loaded, opening modal.");
+            commerzbankModal.showModal();
+        }
+    
+        // Close modal event listener
+        closeButtons.forEach(button => {
+            button.addEventListener("click", function () {
+                console.log("[Commerzbank JS] ❌ Closing modal.");
+                commerzbankModal.close();
+            });
+        });
+    });
+    
+</script>
+        
 {% endblock %}
