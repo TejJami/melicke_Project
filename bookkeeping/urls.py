@@ -79,8 +79,15 @@ urlpatterns = [
     path('fetch_unit_tenant_data/', views.fetch_unit_tenant_data, name='fetch_unit_tenant_data'),
     
     # Commerzbank integration
-    path('authorize_commerzbank/<int:property_id>/', views.authorize_commerzbank, name='authorize_commerzbank'),
+    path('authorize_commerzbank/', views.authorize_commerzbank, name='authorize_commerzbank'),
     path('commerzbank/callback/', views.commerzbank_callback, name='commerzbank_callback'),
     path('commerzbank/get_transactions/', views.get_commerzbank_transactions, name='get_commerzbank_transactions'),
     
+    # OneDrive integration
+    path('onedrive/auth/', views.onedrive_auth, name='onedrive_auth'),
+    path('onedrive/callback/', views.onedrive_callback, name='onedrive_callback'),
+
+    #Settings url
+    path('settings/', views.settings_view, name='settings'),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

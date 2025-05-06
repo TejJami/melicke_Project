@@ -519,54 +519,6 @@ def expense_profiles(request):
     })
 
 # Add Expense Profile
-# def add_expense_profile(request):
-#     if request.method == 'POST':
-#         data = request.POST
-#         invoice_file = request.FILES.get('invoice')  # Get uploaded file
-        
-
-#         # Validate Property ID
-#         property_id = data.get('property')
-#         if not property_id:
-#             return redirect('dashboard')  # Redirect if property is missing
-
-#         property_obj = get_object_or_404(Property, id=property_id)
-
-#         # Fetch Lease if provided
-#         lease_id = data.get('lease')
-#         lease = Lease.objects.filter(id=lease_id).first() if lease_id else None
-
-#         # Safely parse optional fields
-#         amount = safe_decimal(data.get('amount'))
-#         date = safe_date(data.get('date'))
-
-#         # Validate mandatory fields
-#         if not data.get('transaction_type') or not data.get('account_name'):
-#             return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=mapping_tab")
-
-#         try:
-#             # Create Expense Profile
-#             ExpenseProfile.objects.create(
-#                 lease=lease,
-#                 property=property_obj,
-#                 transaction_type=data.get('transaction_type'),
-#                 account_name=data.get('account_name'),
-#                 # booking_no=data.get('booking_no'),
-#                 amount=amount,
-#                 date=date,
-#                 recurring=data.get('recurring') == 'on',
-#                 frequency=data.get('frequency'),
-#                 ust=data.get('ust'),
-#                 invoice=invoice_file  # Attach invoice if provided
-#             )
-#         except ValidationError as e:
-#             print(f"Validation Error: {e}")  # Log error
-#             return redirect('dashboard')  # Redirect on error
-
-#         return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=mapping_tab")
-
-#     return redirect('dashboard')  # Default fallback
-
 def add_expense_profile(request):
     if request.method == 'POST':
         data = request.POST # Get the POST data 
@@ -613,8 +565,15 @@ def add_expense_profile(request):
         if invoice_file:
             try:
                 print("Attempting OneDrive upload for:", invoice_file.name)
-                invoice_url = upload_to_onedrive(invoice_file, invoice_file.name)
-                print("Upload successful. OneDrive URL:", invoice_url)
+                token = request.session.get('onedrive_token')['access_token']
+                if not token:
+                    print("No OneDrive token found in session.")
+                print("Token retrieved:", token)
+                filename = invoice_file.name
+                file_content = invoice_file.read()
+                print("File content read successfully.")
+                invoice_url = upload_to_onedrive(token, file_content, filename)
+                print("OneDrive upload successful. URL:", invoice_url)
             except Exception as e:
                 print("OneDrive upload failed:", str(e))
 
@@ -1501,49 +1460,6 @@ def property_detail(request, property_id):
 
 
 from django.db.models import Sum, F, FloatField
-
-
-# def ust_view(request, property_id):
-#     # Get the Property object
-#     property_instance = get_object_or_404(Property, id=property_id)
-
-#     # Filter transactions by related_property and aggregate by month
-#     monthly_data = ParsedTransaction.objects.filter(related_property_id=property_id).annotate(
-#         month=F('date__month')  # Assuming `date` stores the transaction date
-#     ).values(
-#         'month'
-#     ).annotate(
-#         umzu19_netto=Sum(F('betrag_brutto') / (1 + F('ust_type') / 100), output_field=FloatField()),
-#         vorsteuer=Sum(
-#             (F('betrag_brutto') - (F('betrag_brutto') / (1 + F('ust_type') / 100))),
-#             output_field=FloatField()
-#         ),
-#         saldo_ust=Sum(
-#             (F('betrag_brutto') * F('ust_type') / 100) - 
-#             (F('betrag_brutto') - (F('betrag_brutto') / (1 + F('ust_type') / 100))),
-#             output_field=FloatField()
-#         )
-#     ).order_by('month')
-
-#     # Calculate totals for the summary row
-#     totals = monthly_data.aggregate(
-#         total_umzu19_netto=Sum('umzu19_netto'),
-#         total_vorsteuer=Sum('vorsteuer'),
-#         total_saldo_ust=Sum('saldo_ust')
-#     )
-
-#     # Add 19% calculation
-#     total_19_percent = totals['total_umzu19_netto'] * 0.19 if totals['total_umzu19_netto'] else 0
-
-#     # Pass data to the context
-#     context = {
-#         'property': property_instance,
-#         'monthly_data': monthly_data,
-#         'totals': totals,
-#         'total_19_percent': total_19_percent, 
-#     }
-#     return render(request, 'bookkeeping/ust.html', context)
-
 from collections import defaultdict
 from calendar import month_name
 from django.db.models import Sum, F, FloatField, Case, When, Value as V
@@ -1673,14 +1589,12 @@ AUTH_BASE_URL = "https://api-sandbox.commerzbank.com/auth/realms/sandbox/protoco
 AUTHORIZE_URL = f"{AUTH_BASE_URL}/auth"
 TOKEN_URL = f"{AUTH_BASE_URL}/token"
 
-def authorize_commerzbank(request, property_id):
+def authorize_commerzbank(request):
     """Redirects user to Commerzbank OAuth2 login."""
-    print(f"[authorize_commerzbank] Redirecting for authorization (Property ID: {property_id})")
 
     if not settings.COMMERZBANK_CLIENT_ID or not settings.COMMERZBANK_CLIENT_SECRET:
         return JsonResponse({"error": "Missing API credentials"}, status=500) # Check for credentials
 
-    request.session["property_id"] = property_id  # Store property ID for later
 
     params = {
         "response_type": "code",
@@ -1842,3 +1756,74 @@ def extract_transactions_from_camt(statement_details):
     except Exception as e:
         print(f"[extract_transactions_from_camt] Error parsing camt.053: {e}")
         return []
+    
+
+from django.shortcuts import redirect
+from django.conf import settings
+from requests_oauthlib import OAuth2Session
+
+def onedrive_auth(request):
+    print("[onedrive_auth] Redirecting to OneDrive OAuth2 login...")
+    print('OneDrive Client ID:', settings.ONEDRIVE_CLIENT_ID)  # Debugging line
+    print('OneDrive Redirect URI:', settings.ONEDRIVE_REDIRECT_URI)  # Debugging line
+    print('OneDrive Scopes:', settings.ONEDRIVE_SCOPES)  # Debugging line
+    
+    oauth = OAuth2Session(
+        settings.ONEDRIVE_CLIENT_ID,
+        redirect_uri=settings.ONEDRIVE_REDIRECT_URI,
+        scope=settings.ONEDRIVE_SCOPES,
+    )
+    auth_url, state = oauth.authorization_url('https://login.microsoftonline.com/common/oauth2/v2.0/authorize')
+    request.session['oauth_state'] = state
+    return redirect(auth_url)
+
+def onedrive_callback(request):
+    oauth = OAuth2Session(
+        settings.ONEDRIVE_CLIENT_ID,
+        state=request.session['oauth_state'],
+        redirect_uri=settings.ONEDRIVE_REDIRECT_URI,
+        scope=settings.ONEDRIVE_SCOPES  # explicitly add scopes here
+    )
+
+    token = oauth.fetch_token(
+        'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+        client_secret=settings.ONEDRIVE_CLIENT_SECRET,
+        authorization_response=request.build_absolute_uri(),
+        include_client_id=True,
+        scope=settings.ONEDRIVE_SCOPES  # explicitly include scope here
+    )
+
+    request.session['onedrive_token'] = token
+    request.session.modified = True
+
+    return redirect('/')
+
+
+import requests
+
+def upload_to_onedrive(token, filename, file_content):
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/pdf',
+    }
+    upload_url = f'https://graph.microsoft.com/v1.0/me/drive/root:/Invoices/{filename}:/content'
+
+    response = requests.put(upload_url, headers=headers, data=file_content)
+
+    if response.status_code in [200, 201]:
+        json_response = response.json()
+        file_web_url = json_response.get('webUrl')
+        return file_web_url  # Save this link to your database
+    else:
+        raise Exception(f'Failed to upload: {response.content}')
+
+
+#Settings page view
+def settings_view(request):
+    if request.method == 'POST':
+        # Handle form submission
+        # Save settings to the database or session
+        pass  # Implement your logic here
+
+    # Render the settings page template
+    return render(request, 'bookkeeping/settings.html')

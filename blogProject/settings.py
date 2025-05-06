@@ -82,20 +82,20 @@ WSGI_APPLICATION = 'blogProject.wsgi.application'
 
 import dj_database_url
 
-DATABASES = {
-    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
-}
-
 # DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.getenv('DB_NAME'),
-#         'USER': os.getenv('DB_USER'),
-#         'PASSWORD': os.getenv('DB_PASSWORD'),
-#         'HOST': os.getenv('DB_HOST', 'localhost'),
-#         'PORT': os.getenv('DB_PORT', '5432'),
-#     }
+#     'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
 # }
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
+    }
+}
 
 
 # Password validation
@@ -148,7 +148,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Redirects after login/logout
 LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/login/'  # Optional, handled by next_page in the LogoutView
+LOGOUT_REDIRECT_URL = '/login/'  
 LOGIN_URL = '/login/'
 
 django_heroku.settings(locals(), test_runner=False)
@@ -157,6 +157,11 @@ django_heroku.settings(locals(), test_runner=False)
 COMMERZBANK_CLIENT_ID=os.getenv('COMMERZBANK_CLIENT_ID')
 COMMERZBANK_CLIENT_SECRET= os.getenv('COMMERZBANK_CLIENT_SECRET')
 COMMERZBANK_API_BASE=os.getenv('COMMERZBANK_API_BASE')
+
+ONEDRIVE_CLIENT_ID = os.getenv('ONEDRIVE_CLIENT_ID')
+ONEDRIVE_CLIENT_SECRET = os.getenv('ONEDRIVE_CLIENT_SECRET')
+ONEDRIVE_REDIRECT_URI = os.getenv('ONEDRIVE_REDIRECT_URI')
+ONEDRIVE_SCOPES = ['offline_access', 'Files.ReadWrite.All', 'User.Read']
 
 import os
 import base64

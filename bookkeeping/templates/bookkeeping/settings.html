@@ -1,0 +1,72 @@
+{% extends 'bookkeeping/base.html' %}
+{% load static %}
+
+{% block title %}Integrationseinstellungen{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-6">
+    <h2 class="text-2xl font-bold mb-5">Integrationseinstellungen</h2>
+
+    <!-- Buttons zur Authentifizierung -->
+    <div class="flex gap-4 mb-8">
+        <a href="{% url 'authorize_commerzbank' %}" class="btn btn-outline btn-primary">Mit Commerzbank verbinden</a>
+        <a href="{% url 'onedrive_auth' %}" class="btn btn-outline btn-secondary">Mit OneDrive verbinden</a>
+    </div>
+
+    <!-- Statusanzeigen -->
+    <div class="space-y-4">
+        <div class="flex items-center gap-2">
+            <span class="font-semibold">Commerzbank Status:</span>
+            {% if commerzbank_authenticated %}
+                <span class="inline-block h-3 w-3 rounded-full bg-green-500"></span>
+                <span class="text-green-600">Verbunden</span>
+            {% else %}
+                <span class="inline-block h-3 w-3 rounded-full bg-red-500"></span>
+                <span class="text-red-600">Nicht verbunden</span>
+            {% endif %}
+        </div>
+
+        <div class="flex items-center gap-2">
+            <span class="font-semibold">OneDrive Status:</span>
+            {% if onedrive_authenticated %}
+                <span class="inline-block h-3 w-3 rounded-full bg-green-500"></span>
+                <span class="text-green-600">Verbunden</span>
+            {% else %}
+                <span class="inline-block h-3 w-3 rounded-full bg-red-500"></span>
+                <span class="text-red-600">Nicht verbunden</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Commerzbank Modal -->
+    <dialog id="commerzbankModal" class="modal">
+        <div class="modal-box">
+            <button class="close btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+            <h3 class="text-lg font-bold">Commerzbank-Authentifizierung</h3>
+            <p id="auth-message" class="mt-2">Authentifizierung läuft...</p>
+            <p><strong>Zugriffstoken:</strong> <span id="access-token" class="text-green-500 font-semibold"></span></p>
+            <p><strong>Sitzungsstatus:</strong> <span id="expires-in" class="text-blue-500"></span></p>
+
+            <hr class="my-3">
+
+            <button id="fetch-transactions" class="btn btn-outline btn-primary mt-3 w-full">
+                🔄 Transaktionen abrufen
+            </button>
+
+            <div id="transaction-spinner" class="flex justify-center items-center my-3 hidden">
+                <svg class="animate-spin h-6 w-6 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+            </div>
+
+            <h4 class="text-md font-bold mt-4">Transaktionen</h4>
+            <ul id="transaction-details" class="list-disc pl-5 mt-2 bg-gray-100 p-3 rounded-md max-h-60 overflow-y-auto">
+                <li class="text-gray-500">Noch keine Transaktionen geladen.</li>
+            </ul>
+
+            <p id="transaction-error" class="text-red-500 mt-2 font-semibold hidden"></p>
+        </div>
+    </dialog>
+</div>
+{% endblock %}

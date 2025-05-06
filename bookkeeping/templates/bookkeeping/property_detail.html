@@ -90,50 +90,9 @@
   <!-- Delete Button -->
   <button class="btn btn-outline btn-error" onclick="delete_property_modal.showModal()">Gebäude löschen</button>
   
-    <!-- Button to trigger OAuth -->
-    <a href="{% url 'authorize_commerzbank' property.id %}" class="btn btn-primary">
-        Connect to Commerzbank
-    </a>
 
 </div>
 
-<!-- Commerzbank Authentication Modal -->
-<dialog id="commerzbankModal" class="modal">
-    <div class="modal-box ">
-        <!-- Close Button -->
-        <button class="close btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-
-        <!-- Authentication Status -->
-        <h3 class="text-lg font-bold">Commerzbank Authentication</h3>
-        <p id="auth-message" class="mt-2">Authenticating...</p>
-        <p><strong>Access Token:</strong> <span id="access-token" class="text-green-500 font-semibold"></span></p>
-        <p><strong>Session Status:</strong> <span id="expires-in" class="text-blue-500"></span></p>
-
-        <hr class="my-3">
-
-        <!-- Fetch Transactions Button (Now a JS-triggered event) -->
-        <button id="fetch-transactions" class="btn btn-outline btn-primary mt-3 w-full">
-            🔄 Fetch Transactions
-        </button>
-
-        <!-- Loading Spinner -->
-        <div id="transaction-spinner" class="flex justify-center items-center my-3 hidden">
-            <svg class="animate-spin h-6 w-6 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-            </svg>
-        </div>
-
-        <!-- Transactions Section -->
-        <h4 class="text-md font-bold mt-4">Transactions</h4>
-        <ul id="transaction-details" class="list-disc pl-5 mt-2 bg-gray-100 p-3 rounded-md max-h-60 overflow-y-auto">
-            <li class="text-gray-500">No transactions loaded yet.</li>
-        </ul>
-
-        <!-- Error Message Display -->
-        <p id="transaction-error" class="text-red-500 mt-2 font-semibold hidden"></p>
-    </div>
-</dialog>
 
 <!-- Delete Property Modal -->
 <dialog id="delete_property_modal" class="modal">

@@ -130,7 +130,7 @@ class ParsedTransaction(models.Model):
     betrag_brutto = models.FloatField(null=True, blank=True)  # Gross amount
     is_income = models.BooleanField()
     tenant = models.CharField(max_length=255, null=True, blank=True)  # Tenant name
-    invoice = models.FileField(upload_to='invoices/', null=True, blank=True, help_text="Invoice PDF from Expense Profile")
+    invoice = models.URLField(null=True, blank=True) 
     
     def __str__(self):
         return f"{self.date} | {self.account_name} | {self.transaction_type} | {self.betrag_brutto}"
