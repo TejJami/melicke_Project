@@ -1613,13 +1613,13 @@ def commerzbank_callback(request):
     print("[commerzbank_callback] Handling OAuth2 callback...")
 
     code = request.GET.get("code") # Authorization code from the callback
-    property_id = request.session.get("property_id") # Retrieve property ID from session
+    # property_id = request.session.get("property_id") # Retrieve property ID from session
 
     if not code:
         return JsonResponse({"error": "No authorization code received."}, status=400) # Handle missing code
 
-    if not property_id:
-        return JsonResponse({"error": "Property ID missing."}, status=400)  # Handle missing property ID
+    # if not property_id:
+    #     return JsonResponse({"error": "Property ID missing."}, status=400)  # Handle missing property ID
 
     # Exchange authorization code for access token
     data = {
@@ -1640,7 +1640,7 @@ def commerzbank_callback(request):
         print(f"[commerzbank_callback] Access Token Retrieved: {access_token[:10]}...") # Log only part of the token for security
 
         # Redirect to property page with success flag
-        return redirect(f"/property/{property_id}/?auth_success=true")
+        return redirect(f"/settings/?auth_success=true")
 
     else:
         return JsonResponse({"error": "Authentication failed."}, status=400)
