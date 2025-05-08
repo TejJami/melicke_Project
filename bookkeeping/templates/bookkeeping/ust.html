@@ -2,23 +2,6 @@
     <div class="mb-6">
         <h2 class="text-xl font-light mb-3">USt-Übersicht für {{ property.name }}</h2>
 
-        <!-- Filter Form -->
-        <form method="get" class="flex flex-wrap items-center gap-4">
-            <label class="font-semibold">Filter nach Buchungstypen:</label>
-            {% for key, label in all_transaction_types %}
-                <label class="inline-flex items-center space-x-1">
-                    <input
-                        type="checkbox"
-                        name="transaction_types"
-                        value="{{ key }}"
-                        {% if key in selected_types %}checked{% endif %}
-                        class="checkbox checkbox-sm"
-                    />
-                    <span>{{ label }}</span>
-                </label>
-            {% endfor %}
-            <!-- <button type="submit" class="btn btn-sm btn-primary ml-4">Filtern</button> -->
-        </form>
     </div>
 
     <div class="overflow-x-auto">

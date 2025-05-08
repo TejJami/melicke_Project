@@ -68,10 +68,18 @@
 
                 <div class="mb-4">
                     <label class="label">
-                        <span class="label-text">Bürgschaft *</span>
+                        <span class="label-text">Kaution *</span>
                     </label>
                     <input type="number" name="deposit_amount" step="0.01" class="input input-bordered w-full">
                 </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Bürgschaft</span>
+                    </label>
+                    <input type="number" name="guarantee" step="0.01" class="input input-bordered w-full">
+                </div>
+
+
 
                 <div class="mb-4">
                     <label class="label">
@@ -102,7 +110,7 @@
     </dialog>
 
     <!-- Lease List -->
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto h-96 mb-10">
         <h2 class="text-xl font-light mb-3">Mietverträge für {{ property.name }}</h2>
         <div class="mb-4 flex items-center gap-2">
             <select id="tenantFilter" class="select select-bordered w-64" onchange="filterLeasesByTenant()">
@@ -122,7 +130,7 @@
                     <th>USt Typ</th>
                     <th>Miete</th>
                     <th>NebenKosten</th>
-
+                    <th>Kaution</th>
                     <th>Bürgschaft</th>
                     <th>Startdatum</th>
                     <th>Enddatum</th>
@@ -162,8 +170,10 @@
                     <td>{{ lease.ust_type }}</td>
                     <td>€{{ lease.rent|floatformat:2 }}</td>
                     <td>€{{ lease.additional_costs|floatformat:"2" }}</td>
-
                     <td>€{{ lease.deposit_amount|floatformat:2 }}</td>
+                    <td>
+                        €{% if lease.guarantee %}{{ lease.guarantee|floatformat:2 }}{% else %}0.00{% endif %}
+                    </td>               
                     <td>{{ lease.start_date|date:'Y-m-d' }}</td>
                     <td>{{ lease.end_date|date:'Y-m-d'|default:"-" }}</td>
                     <td>

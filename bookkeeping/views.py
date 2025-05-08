@@ -699,7 +699,9 @@ def add_unit(request):
         rent = request.POST.get('rent')
         additional_costs = request.POST.get('additional_costs')
         floor = request.POST.get('floor')
-        position = request.POST.get('position')
+        stellplatz_miete = request.POST.get('stellplatz_miete')
+        investition_miete = request.POST.get('investition_miete')
+        print("POST data received:", request.POST)
 
         # Ensure the property exists
         property_obj = get_object_or_404(Property, id=property_id)
@@ -709,6 +711,8 @@ def add_unit(request):
         rent = Decimal(rent) if rent else None
         additional_costs = Decimal(additional_costs) if additional_costs else None
         floor = int(floor) if floor else None
+        stellplatz_miete = Decimal(stellplatz_miete) if stellplatz_miete else None
+        investition_miete = Decimal(investition_miete) if investition_miete else None
 
         # Create the unit
         Unit.objects.create(
@@ -718,7 +722,8 @@ def add_unit(request):
             rent=rent,
             additional_costs=additional_costs,
             floor=floor,
-            position=position
+            stellplatz_miete=stellplatz_miete,
+            investition_miete=investition_miete
         )
 
         # Redirect to property detail view
@@ -740,12 +745,16 @@ def edit_unit(request, pk):
         unit.additional_costs = request.POST.get('additional_costs')
         unit.floor = request.POST.get('floor')
         unit.position = request.POST.get('position')
+        unit.stellplatz_miete = request.POST.get('stellplatz_miete')
+        unit.investition_miete = request.POST.get('investition_miete')
 
         # Convert data to appropriate types
         unit.floor_area = float(unit.floor_area) if unit.floor_area else None
         unit.rent = Decimal(unit.rent) if unit.rent else None
         unit.additional_costs = Decimal(unit.additional_costs) if unit.additional_costs else None
         unit.floor = int(unit.floor) if unit.floor else None
+        unit.stellplatz_miete = Decimal(unit.stellplatz_miete) if unit.stellplatz_miete else None
+        unit.investition_miete = Decimal(unit.investition_miete) if unit.investition_miete else None
 
         # Retrieve the property using the unit's property relationship
         property_id = unit.property.id  # Fetch the associated property ID
@@ -1013,13 +1022,17 @@ def add_lease(request):
         end_date = request.POST.get('end_date') or None
         ust_type = request.POST.get('ust_type')
         deposit_amount = request.POST.get('deposit_amount') or Decimal(0)
-
+        guarantee = request.POST.get('guarantee') or Decimal(0)
+        # Convert deposit amount safely
+        deposit_amount = Decimal(deposit_amount.replace(',', '.')) if deposit_amount else Decimal(0)
+        guarantee = Decimal(guarantee.replace(',', '.')) if guarantee else Decimal(0)
+        print("POST data received:", request.POST)
         # Fetch the unit and its associated property, landlords, and rent
         unit_obj = get_object_or_404(Unit, id=unit_id)
         property_obj = unit_obj.property
         landlords = property_obj.landlords.all()
         rent = unit_obj.rent
-
+        
         # Fetch tenants and extract data
         tenants = Tenant.objects.filter(id__in=tenant_ids)
         account_names = [tenant.name for tenant in tenants]
@@ -1038,6 +1051,7 @@ def add_lease(request):
             additional_costs=additional_costs,  # Store in lease
             account_names=account_names,
             ibans=ibans,
+            guarantee=guarantee, 
         )
 
         lease.landlords.set(landlords)  # Set landlords for the lease

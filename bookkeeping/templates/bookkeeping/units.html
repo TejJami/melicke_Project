@@ -30,24 +30,13 @@
                     <input type="number" name="floor_area" step="0.1" class="input input-bordered w-full" required>
                 </div>
 
-
-
                 <div class="mb-4">
                     <label class="label">
                         <span class="label-text">Etage</span>
                     </label>
                     <input type="number" name="floor" class="input input-bordered w-full" required>
                 </div>
-                <!-- <div class="mb-4">
-                    <label class="label">
-                        <span class="label-text">Position</span>
-                    </label>
-                    <select name="position" class="select select-bordered w-full" required>
-                        <option value="Left">Links</option>
-                        <option value="Middle" selected>Mitte</option>
-                        <option value="Right">Rechts</option>
-                    </select>
-                </div> -->
+
                 <div class="mb-4">
                     <label class="label">
                         <span class="label-text">Miete</span>
@@ -60,8 +49,20 @@
                     </label>
                     <input type="number" name="additional_costs" step="0.01" class="input input-bordered w-full">
                 </div>
-
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Stellplatz Miete</span>
+                    </label>
+                    <input type="number" name="stellplatz_miete" class="input input-bordered w-full">
+                </div>
+                <div class="mb-4">
+                    <label class="label">
+                        <span class="label-text">Investitionmiete</span>
+                    </label>
+                    <input type="number" name="investition_miete" class="input input-bordered w-full">
+                </div>
                 
+
                 <div class="modal-action">
                     <button type="submit" class="btn btn-outline">Hinzufügen</button>
                     <button type="button" class="btn btn-outline btn-error" onclick="add_unit_modal.close()">Abbrechen</button>
@@ -71,7 +72,7 @@
     </dialog>
 
     <!-- Unit List -->
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto h-96 mb-10">
         <h2 class="text-xl font-light mb-3">Units for {{ property.name }}</h2>
         <div class="mb-4 flex items-center gap-2">
             <select id="tenantFilterUnit" class="select select-bordered w-64" onchange="filterUnitsByTenant()">
@@ -94,6 +95,8 @@
                     <!-- <th>Position</th> -->
                     <th>Miete</th>
                     <th>NebenKosten</th>
+                    <th>Stellplatz Miete</th>
+                    <th>Investitionmiete</th>
                     <th>Aktionen</th>
                 </tr>
             </thead>            
@@ -110,7 +113,9 @@
                             {{ unit.floor|default:0 }}, 
                             '{{ unit.position|default:''|escapejs }}', 
                             '{{ unit.rent|default:0|floatformat:"2" }}', 
-                            '{{ unit.additional_costs|default:0|floatformat:"2" }}'
+                            '{{ unit.additional_costs|default:0|floatformat:"2" }}',
+                            '{{ unit.stellplatz_miete|default:0|floatformat:"2" }}',
+                            '{{ unit.investition_miete|default:0|floatformat:"2" }}'
                         )"
             
                         >
@@ -140,6 +145,8 @@
                      -->
                     <td>€{{ unit.rent|floatformat:"2" }}</td>
                     <td>€{{ unit.additional_costs|default:0|floatformat:"2" }}</td>
+                    <td>€{{ unit.stellplatz_miete|default:0|floatformat:"2" }}</td>
+                    <td>€{{ unit.investition_miete|default:0|floatformat:"2" }}</td>
 
                     
                     <td>
@@ -167,7 +174,7 @@
 </div>
 
 <script>
-function openunitEditModal(id, unitName, floorArea, floor, position, rent, additionalCosts) {
+function openunitEditModal(id, unitName, floorArea, floor, position, rent, additionalCosts , stellplatzMiete, investitionMiete) {
     console.log(id, unitName, floorArea, floor, position, rent, additionalCosts);
     document.getElementById('edit_unit_form').action = `/edit_unit/${id}/`;
     document.getElementById('edit_unit_name').value = unitName;
@@ -181,7 +188,12 @@ function openunitEditModal(id, unitName, floorArea, floor, position, rent, addit
     document.getElementById('edit_additional_costs').value = additionalCosts
         ? parseFloat(additionalCosts.replace(/\./g, '').replace(',', '.')).toFixed(2)
         : '';
-
+    document.getElementById('edit_stellplatz_miete').value = stellplatzMiete
+        ? parseFloat(stellplatzMiete.replace(/\./g, '').replace(',', '.')).toFixed(2)
+        : '';
+    document.getElementById('edit_investition_miete').value = investitionMiete
+        ? parseFloat(investitionMiete.replace(/\./g, '').replace(',', '.')).toFixed(2)
+        : '';
     document.getElementById('edit_unit_modal').showModal();
 }
 

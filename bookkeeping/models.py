@@ -100,11 +100,6 @@ class Property(models.Model):
 
 # Model to represent units within a property
 class Unit(models.Model):
-    POSITION_CHOICES = [
-        ('Left', 'Left'),
-        ('Middle', 'Middle'),
-        ('Right', 'Right'),
-    ]
 
     property = models.ForeignKey(Property, related_name='units', on_delete=models.CASCADE)  # Links unit to a property
     unit_name = models.CharField(max_length=255)  # E.g., "Unit A", "Flat 1B"
@@ -112,7 +107,8 @@ class Unit(models.Model):
     floor_area = models.FloatField(help_text="Floor area in square meters", null=True, blank=True,)  # Floor area in sq.m.
     rent = models.DecimalField(max_digits=10, decimal_places=2, help_text="Rent for the unit", null=True, blank=True,)  # Renamed from market_rent
     additional_costs = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Additional costs")  # New field for extra costs
-    position = models.CharField(max_length=10, choices=POSITION_CHOICES, default='Middle', help_text="Unit position (Left, Middle, Right)", null=True, blank=True,)  # New choice field
+    stellplatz_miete = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Parking space rent")  # New field for parking space rent
+    investition_miete = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Investment rent")  # New field for investment rent    
 
     def __str__(self):
         return f"{self.unit_name} - {self.property.name})"
@@ -197,6 +193,7 @@ class Lease(models.Model):
         default='Ohne'
     )
     deposit_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    guarantee = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     rent = models.DecimalField(max_digits=10, decimal_places=2)  # Add rent field
     additional_costs = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Additional costs for the lease")
 
@@ -244,7 +241,15 @@ class ExpenseProfile(models.Model):
     date = models.DateField(null=True, blank=True)
     recurring = models.BooleanField(default=False)
     frequency = models.CharField(
-        max_length=10, choices=[('monthly', 'Monthly'), ('yearly', 'Yearly')], null=True, blank=True
+        max_length=12,
+        choices=[
+            ('monthly', 'Monatlich'),
+            ('bimonthly', 'Zweimonatlich'),
+            ('quarterly', 'Vierteljährlich'),
+            ('yearly', 'Jährlich')
+        ],
+        null=True,
+        blank=True
     )
     account_name = models.CharField(max_length=255)
     ust = models.IntegerField(choices=[(0, '0%'), (7, '7%'), (19, '19%')], default=19)
@@ -281,7 +286,15 @@ class IncomeProfile(models.Model):
     date = models.DateField(null=True, blank=True)
     recurring = models.BooleanField(default=False)
     frequency = models.CharField(
-        max_length=10, choices=[('monthly', 'Monthly'), ('yearly', 'Yearly')], null=True, blank=True
+        max_length=12,
+        choices=[
+            ('monthly', 'Monatlich'),
+            ('bimonthly', 'Zweimonatlich'),
+            ('quarterly', 'Vierteljährlich'),
+            ('yearly', 'Jährlich')
+        ],
+        null=True,
+        blank=True
     )
     account_name = models.CharField(max_length=255)
     ust = models.IntegerField(choices=[(0, '0%'), (7, '7%'), (19, '19%')], default=19)

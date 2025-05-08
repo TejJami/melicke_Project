@@ -132,11 +132,11 @@
                     <td>{{ transaction.description }}</td>
                     <td>
                         {% if transaction.is_income %}
-                        <button class="btn btn-sm btn-outline btn-success" onclick="openIncomeModal('{{ transaction.account_name }}', '{{ transaction.amount }}')">
+                        <button class="btn btn-sm btn-outline btn-success" onclick="openIncomeModal('{{ transaction.account_name }}', '{{ transaction.amount }}' , '{{ transaction.date}}')">
                             + Einnahme
                         </button>
                         {% else %}
-                        <button class="btn btn-sm btn-outline btn-error" onclick="openExpenseModal('{{ transaction.account_name }}' , '{{ transaction.amount }}', '{{ transaction.booking_no }}')">
+                        <button class="btn btn-sm btn-outline btn-error" onclick="openExpenseModal('{{ transaction.account_name }}' , '{{ transaction.amount }}', '{{ transaction.booking_no }}', '{{ transaction.date }}')">
                             + Ausgabe
                         </button>
                         {% endif %}
@@ -173,9 +173,10 @@
         }, 500); // Adjust the delay as needed
     }
 
-    function openIncomeModal(accountName , amount) {
+    function openIncomeModal(accountName , amount , date) {
         const input = document.getElementById('account_name_income');
         const amountInput = document.getElementById('amount_income');
+        const dateInput = document.getElementById('date_income');
         const modal = document.getElementById('add_income_modal_2');
 
         if (modal) {
@@ -185,7 +186,9 @@
                 amountInput.value = amount
                     ? parseFloat(amount.replace(/\./g, '').replace(',', '.')).toFixed(2)
                     : ''; // Set the amount in the input field
-
+                dateInput.value = date
+                ? date.replace(/(\d{2})\.(\d{2})\.(\d{4})/, '$3-$2-$1') // Ensure ISO format
+                : '';
             } else {
                 console.error('Kontoname-Feld nicht gefunden');
             }
@@ -194,10 +197,11 @@
         }
     }
 
-    function openExpenseModal(accountName , amount ) {
+    function openExpenseModal(accountName , amount ,booking_no , date) {
         const input = document.getElementById('account_name_expense');
         const amountInput = document.getElementById('amount_expense');
         const bookingNoInput = document.getElementById('booking_no_expense');
+        const dateInput = document.getElementById('date_expense');
         const modal = document.getElementById('add_expense_modal_2');
 
         if (modal) {
@@ -208,6 +212,9 @@
                 amountInput.value = amount
                     ? parseFloat(amount.replace(/\./g, '').replace(',', '.')).toFixed(2)
                     : ''; // Set the amount in the input field 
+                    dateInput.value = date
+                ? date.replace(/(\d{2})\.(\d{2})\.(\d{4})/, '$3-$2-$1') // Ensure ISO format
+                : '';
             } else {
                 console.error('Account name input not found');
             }

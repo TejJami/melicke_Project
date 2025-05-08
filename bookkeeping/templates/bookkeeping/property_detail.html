@@ -21,11 +21,23 @@
 
   <!-- Page Title -->
   <div class="relative bg-cover bg-center bg-no-repeat p-5 rounded-md shadow-md mb-5 mt-2" style="background-image: url('{{ property.image.url }}');">
-    <!-- Image Overlay -->
-    <div class="absolute inset-0 bg-black opacity-25 rounded-md"></div>
 
     <!-- Content Wrapper -->
     <div class="relative z-20 flex items-center justify-between">
+                        <!-- Badge Positioned to Top-Right -->
+                        <div class="absolute top-0 left-0 m-4">
+                            <div class="badge badge-outline ">
+                                {% if property.property_type == "residential" %}
+                                    Wohngebäude
+                                {% elif property.property_type == "commercial" %}
+                                    Gewerbegebäude
+                                {% elif property.property_type == "mixed-use" %}
+                                    Mischnutzung
+                                {% else %}
+                                    {{ property.property_type }}
+                                {% endif %}
+                            </div>
+                        </div>   
       <!-- Left Section: Back Button and Property Name -->
       <div class="flex items-center space-x-3">
         <!-- Back Button -->
@@ -35,31 +47,29 @@
           </svg>
         </a>
         <!-- Property Name -->
-        <h1 class="text-2xl font-extrabold text-white">{{ property.name }}</h1>
+        <div>
+        <h1 class="font-bold text-2xl">{{ property.name }}</h1>
+            <p>{{ property.street}} , {{ property.city }} </p>      
+        </div>
+
       </div>
 
       <!-- Right Section: Property Details -->
-      <div class="text-right text-white">
-        <!-- <p><span class="font-semibold">UST Typ:</span> {{ property.ust_type }}</p> -->
+      <div class="card card-dash bg-base-100  bg-opacity-70 shadow-md p-5 rounded-md">
         <p>
-          <span class="font-semibold">Adresse:</span> {{ property.street }}, {{ property.building_no }}, {{ property.city }}
         </p>
         <p class="property-details">
             <span class="font-semibold">Teilweise-Steuersatz:</span>
-            {% if property.partial_tax_rate is not None %}
                 {{ property.partial_tax_rate }} %
-            {% elif property.auto_calculate_tax %}
-                Automatisch berechnet nach <br>
-                {% if property.tax_calculation_method == "sq_meterage" %}
-                    Fläche (m²)
-                {% elif property.tax_calculation_method == "income" %}
-                    Einnahmen
+                {% if property.auto_calculate_tax %}
+                    {% if property.tax_calculation_method == "sq_meterage" %}
+                        (Fläche)
+                    {% else %}
+                       (Einnahmen)
+                    {% endif %}
                 {% else %}
-                    unbekannter Methode
+                (Manuell)           
                 {% endif %}
-            {% else %}
-                Nicht festgelegt
-            {% endif %}
         </p>
         
         <style>
@@ -469,6 +479,19 @@
                 <label class="label"><span class="label-text">NebenKosten</span></label>
                 <input type="number" name="additional_costs" id="edit_additional_costs" step="0.01" class="input input-bordered w-full">
             </div>
+
+            <div class="mb-4">
+                <label class="label">
+                    <span class="label-text">Stellplatz Miete</span>
+                </label>
+                <input type="number" name="stellplatz_miete"  id="edit_stellplatz_miete"class="input input-bordered w-full">
+            </div>
+            <div class="mb-4">
+                <label class="label">
+                    <span class="label-text">Investitionmiete</span>
+                </label>
+                <input type="number" name="investition_miete"  id="edit_investition_miete"class="input input-bordered w-full">
+            </div>
   
             <div class="modal-action">
                 <button type="submit" class="btn btn-outline">Speichern</button>
@@ -600,13 +623,13 @@
             <label class="cursor-pointer flex items-center gap-2">
                 <input type="checkbox" id="split_income_checkbox" class="checkbox" disabled>
 
-                <span class="label-text">Split this income</span>
+                <span class="label-text">Einkommen aufteilen</span>
             </label>
             </div>
             
             <!-- Split Section (Initially hidden) -->
             <div id="split_income_section" class="hidden border-transparent p-4 rounded-md bg-base-100">
-            <p class="mb-2 font-medium">Split Options:</p>
+            <p class="mb-2 font-medium">Teilungsoptionen:</p>
             
             <div id="split_items_container" class="space-y-2 text-sm">
                 <p class="text-gray-500">Bitte wählen Sie einen Mietvertrag aus...</p>
@@ -633,7 +656,7 @@
                 <option value="bk_advance_payments">BK Vorauszahlungen</option>
                 <option value="security_deposit">Kaution</option>
                 <option value="subsidy">Zuschuss</option>
-                <option value="deposit_withdrawal">Einzahlung / Abhebung</option>
+                <option value="deposit_withdrawal">Einlage / Entnahme</option>
               </select>
           </div>
 
@@ -653,17 +676,19 @@
           </div>
 
           <div class="mb-4">
-              <label class="label"><span class="label-text">Häufigkeit</span></label>
-              <select name="frequency" class="select select-bordered w-full">
-                  <option value="">-- None --</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-              </select>
-          </div>
+            <label class="label"><span class="label-text">Häufigkeit</span></label>
+            <select name="frequency" class="select select-bordered w-full">
+                <option value="">-- Keine --</option>
+                <option value="monthly">Monatlich</option>
+                <option value="bimonthly">Zweimonatlich</option>
+                <option value="quarterly">Vierteljährlich</option>
+                <option value="yearly">Jährlich</option>
+            </select>
+            </div>
 
           <div class="mb-4">
               <label class="label"><span class="label-text">Datum</span></label>
-              <input type="date" name="date" class="input input-bordered w-full" >
+              <input type="date" name="date" id="date_income" class="input input-bordered w-full" >
           </div>
 
           <div class="mb-4">
@@ -759,14 +784,17 @@
                 <label class="label"><span class="label-text">Häufigkeit</span></label>
                 <select name="frequency" class="select select-bordered w-full">
                     <option value="">-- Keine --</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
+                    <option value="monthly">Monatlich</option>
+                    <option value="bimonthly">Zweimonatlich</option>
+                    <option value="quarterly">Vierteljährlich</option>
+                    <option value="yearly">Jährlich</option>
                 </select>
             </div>
+            
 
             <div class="mb-4">
                 <label class="label"><span class="label-text">Datum</span></label>
-                <input type="date" name="date" class="input input-bordered w-full">
+                <input type="date" name="date" id="date_expense" class="input input-bordered w-full">
             </div>
 
             <div class="mb-4">
