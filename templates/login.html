@@ -30,7 +30,8 @@
                 Möchten Sie die andere Sitzung beenden und hier fortfahren?
                 </p>
                 <div class="modal-action flex gap-2">
-                <label for="session-modal" class="btn" onclick="document.getElementById('force-login').value = '1'; document.forms[0].submit();">Ja</label>
+                <button type="button" class="btn" id="force-login-btn">Ja</button>
+
                 <label for="session-modal" class="btn btn-ghost" onclick="window.location.href='{% url 'login' %}'">Nein</label>
                 </div>
             </div>
@@ -69,4 +70,40 @@
         </form>
     </div>
 </body>
+<script>
+    document.getElementById('force-login-btn')?.addEventListener('click', function () {
+        const form = document.querySelector('form');
+        if (form) {
+            const forceInput = document.getElementById('force-login');
+            if (forceInput) {
+                forceInput.value = '1';
+            }
+    
+            // Resubmit the same credentials (pull them from previous inputs)
+            const usernameInput = document.createElement("input");
+            usernameInput.type = "hidden";
+            usernameInput.name = "username";
+            usernameInput.value = localStorage.getItem("temp_username") || "";
+            form.appendChild(usernameInput);
+    
+            const passwordInput = document.createElement("input");
+            passwordInput.type = "hidden";
+            passwordInput.name = "password";
+            passwordInput.value = localStorage.getItem("temp_password") || "";
+            form.appendChild(passwordInput);
+    
+            form.submit();
+        }
+    });
+    
+    // Save credentials on first form attempt
+    document.querySelector('form')?.addEventListener('submit', function () {
+        const username = document.querySelector('input[name="username"]')?.value;
+        const password = document.querySelector('input[name="password"]')?.value;
+        localStorage.setItem("temp_username", username);
+        localStorage.setItem("temp_password", password);
+    });
+    </script>
+    
+    
 </html>

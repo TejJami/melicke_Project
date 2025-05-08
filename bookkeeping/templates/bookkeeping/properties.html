@@ -251,5 +251,10 @@
     // Poll every 10 seconds
     setInterval(updateLockStatus, 5000);
     </script>
+    <script>
+        localStorage.removeItem("temp_username");
+        localStorage.removeItem("temp_password");
+    </script>
+    
     
 {% endblock %}

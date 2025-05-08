@@ -42,32 +42,41 @@ from bookkeeping.utils.onedrive_utils import upload_to_onedrive
 
 # Custom Login View
 class CustomLoginView(LoginView):
-    template_name = 'login.html' # Path to your login template
+    template_name = 'login.html'  # Path to your login template
 
     def form_valid(self, form):
-        user = form.get_user() 
-        request = self.request # Get the request object
-        force_login = request.POST.get("force_login") == "1" # Check if force_login is set
+        user = form.get_user()
+        request = self.request  # Get the request object
+        force_login = request.POST.get("force_login") == "1"  # Check if force_login is set
 
-        existing_sessions = Session.objects.filter(expire_date__gte=timezone.now()) # Get all active sessions
-        user_has_session = False # Flag to check if user has an existing session
+        print(f"[DEBUG] User attempting login: {user.username} (ID: {user.id})")
+        print(f"[DEBUG] force_login flag: {force_login}")
+
+        existing_sessions = Session.objects.filter(expire_date__gte=timezone.now())  # Get all active sessions
+        print(f"[DEBUG] Found {existing_sessions.count()} active sessions.")
+
+        user_has_session = False  # Flag to check if user has an existing session
 
         # Check if the user already has an active session
-        # Iterate through all active sessions and check if the user ID matches
         for session in existing_sessions:
             data = session.get_decoded()
-            if data.get('_auth_user_id') == str(user.id): # Check if the user ID matches
-                if not force_login: 
-                    user_has_session = True # Set the flag to True if user has an existing session
+            if data.get('_auth_user_id') == str(user.id):  # Check if the user ID matches
+                print(f"[DEBUG] Existing session found for user {user.username} (Session Key: {session.session_key})")
+                if not force_login:
+                    user_has_session = True  # Set the flag to True if user has an existing session
                     break
                 else:
-                    session.delete() # Delete the existing session if force_login is set
+                    session.delete()  # Delete the existing session if force_login is set
+                    print(f"[DEBUG] Deleted existing session for user {user.username} due to force_login.")
 
-        if user_has_session: # If the user has an existing session and force_login is not set
+        if user_has_session:  # If the user has an existing session and force_login is not set
+            print(f"[DEBUG] Login prevented for user {user.username}: already logged in.")
             form.add_error(None, "already_logged_in")  # key only, used in template
-            return self.form_invalid(form) 
+            return self.form_invalid(form)
 
+        print(f"[DEBUG] Login allowed for user {user.username}")
         return super().form_valid(form)
+
 
 # Dashboard: Displays Earmarked and Parsed Transactions
 @login_required
