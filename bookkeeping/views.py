@@ -1155,7 +1155,7 @@ def income_profiles(request):
 # Add Income Profile
 def add_income_profile(request):
     if request.method == 'POST':
-        lease_id = request.POST.get('lease')
+        lease_ids = request.POST.getlist('leases')
         property_id = request.POST.get('property')
         date = request.POST.get('date')
         ust = int(request.POST.get('ust', 0))
@@ -1163,7 +1163,7 @@ def add_income_profile(request):
         frequency = request.POST.get('frequency')
         account_name = request.POST.get('account_name')
 
-        lease = get_object_or_404(Lease, id=lease_id)
+        leases = Lease.objects.filter(id__in=lease_ids)
         property_obj = get_object_or_404(Property, id=property_id)
 
         try:
@@ -1192,29 +1192,17 @@ def add_income_profile(request):
                     split_amount = Decimal("0.00")
 
                 if split_amount > 0:
-                    split_map[tx_type] = float(split_amount)  # Store as float for JSON serializability
+                    split_map[tx_type] = float(split_amount)
                     split_total += split_amount
 
             remainder = total_amount - split_total
 
-            # Add remainder to account balance if requested
             if remainder > 0 and apply_remainder:
                 split_map["account_balance"] = float(remainder)
 
-                # Update the tenant's balance
-                if lease.tenants.exists():
-                    tenant = lease.tenants.first()
-                    tenant.balance += remainder
-                    tenant.save()
-
-                messages.info(request, f"Restbetrag von €{remainder:.2f} wurde dem Saldo des Mieters gutgeschrieben.")
-            elif remainder > 0:
-                messages.info(request, f"Restbetrag von €{remainder:.2f} wurde nicht zugewiesen.")
-
-            IncomeProfile.objects.create(
-                lease=lease,
+            income_profile = IncomeProfile.objects.create(
                 property=property_obj,
-                transaction_type=None,  # Since this is a split, no single type applies
+                transaction_type=None,
                 amount=total_amount,
                 date=date,
                 recurring=recurring,
@@ -1224,10 +1212,21 @@ def add_income_profile(request):
                 split_details=split_map
             )
 
+            income_profile.leases.set(leases)
+
+            # Now apply remainder AFTER leases are saved
+            if remainder > 0 and apply_remainder:
+                lease = leases.first()
+                if lease and lease.tenants.exists():
+                    tenant = lease.tenants.first()
+                    tenant.balance += remainder
+                    tenant.save()
+                    messages.info(request, f"Restbetrag von €{remainder:.2f} wurde dem Saldo des Mieters gutgeschrieben.")
+            elif remainder > 0:
+                messages.info(request, f"Restbetrag von €{remainder:.2f} wurde nicht zugewiesen.")
+
         else:
-            # Standard single entry
-            IncomeProfile.objects.create(
-                lease=lease,
+            income_profile = IncomeProfile.objects.create(
                 property=property_obj,
                 transaction_type=request.POST.get('transaction_type'),
                 amount=total_amount,
@@ -1236,12 +1235,22 @@ def add_income_profile(request):
                 frequency=frequency,
                 account_name=account_name,
                 ust=ust,
-                split_details=None  # Not a split
+                split_details=None
             )
+            income_profile.leases.set(leases)
 
         return redirect(f"{reverse('property_detail', args=[property_obj.id])}?tab=mapping_tab")
 
     return redirect('dashboard')
+
+from django.http import JsonResponse
+from .models import Lease
+
+def matching_leases(request):
+    account_name = request.GET.get('account_name', '')
+    leases = Lease.objects.filter(account_names__icontains=account_name)
+    lease_ids = list(leases.values_list('id', flat=True))
+    return JsonResponse({'lease_ids': lease_ids})
 
 
 # Edit Income Profile
@@ -1361,6 +1370,7 @@ def lease_profiles(request, lease_id):
         })
     return JsonResponse({
         "lease_id": lease.id,
+         "unit_name": lease.unit.unit_name if lease.unit else None,
         "incomes": income_data
     })
 

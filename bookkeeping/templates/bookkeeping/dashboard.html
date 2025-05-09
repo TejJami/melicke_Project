@@ -179,6 +179,15 @@
         const dateInput = document.getElementById('date_income');
         const modal = document.getElementById('add_income_modal_2');
 
+        fetch(`/api/matching-leases/?account_name=${encodeURIComponent(accountName)}`)
+        .then(response => response.json())
+        .then(data => {
+            const leaseSelect = document.getElementById('lease_add_income_profile');
+            for (const option of leaseSelect.options) {
+                option.selected = data.lease_ids.includes(parseInt(option.value));
+            }
+        });
+
         if (modal) {
             modal.showModal(); // Show the modal
             if (input) {
@@ -223,4 +232,10 @@
         }
     }
 
+</script>
+<script>
+  new TomSelect("#leases_multi", {
+    plugins: ['remove_button'],
+    maxItems: null
+  });
 </script>

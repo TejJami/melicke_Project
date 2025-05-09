@@ -118,9 +118,9 @@
 <!-- Tenant Table -->
 <div class="overflow-x-auto">
 
-    <form method="get" class="flex items-center gap-4 mb-4">
-        <select name="property" class="select select-bordered">
-          <option value="">Alle Objekte</option>
+    <form method="get" class="flex flex-wrap items-center gap-4 mb-4">
+        <!-- Property Multi-Select -->
+        <select name="property" id="propertyFilter" multiple class="w-64">
           {% for prop in properties %}
             <option value="{{ prop.id }}" {% if prop.id|stringformat:"s" == selected_property_id %}selected{% endif %}>
               {{ prop.name }}
@@ -128,13 +128,19 @@
           {% endfor %}
         </select>
       
+        <!-- Filter Button -->
         <button class="btn btn-sm btn-outline" type="submit">Filtern</button>
-        <!-- pin sollstellung to righ corner in the form-->
-        <label class="label cursor-pointer flex items-center gap-2 ml-auto">
-            <input type="checkbox" id="toggleLeaseDetails" class="toggle toggle-primary">
-            <span class="font-semibold">Sollstellung</span>
+      
+        <!-- Spacer pushes toggle to the right -->
+        <div class="flex-grow"></div>
+      
+        <!-- Sollstellung Toggle -->
+        <label class="label cursor-pointer flex items-center gap-2">
+          <input type="checkbox" id="toggleLeaseDetails" class="toggle toggle-primary">
+          <span class="font-semibold">Sollstellung</span>
         </label>
       </form>
+      
       
 
     <table class="table w-full text-left bg-base-100 text-base-content">
@@ -451,6 +457,17 @@ function openDeleteTenantModal(tenantId, tenantName) {
     // Listen for theme changes
     document.addEventListener("custom.layout-changed", updateTooltipTheme);
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+      new TomSelect("#propertyFilter", {
+        plugins: ['remove_button'],
+        placeholder: "Objekte auswählen...",
+        maxItems: null,
+        persist: false
+      });
+    });
+    </script>
+    
 
 <!-- Tooltip Box -->
 <div id="lease-tooltip" class="fixed hidden bg-gray-800 text-white text-xs p-2 rounded-lg shadow-md z-50"></div>

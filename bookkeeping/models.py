@@ -201,7 +201,7 @@ class Lease(models.Model):
     ibans = ArrayField(models.CharField(max_length=34), blank=True, default=list)
 
     def __str__(self):
-        return f"Lease: {self.property.name} - {self.unit.unit_name}"
+        return f"Lease: {self.property.name} - {self.unit.unit_name} - {self.tenants.first().name if self.tenants.exists() else 'No Tenant'}"
 
 # Model to represent expense categories
 class ExpenseProfile(models.Model):
@@ -275,9 +275,10 @@ class IncomeProfile(models.Model):
     property = models.ForeignKey(
         Property, related_name='income_profiles', on_delete=models.CASCADE, null=True, blank=True
     )
-    lease = models.ForeignKey(
-        Lease, related_name='income_profiles', on_delete=models.CASCADE, null=True, blank=True
-    )
+    # lease = models.ForeignKey(
+    #     Lease, related_name='income_profiles', on_delete=models.CASCADE, null=True, blank=True
+    # )
+    leases = models.ManyToManyField(Lease, related_name='income_profiles', blank=True)
     # profile_name = models.CharField(max_length=255)
     transaction_type = models.CharField(
         max_length=30, choices=TRANSACTION_TYPES, default='rent' , null=True, blank=True
@@ -305,8 +306,6 @@ class IncomeProfile(models.Model):
         help_text="Optional: define exact split for this profile, e.g. {'rent': 1500, 'bk_advance_payments': 250, 'security_deposit': 250}"
     )
     def __str__(self):
-        if self.lease:
-            return f" ({self.lease.property.name} - {self.lease.unit.unit_name})"
-        elif self.property:
-            return f"({self.property.name})"
-        return self.profile_name
+        if self.property:
+            return f"({self.property.name} - {self.account_name})"
+        return self.profile_name if hasattr(self, 'profile_name') else "Income Profile"

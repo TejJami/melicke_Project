@@ -113,13 +113,13 @@
     <div class="overflow-x-auto h-96 mb-10">
         <h2 class="text-xl font-light mb-3">Mietverträge für {{ property.name }}</h2>
         <div class="mb-4 flex items-center gap-2">
-            <select id="tenantFilter" class="select select-bordered w-64" onchange="filterLeasesByTenant()">
-                <option value="">Alle Mieter</option>
-                {% for tenant in tenants %}
-                    <option value="{{ tenant.name }}">{{ tenant.name }}</option>
-                {% endfor %}
+            <select id="tenantFilter" multiple class="w-64" placeholder="Mieter auswählen...">
+              {% for tenant in tenants %}
+                <option value="{{ tenant.name }}">{{ tenant.name }}</option>
+              {% endfor %}
             </select>
-        </div>        
+          </div>
+           
         <table id="leaseTable" class="table w-3/5 text-left bg-base-100 text-base-content">
 
             <thead>
@@ -299,3 +299,14 @@
         });
     }
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+      new TomSelect("#tenantFilter", {
+        plugins: ['remove_button'],
+        placeholder: "Mieter auswählen...",
+        maxItems: null,
+        onChange: filterLeasesByTenant
+      });
+    });
+    </script>
+    

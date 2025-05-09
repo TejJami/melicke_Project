@@ -159,7 +159,7 @@ def process_earmarked_transaction(sender, instance, created, **kwargs):
                 ParsedTransaction.objects.create(
                     date=instance.date,
                     account_name=instance.account_name,
-                    booking_no=instance.booking_no,
+                    booking_no=txn.booking_no,
                     transaction_type=income_profile.transaction_type,
                     related_property=instance.property,
                     unit_name=income_profile.lease.unit.unit_name if income_profile.lease and income_profile.lease.unit else None,
@@ -216,77 +216,129 @@ def match_earmarked_transactions_for_expense(sender, instance, created, **kwargs
                 logger.error(f"🚨 Error processing EarmarkedTransaction {txn.id} → ExpenseProfile {instance.id}: {e}")
                 print(f"[DEBUG] Exception occurred: {e}")
 
-@receiver(post_save, sender=IncomeProfile)
-def match_earmarked_transactions_for_income(sender, instance, created, **kwargs):
-    if not created:
+from django.db.models.signals import m2m_changed
+
+
+logger = logging.getLogger(__name__)
+
+@receiver(m2m_changed, sender=IncomeProfile.leases.through)
+def handle_incomeprofile_leases_changed(sender, instance, action, **kwargs):
+    if action != 'post_add':
         return
 
-    logger.info(f"Checking existing EarmarkedTransactions for new IncomeProfile {instance.id}")
+    logger.info(f"✅ Triggered m2m_changed for IncomeProfile ID {instance.id}")
+    print(f"[DEBUG] IncomeProfile #{instance.id} triggered post_add with leases: {[lease.id for lease in instance.leases.all()]}")
+
     earmarked_transactions = EarmarkedTransaction.objects.filter(
         account_name=instance.account_name,
-        property=instance.property
+        property=instance.property,
+        amount=float(instance.amount or 0)
     )
+
+    print(f"[DEBUG] Found {earmarked_transactions.count()} earmarked txns for account '{instance.account_name}' and property ID {instance.property.id}")
 
     for txn in earmarked_transactions:
         try:
+            print(f"[DEBUG] Processing EarmarkedTransaction #{txn.id} with amount €{txn.amount}")
+
             if instance.split_details:
+                print("[DEBUG] Handling SPLIT income profile...")
                 split_details = instance.split_details
-                split_total = sum(Decimal(str(v)) for k, v in split_details.items() if k != "account_balance")
                 full_total = sum(Decimal(str(v)) for v in split_details.values())
+                valid_keys = [k for k in split_details if not k.startswith("account_balance")]
+                print(f"[DEBUG] Valid split keys: {valid_keys}")
+                print(f"[DEBUG] Total from split details: {full_total}, Expected: {txn.amount}")
 
                 if abs(Decimal(str(txn.amount)) - full_total) < Decimal("0.01"):
-                    suffixes = generate_split_booking_nos(txn.booking_no, len([k for k in split_details if k != "account_balance"]))
+                    suffixes = generate_split_booking_nos(txn.booking_no, len(valid_keys))
+                    lease_map = {str(lease.id): lease for lease in instance.leases.all()}
+                    print(f"[DEBUG] Lease map: {lease_map}")
                     i = 0
-                    for tx_type, amt in split_details.items():
-                        if tx_type == "account_balance":
-                            continue
-                        ParsedTransaction.objects.create(
-                            date=txn.date,
-                            account_name=txn.account_name,
-                            booking_no=suffixes[i],
-                            transaction_type=tx_type,
-                            related_property=txn.property,
-                            unit_name=instance.lease.unit.unit_name if instance.lease and instance.lease.unit else None,
-                            ust_type=instance.ust,
-                            betrag_brutto=amt,
-                            is_income=txn.is_income,
-                            tenant=instance.lease.tenants.first().name if instance.lease and instance.lease.tenants.exists() else None,
-                        )
-                        i += 1
 
-                    # Update balance from 'account_balance' remainder
+                    for key in valid_keys:
+                        try:
+                            if "__" not in key:
+                                print(f"[WARNING] Invalid key format: {key}")
+                                continue
+
+                            tx_type, lease_id = key.split("__", 1)
+                            lease = lease_map.get(lease_id)
+                            print(f"[DEBUG] Parsed key '{key}' into tx_type='{tx_type}', lease_id={lease_id}")
+
+                            if not lease:
+                                logger.warning(f"No lease found for lease_id={lease_id}")
+                                continue
+
+                            amount = Decimal(str(split_details[key]))
+                            print(f"[DEBUG] Creating ParsedTransaction for {tx_type}, Lease #{lease.id}, Amount €{amount}")
+
+                            ParsedTransaction.objects.create(
+                                date=txn.date,
+                                account_name=txn.account_name,
+                                booking_no=suffixes[i],
+                                transaction_type=tx_type,
+                                related_property=txn.property,
+                                unit_name=lease.unit.unit_name if lease.unit else None,
+                                ust_type=instance.ust,
+                                betrag_brutto=amount,
+                                is_income=txn.is_income,
+                                tenant=lease.tenants.first().name if lease.tenants.exists() else None
+                            )
+                            i += 1
+                        except Exception as split_err:
+                            logger.error(f"❌ Split handling error: {split_err}")
+                            print(f"[ERROR] Exception during split: {split_err}")
+
+                    # Handle remainder
                     remainder = Decimal(str(split_details.get("account_balance", 0)))
-                    if remainder > 0 and instance.lease and instance.lease.tenants.exists():
-                        tenant = instance.lease.tenants.first()
-                        tenant.balance += remainder
-                        tenant.save()
-
+                    print(f"[DEBUG] Remainder to apply: €{remainder}")
+                    if remainder > 0:
+                        for lease in sorted(instance.leases.all(), key=lambda l: l.id):
+                            if lease.tenants.exists():
+                                tenant = lease.tenants.first()
+                                tenant.balance += remainder
+                                tenant.save()
+                                logger.info(f"✅ Applied €{remainder} to tenant {tenant.name}")
+                                print(f"[DEBUG] Remainder applied to tenant: {tenant.name}")
+                                break
                     txn.delete()
+                    print(f"[DEBUG] Deleted matched EarmarkedTransaction #{txn.id}")
+
                 else:
                     txn.flagged_for_review = True
                     txn.review_note = f"Split mismatch: expected {txn.amount}, got {full_total}"
                     txn.save()
+                    print(f"[WARNING] Split mismatch on txn #{txn.id}, flagged for review")
+
             else:
-                _, matched_profile = find_matching_profile(txn.account_name, txn.amount, txn.property)
-                if matched_profile and matched_profile.id == instance.id:
+                # Handle non-split case
+                print("[DEBUG] Handling NON-SPLIT income profile...")
+                lease = instance.leases.first()
+                if lease:
                     ParsedTransaction.objects.create(
                         date=txn.date,
                         account_name=txn.account_name,
                         booking_no=txn.booking_no,
                         transaction_type=instance.transaction_type,
                         related_property=txn.property,
-                        unit_name=instance.lease.unit.unit_name if instance.lease and instance.lease.unit else None,
+                        unit_name=lease.unit.unit_name if lease.unit else None,
                         ust_type=instance.ust,
                         betrag_brutto=txn.amount,
                         is_income=txn.is_income,
-                        tenant=instance.lease.tenants.first().name if instance.lease and instance.lease.tenants.exists() else None,
+                        tenant=lease.tenants.first().name if lease.tenants.exists() else None
                     )
                     txn.delete()
+                    print(f"[DEBUG] ParsedTransaction created and txn #{txn.id} deleted.")
+                else:
+                    logger.warning(f"IncomeProfile {instance.id} has no leases for fallback transaction.")
+                    print(f"[WARNING] No lease found for non-split income profile #{instance.id}")
 
         except Exception as e:
-            logger.error(f"Error linking EarmarkedTransaction {txn.id} to IncomeProfile {instance.id}: {e}")
-            print(f"[DEBUG] Exception occurred: {e}")   
-
+            logger.error(f"🚨 Error processing EarmarkedTransaction {txn.id} for IncomeProfile {instance.id}: {e}")
+            txn.flagged_for_review = True
+            txn.review_note = f"Processing error: {e}"
+            txn.save()
+            print(f"[ERROR] Exception on txn #{txn.id}: {e}")
 
 @receiver(post_save, sender=Lease)
 def create_income_profiles_for_lease(sender, instance, created, **kwargs):

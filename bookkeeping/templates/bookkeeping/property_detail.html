@@ -604,15 +604,15 @@
           </div>
 
 
-          <div class="mb-4">
-            <label id="lease_add_income_profile" class="label"><span class="label-text">Mietvertrag *</span></label>
-            <select name="lease" id="lease_add_income_profile" class="select select-bordered w-full" required>
-                <option value="" disabled selected>Mietvertrag auswählen</option>
+          <div class="mb-4 w-full">
+            <label class="label"><span class="label-text">Mietvertrag *</span></label>
+            <select id="leases_multi" name="leases" multiple required class="w-full">
                 {% for lease in property.leases.all %}
                 <option value="{{ lease.id }}">{{ lease }}</option>
                 {% endfor %}
             </select>
-            </div>
+        </div>
+        
 
             <div class="mb-4">
                 <label class="label"><span class="label-text">Betrag *</span></label>
@@ -637,7 +637,7 @@
             
             <div class="mt-3">
                 <label class="cursor-pointer flex items-center gap-2">
-                <input type="checkbox" id="apply_remainder_to_balance" class="checkbox">
+                <input type="checkbox" id="apply_remainder_to_balance" class="checkbox" checked>
                 <span class="label-text">Restbetrag dem Kontostand des Mieters gutschreiben</span>
                 </label>
             </div>
@@ -1061,194 +1061,207 @@ document.addEventListener("DOMContentLoaded", function () {
             navigator.sendBeacon("{% url 'unlock_property' property.id %}", '');
         });
     </script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-          const splitCheckbox = document.getElementById("split_income_checkbox");
-          const splitSection = document.getElementById("split_income_section");
-          const leaseSelect = document.querySelector("select[id='lease_add_income_profile']");
-          console.log("Lease Select:", leaseSelect);
-          const amountInput = document.getElementById("amount_income");
-          const splitContainer = document.getElementById("split_items_container");
-          const splitTotalDisplay = document.getElementById("split_total");
-          const splitRemainingDisplay = document.getElementById("split_remaining");
-        
-          let currentSplitData = {};
-        
-          // Toggle split section
-          console.log("Split Checkbox:", splitCheckbox);
-          splitCheckbox.addEventListener("change", () => {
-            const leaseSelected = leaseSelect.value && leaseSelect.value !== "";
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const splitCheckbox = document.getElementById("split_income_checkbox");
+      const splitSection = document.getElementById("split_income_section");
+      const leaseSelect = document.querySelector("select[id='leases_multi']");
+      const amountInput = document.getElementById("amount_income");
+      const splitContainer = document.getElementById("split_items_container");
+      const splitTotalDisplay = document.getElementById("split_total");
+      const splitRemainingDisplay = document.getElementById("split_remaining");
+    
+      let currentSplitData = [];
+    
+      splitCheckbox.addEventListener("change", () => {
+        const selectedLeaseIds = Array.from(leaseSelect.selectedOptions).map(opt => opt.value);
+        const leaseSelected = selectedLeaseIds.length > 0;
+    
+        if (!leaseSelected) {
+          splitSection.classList.add("hidden");
+          splitContainer.innerHTML = "<p class='text-warning'>⚠️ Bitte zuerst einen Mietvertrag auswählen.</p>";
+          splitCheckbox.checked = false;
+          return;
+        }
+    
+        if (splitCheckbox.checked) {
+          splitSection.classList.remove("hidden");
+          loadLeaseIncomes(selectedLeaseIds);
+        } else {
+          splitSection.classList.add("hidden");
+        }
+      });
+    
+      document.querySelector("button[onclick='add_income_modal_2.close()']").addEventListener("click", () => {
+        splitCheckbox.checked = false;
+        splitSection.classList.add("hidden");
+        splitContainer.innerHTML = "<p class='text-gray-500'>Bitte wählen Sie einen Mietvertrag aus...</p>";
+        splitTotalDisplay.textContent = "€0.00";
+        splitRemainingDisplay.textContent = "€0.00";
+      });
+    
+      leaseSelect.addEventListener("change", () => {
+        const selectedLeaseIds = Array.from(leaseSelect.selectedOptions).map(opt => opt.value);
+        const leaseSelected = selectedLeaseIds.length > 0;
+    
+        splitCheckbox.disabled = selectedLeaseIds.length === 0;
+        if (selectedLeaseIds.length > 1) {
+          splitCheckbox.disabled = false;
+          splitCheckbox.checked = true;
+          splitSection.classList.remove("hidden");
+          loadLeaseIncomes(selectedLeaseIds);
+        }
+    
+        if (splitCheckbox.checked && leaseSelected) {
+          loadLeaseIncomes(selectedLeaseIds);
+        }
+    
+        if (!leaseSelected) {
+          splitCheckbox.checked = false;
+          splitSection.classList.add("hidden");
+          splitContainer.innerHTML = "<p class='text-gray-500'>Bitte wählen Sie einen Mietvertrag aus...</p>";
+          splitTotalDisplay.textContent = "€0.00";
+          splitRemainingDisplay.textContent = "€0.00";
+        }
+      });
+    
+      amountInput.addEventListener("input", recalculateRemaining);
+    
+      function loadLeaseIncomes(leaseIds) {
+  splitContainer.innerHTML = "";
+  currentSplitData = [];
 
-            if (!leaseSelected) {
-                splitSection.classList.add("hidden");
-                splitContainer.innerHTML = "<p class='text-warning'>⚠️ Bitte zuerst einen Mietvertrag auswählen.</p>";
-                splitCheckbox.checked = false;
-                return;
-            }
+  const fetches = leaseIds.map(id =>
+    fetch(`/lease_profiles/${id}/`).then(res => res.json().then(data => ({ id, ...data })))
+  );
 
-            if (splitCheckbox.checked) {
-                splitSection.classList.remove("hidden");
-                loadLeaseIncomes(leaseSelect.value);
-            } else {
-                splitSection.classList.add("hidden");
-            }
-            });
+  Promise.all(fetches)
+    .then(results => {
+      splitContainer.innerHTML = "";
 
+      results.forEach(data => {
+        const leaseId = data.lease_id;
+        const unitLabel = data.unit_name || `Lease ${leaseId}`;
+        const incomes = data.incomes || [];
 
-            document.querySelector("button[onclick='add_income_modal_2.close()']").addEventListener("click", () => {
-                splitCheckbox.checked = false;
-                splitSection.classList.add("hidden");
-                splitContainer.innerHTML = "<p class='text-gray-500'>Bitte wählen Sie einen Mietvertrag aus...</p>";
-                splitTotalDisplay.textContent = "€0.00";
-                splitRemainingDisplay.textContent = "€0.00";
-                });
+        // Add a heading for the lease group
+        const leaseHeader = document.createElement("div");
+        leaseHeader.className = "font-semibold mt-2 mb-1";
+        leaseHeader.textContent = unitLabel;
+        splitContainer.appendChild(leaseHeader);
 
-        console.log("Lease Select:", leaseSelect);
-        //console log lease select updates
-        console.log("Lease Select:", leaseSelect.value);
-        console.log("Lease Select:", leaseSelect.options[leaseSelect.selectedIndex].text);
-        
-          // Load incomes when lease is selected
-        leaseSelect.addEventListener("change", () => {
-            const leaseSelected = leaseSelect.value && leaseSelect.value !== "";
+        incomes.forEach(income => {
+          const type = income.type;
+          const label = income.label;
+          const amount = parseFloat(income.amount);
 
-            // Enable/disable the split checkbox
-            splitCheckbox.disabled = !leaseSelected;
+          const uniqueKey = `${type}__${leaseId}`;
+          currentSplitData.push({ type, amount, leaseId });
 
-            // Reset if lease changed while split was active
-            if (splitCheckbox.checked && leaseSelected) {
-                loadLeaseIncomes(leaseSelect.value);
-            }
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.classList.add("checkbox");
+          checkbox.dataset.amount = amount;
+          checkbox.dataset.type = type;
+          checkbox.dataset.key = uniqueKey;
+          checkbox.addEventListener("change", recalculateRemaining);
 
-            // If checkbox was checked, but no lease now → reset
-            if (!leaseSelected) {
-                splitCheckbox.checked = false;
-                splitSection.classList.add("hidden");
-                splitContainer.innerHTML = "<p class='text-gray-500'>Bitte wählen Sie einen Mietvertrag aus...</p>";
-                splitTotalDisplay.textContent = "€0.00";
-                splitRemainingDisplay.textContent = "€0.00";
-            }
-            });
+          const container = document.createElement("label");
+          container.className = "flex items-center gap-2 ml-2"; // Indent
+          container.appendChild(checkbox);
+          container.appendChild(document.createTextNode(`${label} (€${amount.toFixed(2)})`));
 
-        
-          // Recalculate when amount changes
-          amountInput.addEventListener("input", recalculateRemaining);
-        
-          function loadLeaseIncomes(leaseId) {
-            fetch(`/lease_profiles/${leaseId}/`)
-                .then(res => res.json())
-                .then(data => {
-                const incomes = data.incomes;
-                console.log("Incomes:", incomes);
-
-                if (!incomes || incomes.length === 0) {
-                    splitContainer.innerHTML = "<p class='text-gray-500'>Keine Einkommensprofile gefunden.</p>";
-                    return;
-                }
-
-                currentSplitData = {};
-                splitContainer.innerHTML = "";
-
-                incomes.forEach(income => {
-                    const type = income.type;
-                    const label = income.label;
-                    const amount = parseFloat(income.amount);
-
-                    currentSplitData[type] = amount;
-
-                    const checkbox = document.createElement("input");
-                    checkbox.type = "checkbox";
-                    checkbox.classList.add("checkbox");
-                    checkbox.dataset.amount = amount;
-                    checkbox.dataset.type = type;
-                    checkbox.addEventListener("change", recalculateRemaining);
-
-                    const container = document.createElement("label");
-                    container.className = "flex items-center gap-2";
-                    container.appendChild(checkbox);
-                    container.appendChild(document.createTextNode(`${label} (€${amount.toFixed(2)})`));
-
-                    splitContainer.appendChild(container);
-                });
-
-                recalculateRemaining();
-                })
-                .catch(error => {
-                console.error("Fehler beim Laden der Einkommen:", error);
-                splitContainer.innerHTML = "<p class='text-red-500'>Fehler beim Abrufen der Einkommensprofile.</p>";
-                });
-            }
-
-          function recalculateRemaining() {
-            const selectedAmount = parseFloat(amountInput.value) || 0;
-            const checkboxes = splitContainer.querySelectorAll("input[type='checkbox']");
-            let splitTotal = 0;
-        
-            checkboxes.forEach(cb => {
-              if (cb.checked) {
-                splitTotal += parseFloat(cb.dataset.amount);
-              }
-            });
-        
-            const remaining = selectedAmount - splitTotal;
-        
-            splitTotalDisplay.textContent = `€${splitTotal.toFixed(2)}`;
-            splitRemainingDisplay.textContent = `€${remaining.toFixed(2)}`;
-          }
+          splitContainer.appendChild(container);
         });
-
-        document.addEventListener("DOMContentLoaded", function () {
-  const form = document.querySelector("#add_income_modal_2 form");
-  const splitCheckbox = document.getElementById("split_income_checkbox");
-
-  form.addEventListener("submit", (e) => {
-    // Clean up old hidden inputs
-    document.querySelectorAll(".dynamic-split-hidden").forEach(el => el.remove());
-
-    if (splitCheckbox.checked) {
-      // Add hidden input to flag that split is active
-      const hiddenFlag = document.createElement("input");
-      hiddenFlag.type = "hidden";
-      hiddenFlag.name = "split_income";
-      hiddenFlag.value = "on";
-      hiddenFlag.classList.add("dynamic-split-hidden");
-      form.appendChild(hiddenFlag);
-
-      // Add each selected type and its amount
-      document.querySelectorAll("#split_items_container input[type='checkbox']:checked").forEach(cb => {
-        const type = cb.dataset.type;
-        const amount = cb.dataset.amount;
-
-        const typeInput = document.createElement("input");
-        typeInput.type = "hidden";
-        typeInput.name = "split_types[]";
-        typeInput.value = type;
-        typeInput.classList.add("dynamic-split-hidden");
-        form.appendChild(typeInput);
-
-        const amountInput = document.createElement("input");
-        amountInput.type = "hidden";
-        amountInput.name = `split_amount_${type}`;
-        amountInput.value = amount;
-        amountInput.classList.add("dynamic-split-hidden");
-        form.appendChild(amountInput);
       });
 
-      // Add remainder checkbox value if selected
-      if (document.getElementById("apply_remainder_to_balance").checked) {
-        const remainderInput = document.createElement("input");
-        remainderInput.type = "hidden";
-        remainderInput.name = "apply_remainder";
-        remainderInput.value = "on";
-        remainderInput.classList.add("dynamic-split-hidden");
-        form.appendChild(remainderInput);
-      }
-    }
-  });
-});
+      recalculateRemaining();
+    })
+    .catch(error => {
+      console.error("Fehler beim Laden der Einkommen:", error);
+      splitContainer.innerHTML = "<p class='text-red-500'>Fehler beim Abrufen der Einkommensprofile.</p>";
+    });
+}
 
-        </script>
-        
+      function recalculateRemaining() {
+        const selectedAmount = parseFloat(amountInput.value) || 0;
+        const checkboxes = splitContainer.querySelectorAll("input[type='checkbox']");
+        let splitTotal = 0;
+    
+        checkboxes.forEach(cb => {
+          if (cb.checked) {
+            splitTotal += parseFloat(cb.dataset.amount);
+          }
+        });
+    
+        const remaining = selectedAmount - splitTotal;
+    
+        splitTotalDisplay.textContent = `€${splitTotal.toFixed(2)}`;
+        splitRemainingDisplay.textContent = `€${remaining.toFixed(2)}`;
+      }
+    });
+    
+    // Submit handler for dynamic split data
+    document.addEventListener("DOMContentLoaded", function () {
+      const form = document.querySelector("#add_income_modal_2 form");
+      const splitCheckbox = document.getElementById("split_income_checkbox");
+    
+      form.addEventListener("submit", (e) => {
+        document.querySelectorAll(".dynamic-split-hidden").forEach(el => el.remove());
+    
+        if (splitCheckbox.checked) {
+          const hiddenFlag = document.createElement("input");
+          hiddenFlag.type = "hidden";
+          hiddenFlag.name = "split_income";
+          hiddenFlag.value = "on";
+          hiddenFlag.classList.add("dynamic-split-hidden");
+          form.appendChild(hiddenFlag);
+    
+          document.querySelectorAll("#split_items_container input[type='checkbox']:checked").forEach(cb => {
+            const type = cb.dataset.type;
+            const amount = cb.dataset.amount;
+            const key = cb.dataset.key;  // type_leaseId
+    
+            const typeInput = document.createElement("input");
+            typeInput.type = "hidden";
+            typeInput.name = "split_types[]";
+            typeInput.value = key;
+            typeInput.classList.add("dynamic-split-hidden");
+            form.appendChild(typeInput);
+    
+            const amountInput = document.createElement("input");
+            amountInput.type = "hidden";
+            amountInput.name = `split_amount_${key}`;
+            amountInput.value = amount;
+            amountInput.classList.add("dynamic-split-hidden");
+            form.appendChild(amountInput);
+          });
+    
+          if (document.getElementById("apply_remainder_to_balance").checked) {
+            const remainderInput = document.createElement("input");
+            remainderInput.type = "hidden";
+            remainderInput.name = "apply_remainder";
+            remainderInput.value = "on";
+            remainderInput.classList.add("dynamic-split-hidden");
+            form.appendChild(remainderInput);
+          }
+        }
+      });
+    });
+    </script>
+    
+    <script>
+            document.addEventListener("DOMContentLoaded", function () {
+              new TomSelect("#leases_multi", {
+                plugins: ['remove_button'],
+                maxItems: null,
+                create: false,
+                searchField: 'text',
+                placeholder: "Leases suchen...",
+              });
+            });
+      </script>
+          
     
 
     
