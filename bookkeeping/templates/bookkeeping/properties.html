@@ -99,7 +99,7 @@
             </div>
             <div class="mb-4">
                 <label class="label"><span class="label-text">Vermieter</span></label>
-                <select name="landlords" class="select select-bordered w-full" multiple>
+                <select name="landlords" id="landlordSelect" class="select select-bordered w-full" multiple>
                     {% for landlord in landlords %}
                     <option value="{{ landlord.id }}">{{ landlord.name }}-{{ landlord.object}}</option>
                     {% endfor %}
@@ -253,4 +253,26 @@
     localStorage.removeItem("temp_username");
     localStorage.removeItem("temp_password");
 </script>
+<script>
+    // without border
+document.addEventListener("DOMContentLoaded", function () {
+    new TomSelect("#landlordSelect", {
+        plugins: ['remove_button'],
+        placeholder: 'Vermieter auswählen...',
+        persist: false,
+        maxItems: null,
+
+
+    });
+});
+</script>
+<style>
+#landlordSelect + .ts-wrapper .ts-control {
+    border: none !important;
+    box-shadow: none !important;
+    background-color: transparent;
+    padding-left: 0; /* optional: align text if needed */
+}
+</style>
+
 {% endblock %}

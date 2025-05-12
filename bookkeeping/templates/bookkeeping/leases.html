@@ -309,4 +309,22 @@
       });
     });
     </script>
-    
+    <script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Tenant Select
+    new TomSelect("#tenants", {
+        plugins: ['remove_button'],
+        placeholder: 'Mieter auswählen...',
+        persist: false,
+        maxItems: null
+    });
+});
+</script>
+<style>
+#tenants + .ts-wrapper .ts-control {
+    border: none !important;
+    box-shadow: none !important;
+    background-color: transparent;
+}
+</style>
+
