@@ -40,7 +40,9 @@
       <!-- Right Section: Property Details -->
       <div class="card card-dash bg-base-100  bg-opacity-70 shadow-md p-5 rounded-md">
         <!-- Badge Positioned to Top-Right -->
-        <p class="badge badge-accent absolute top-2 right-2">
+        <!-- Property type -->
+        <p class="property-details">
+            <span class="font-semibold">Gebäudetyp:</span>
             {% if property.property_type == "residential" %}
                 Wohngebäude
             {% elif property.property_type == "commercial" %}
@@ -51,6 +53,7 @@
                 {{ property.property_type }}
             {% endif %}
         </p>
+
         <p class="property-details">
             <span class="font-semibold">Teilweise-Steuersatz:</span>
                 {{ property.partial_tax_rate }} %
@@ -64,6 +67,7 @@
                 (Manuell)           
                 {% endif %}
         </p>
+
         <p>
           <span class="font-semibold">Vermieter:</span>
           {% for landlord in property_landlords %}

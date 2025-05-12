@@ -4540,6 +4540,14 @@ details.collapse summary::-webkit-details-marker {
   top: 0.5rem;
 }
 
+.right-0\.5 {
+  right: 0.125rem;
+}
+
+.top-0\.5 {
+  top: 0.125rem;
+}
+
 .z-20 {
   z-index: 20;
 }
