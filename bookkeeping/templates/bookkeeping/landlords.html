@@ -104,19 +104,27 @@
 </dialog>
 
 <!-- Landlords Table -->
-<div class="overflow-x-auto">
-    <form method="get" class="flex items-center gap-4 mb-4">
-        <select name="property" class="select select-sm select-bordered">
-            <option value="">Alle Objekte</option>
+<div class="overflow-x-auto h-96 mb-10">
+    <form method="get" class="flex flex-wrap items-center gap-4 mb-4">
+        <select name="property" id="propertyFilter" multiple class="w-64">
             {% for prop in properties %}
-                <option value="{{ prop.id }}" {% if prop.id|stringformat:"s" == selected_property_id %}selected{% endif %}>
-                    {{ prop.name }}
-                </option>
+            <option value="{{ prop.id }}" {% if prop.id|stringformat:"s" == selected_property_id %}selected{% endif %}>
+                {{ prop.name }}
+            </option>
             {% endfor %}
         </select>
-    
+
         <button class="btn btn-sm btn-outline" type="submit">Filtern</button>
-    </form>
+
+        <div class="flex-grow"></div>
+
+        <!-- Optional toggle (match tenants.html behavior) -->
+        <label class="label cursor-pointer flex items-center gap-2">
+            <input type="checkbox" id="toggleDetails" class="toggle toggle-primary">
+            <span class="font-semibold">Details anzeigen</span>
+        </label>
+        </form>
+
     
     <table class="table w-full text-left bg-base-100 text-base-content">
         <thead>
@@ -135,11 +143,27 @@
             {% for landlord in landlords %}
             <tr>
                 <td>
-                    <span class="font-semibold">{{ landlord.name }}</span> – <span>{{ landlord.object }}</span>
+                    <a href="javascript:void(0);" 
+                    class="font-semibold text-primary hover:underline hover:text-primary-focus transition"
+                    onclick="openEditLandlordModal(
+                        '{{ landlord.id|escapejs }}', 
+                        '{{ landlord.name|escapejs }}', 
+                        '{{ landlord.phone_number|escapejs }}', 
+                        '{{ landlord.email|escapejs }}', 
+                        '{{ landlord.address|escapejs }}', 
+                        '{{ landlord.iban|escapejs }}', 
+                        '{{ landlord.bic|escapejs }}', 
+                        '{{ landlord.tax_id|escapejs }}', 
+                        '{{ landlord.object|escapejs }}', 
+                        '{{ landlord.notes|escapejs }}'
+                    )">
+                        {{ landlord.name }}
+                    </a>
+                    <span class="text-sm text-gray-500">– {{ landlord.object }}</span>
                 </td>
                 <td>
                     {% for property in landlord.owned_properties.all %}
-                        <a href="{% url 'property_detail' property.id %}" class="text-blue-500 hover:underline">
+                        <a href="{% url 'property_detail' property.id %}" class="font-semibold text-primary hover:underline hover:text-primary-focus transition">
                             {{ property.name }}
                         </a>{% if not forloop.last %}, {% endif %}
                     {% empty %}
@@ -153,7 +177,7 @@
                 <td>{{ landlord.bic }}</td>
                 <td class="flex items-center gap-2">
                     <!-- Edit button -->
-                    <button 
+                    <!-- <button 
                         class="btn btn-circle btn-outline btn-warning btn-sm" 
                         onclick="openEditLandlordModal(
                             '{{ landlord.id|escapejs }}', 
@@ -169,8 +193,7 @@
                         )"
                         aria-label="Edit Landlord">
                         ✏️
-                    </button>
-            
+                    </button> -->
                     <!-- Delete button -->
                     <button 
                         type="button" 
@@ -302,4 +325,15 @@
 }
 
 </script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    new TomSelect("#propertyFilter", {
+      plugins: ['remove_button'],
+      placeholder: "Objekte auswählen...",
+      maxItems: null,
+      persist: false
+    });
+  });
+</script>
+
 {% endblock %}

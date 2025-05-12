@@ -87,22 +87,29 @@
 </div>
 
 <!-- Delete Property Modal -->
+<!-- Delete Property Modal -->
 <dialog id="delete_property_modal" class="modal">
   <div class="modal-box bg-base-100 text-base-content">
-      <form method="post" action="{% url 'delete_property' property.id %}">
-          {% csrf_token %}
-          <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="delete_property_modal.close()">✕</button>
-          <h1 class="text-lg font-bold mb-4">Gebäude löschen</h1>
-          <p class="mb-4">"Sind Sie sicher, dass Sie <strong>{{ property.name }}</strong> löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
-            </p>
-          
-          <div class="modal-action">
-              <button type="submit" class="btn btn-outline btn-error">Löschen</button>
-              <button type="button" class="btn btn-outline" onclick="delete_property_modal.close()">Abbrechen</button>
-          </div>
-      </form>
+    <form method="post" id="delete_property_form" action="{% url 'delete_property' property.id %}">
+      {% csrf_token %}
+      <button type="button" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onclick="delete_property_modal.close()">✕</button>
+      <h1 class="text-lg font-bold mb-4 text-error">Gebäude löschen</h1>
+      <p class="mb-4">
+        Sind Sie sicher, dass Sie <strong id="delete_property_name_display">{{ property.name }}</strong> löschen möchten? <br>
+        Bitte geben Sie den Namen ein, um fortzufahren.
+      </p>
+
+      <!-- Confirmation Input -->
+      <input type="text" id="confirm_property_name" class="input input-bordered w-full mb-4" placeholder="Gebäudename eingeben" required>
+
+      <div class="modal-action">
+        <button type="submit" id="confirm_delete_property_btn" class="btn btn-error" disabled>Löschen</button>
+        <button type="button" class="btn btn-outline" onclick="delete_property_modal.close()">Abbrechen</button>
+      </div>
+    </form>
   </div>
 </dialog>
+
 
 <!-- Edit Property Modal -->
 <dialog id="edit_property_modal" class="modal">
@@ -1243,5 +1250,19 @@ document.addEventListener("DOMContentLoaded", function () {
           });
         });
 </script>
-          
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const input = document.getElementById("confirm_property_name");
+  const confirmBtn = document.getElementById("confirm_delete_property_btn");
+  const expectedName = document.getElementById("delete_property_name_display").innerText.trim();
+
+  if (input && confirmBtn) {
+    input.addEventListener("input", function () {
+      confirmBtn.disabled = this.value.trim() !== expectedName;
+    });
+  }
+});
+</script>
+
 {% endblock %}

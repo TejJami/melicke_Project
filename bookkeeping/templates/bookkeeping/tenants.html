@@ -116,7 +116,7 @@
 
 
 <!-- Tenant Table -->
-<div class="overflow-x-auto">
+<div class="overflow-x-auto h-96 mb-10">
 
     <form method="get" class="flex flex-wrap items-center gap-4 mb-4">
         <!-- Property Multi-Select -->
@@ -174,7 +174,23 @@
                         {% for lease in leases %}
                             <tr>
                                 {% if forloop.first %}
-                                    <td rowspan="{{ leases|length }}">{{ tenant.name }}</td>
+                                    <td rowspan="{{ leases|length }}">
+                                        <a href="javascript:void(0);"
+                                        class="font-semibold text-primary hover:underline hover:text-primary-focus transition"
+                                        onclick="openEditTenantModal(
+                                            '{{ tenant.id }}',
+                                            '{{ tenant.name|escapejs }}',
+                                            '{{ tenant.other_account_names|default:''|escapejs }}',
+                                            '{{ tenant.phone_number|default:''|escapejs }}',
+                                            '{{ tenant.email|default:''|escapejs }}',
+                                            '{{ tenant.address|default:''|escapejs }}',
+                                            '{{ tenant.iban|default:''|escapejs }}',
+                                            '{{ tenant.bic|default:''|escapejs }}',
+                                            '{{ tenant.notes|default:''|escapejs }}'
+                                        )">
+                                            {{ tenant.name }}
+                                        </a>
+                                    </td>
                                 {% endif %}
                                 {% if forloop.first %}
                                     <td rowspan="{{ leases|length }}" class="lease-columns" style="display: none;">
@@ -204,7 +220,7 @@
             
                                 {% if forloop.first %}
                                     <td rowspan="{{ leases|length }}">
-                                        <button 
+                                        <!-- <button 
                                             class="btn btn-circle btn-outline btn-warning btn-sm mr-2" 
                                             onclick="openEditTenantModal(
                                                 '{{ tenant.id }}', 
@@ -218,7 +234,7 @@
                                                 '{{ tenant.notes|default:''|escapejs }}'
                                             )">
                                             ✏️
-                                        </button>
+                                        </button> -->
                                         <button 
                                             class="btn btn-circle btn-outline btn-error btn-sm hover:bg-error hover:text-white" 
                                             onclick="openDeleteTenantModal('{{ tenant.id }}', '{{ tenant.name|escapejs }}')">
@@ -230,8 +246,28 @@
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td>{{ tenant.name }}</td>
+                            <!-- <td>{{ tenant.name }}</td> -->
+                            <td>
+                                <a href="javascript:void(0);"
+                                class="font-semibold text-primary hover:underline hover:text-primary-focus transition"
+                                onclick="openEditTenantModal(
+                                    '{{ tenant.id }}',
+                                    '{{ tenant.name|escapejs }}',
+                                    '{{ tenant.other_account_names|default:''|escapejs }}',
+                                    '{{ tenant.phone_number|default:''|escapejs }}',
+                                    '{{ tenant.email|default:''|escapejs }}',
+                                    '{{ tenant.address|default:''|escapejs }}',
+                                    '{{ tenant.iban|default:''|escapejs }}',
+                                    '{{ tenant.bic|default:''|escapejs }}',
+                                    '{{ tenant.notes|default:''|escapejs }}'
+                                )">
+                                    {{ tenant.name }}
+                                </a>
+                            </td>
+
                             <td><span class="text-gray-500">Kein Mietvertrag</span></td>
+                            <td><span class="text-gray-500">Kein Mietvertrag</span></td>
+
             
                             <!-- Contact Columns -->
                             <td class="contact-columns">{{ tenant.phone_number }}</td>
@@ -244,11 +280,13 @@
                             <td class="lease-columns" style="display: none;">-</td>
                             <td class="lease-columns" style="display: none;">-</td>
                             <td class="lease-columns" style="display: none;">-</td>
+                            <td class="lease-columns" style="display: none;">-</td>
+
 
             
                             <!-- Actions -->
                             <td>
-                                <button 
+                                <!-- <button 
                                     class="btn btn-circle btn-outline btn-warning btn-sm mr-2" 
                                     onclick="openEditTenantModal(
                                         '{{ tenant.id }}', 
@@ -262,7 +300,7 @@
                                         '{{ tenant.notes|default:''|escapejs }}'
                                     )">
                                     ✏️
-                                </button>
+                                </button> -->
                                 <button 
                                     class="btn btn-circle btn-outline btn-error btn-sm hover:bg-error hover:text-white" 
                                     onclick="openDeleteTenantModal('{{ tenant.id }}', '{{ tenant.name|escapejs }}')">

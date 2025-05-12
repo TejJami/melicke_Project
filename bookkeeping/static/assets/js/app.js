@@ -71,11 +71,21 @@ class LayoutCustomizer {
   initLeftmenu = () => {
     const initLeftmenuHandler = () => {
       const leftbarToggle = document.querySelector("[data-action=leftbar-toggle]")
+
       leftbarToggle?.addEventListener("click", () => {
+
+        // Manual override: flip current hide state
         this.config.leftbar.hide = !this.config.leftbar.hide
+
+        // Optional: prevent resizer from overriding immediately
+        this.config.leftbar.manualOverride = true
+
+        // Update UI
         this.updateTheme()
+
       })
     }
+
 
     const initMenuResizer = () => {
       const resizeFn = () => {
