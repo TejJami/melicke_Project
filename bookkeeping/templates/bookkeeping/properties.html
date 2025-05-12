@@ -24,8 +24,6 @@
     </div>
 </div>
 
-
-
 <!-- Search Modal -->
 <dialog aria-label="Modal" class="modal" id="search_modal">
     <div class="modal-box p-0">
@@ -155,7 +153,7 @@
             </figure>
 
             <div class="card-body">
-                <h1 class="font-bold text-xl text-white">{{ property.name }}</h1>
+                <h1 class="font-bold text-xl ">{{ property.name }}</h1>
                 <p>{{ property.street }}, {{ property.city }}</p>
                 
                 <p class="text-sm text-warning mt-1 lock-status">
@@ -251,10 +249,8 @@
     // Poll every 10 seconds
     setInterval(updateLockStatus, 5000);
     </script>
-    <script>
-        localStorage.removeItem("temp_username");
-        localStorage.removeItem("temp_password");
-    </script>
-    
-    
+<script>
+    localStorage.removeItem("temp_username");
+    localStorage.removeItem("temp_password");
+</script>
 {% endblock %}

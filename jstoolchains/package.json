@@ -1,19 +1,22 @@
 {
-  "name": "jstoolchain",
+  "name": "nexus-starter-html",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
-    "tailwind-watch": "tailwindcss -i ../input.css -o ../bookkeeping/static/css/output.css --watch",
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+        "tailwind-watch": "tailwindcss -i ../input.css -o ../bookkeeping/static/css/output.css --watch",
     "tailwind-build": "tailwindcss -i ../input.css -o ../bookkeeping/static/css/output.css --minify"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
-    "tailwindcss": "^3.1.6"
-  },
-  "dependencies": {
-    "daisyui": "^2.19.0"
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.45",
+    "prettier": "^3.3.3",
+    "prettier-plugin-tailwindcss": "^0.6.6",
+    "tailwindcss": "^3.4.11",
+    "vite": "^5.4.4",
+    "vite-plugin-html-inject": "^1.1.2",
+    "daisyui": "^4.12.10"
   }
 }

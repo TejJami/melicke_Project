@@ -1,13 +1,11 @@
 {% load custom_filters %}
 <div class="card bg-transparent p-5 w-full max-w-6xl mx-auto">
 
-
     <div class="join gap-2">
         <button class="btn w-64 btn-sm btn-outline mb-5" onclick="add_income_modal_2.showModal()">+ Einnahmenregel hinzufügen</button>
         <button class="btn w-64 btn-sm btn-outline btn-error mb-5" onclick="add_expense_modal_2.showModal()">- Ausgabenregel hinzufügen</button>
     </div>
     
-
     <div class="overflow-x-auto h-96 mb-10">
         <h2 class="text-xl font-light mb-3">Mapping-Regeln für {{ property.name }}</h2>
         <table class="table w-full text-left bg-base-100 text-base-content">

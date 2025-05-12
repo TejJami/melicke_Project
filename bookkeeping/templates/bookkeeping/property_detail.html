@@ -17,27 +17,12 @@
     </div>
     {% endif %}
     
-
-
   <!-- Page Title -->
-  <div class="relative bg-cover bg-center bg-no-repeat p-5 rounded-md shadow-md mb-5 mt-2" style="background-image: url('{{ property.image.url }}');">
-
+  <div class="relative bg-cover bg-center bg-no-repeat p-5 rounded-md shadow-md mb-5 mt-2 h-36" style="background-image: url('{{ property.image.url }}');">
+    <!-- Overlay -->
+    <div class="absolute inset-0 bg-white bg-opacity-70 rounded-md"></div>
     <!-- Content Wrapper -->
     <div class="relative z-20 flex items-center justify-between">
-                        <!-- Badge Positioned to Top-Right -->
-                        <div class="absolute top-0 left-0 m-4">
-                            <div class="badge badge-outline ">
-                                {% if property.property_type == "residential" %}
-                                    Wohngebäude
-                                {% elif property.property_type == "commercial" %}
-                                    Gewerbegebäude
-                                {% elif property.property_type == "mixed-use" %}
-                                    Mischnutzung
-                                {% else %}
-                                    {{ property.property_type }}
-                                {% endif %}
-                            </div>
-                        </div>   
       <!-- Left Section: Back Button and Property Name -->
       <div class="flex items-center space-x-3">
         <!-- Back Button -->
@@ -51,12 +36,20 @@
         <h1 class="font-bold text-2xl">{{ property.name }}</h1>
             <p>{{ property.street}} , {{ property.city }} </p>      
         </div>
-
       </div>
-
       <!-- Right Section: Property Details -->
       <div class="card card-dash bg-base-100  bg-opacity-70 shadow-md p-5 rounded-md">
-        <p>
+        <!-- Badge Positioned to Top-Right -->
+        <p class="badge badge-accent absolute top-2 right-2">
+            {% if property.property_type == "residential" %}
+                Wohngebäude
+            {% elif property.property_type == "commercial" %}
+                Gewerbegebäude
+            {% elif property.property_type == "mixed-use" %}
+                Mischnutzung
+            {% else %}
+                {{ property.property_type }}
+            {% endif %}
         </p>
         <p class="property-details">
             <span class="font-semibold">Teilweise-Steuersatz:</span>
@@ -71,15 +64,6 @@
                 (Manuell)           
                 {% endif %}
         </p>
-        
-        <style>
-            .property-details {
-                word-wrap: break-word; /* Break long words */
-                white-space: normal; /* Allow text wrapping */
-                max-width: 300px; /* Adjust width as needed */
-            }
-        </style>
-        
         <p>
           <span class="font-semibold">Vermieter:</span>
           {% for landlord in property_landlords %}
@@ -91,18 +75,12 @@
   </div>
 </div>
 
-
-
 <!-- Edit Property and Delete Button Section -->
 <div class="flex gap-4 mb-5">
   <button class="btn btn-outline" onclick="edit_property_modal.showModal()">Gebäude bearbeiten</button>
-  
   <!-- Delete Button -->
   <button class="btn btn-outline btn-error" onclick="delete_property_modal.showModal()">Gebäude löschen</button>
-  
-
 </div>
-
 
 <!-- Delete Property Modal -->
 <dialog id="delete_property_modal" class="modal">
@@ -284,9 +262,8 @@
   </div>
 </dialog>
 
-  
-  <!-- Radio Tabs -->
-  <div class ="flex">
+<!-- Radio Tabs -->
+<div class ="flex">
     <div role="tablist" class="tabs tabs-bordered justify-start mb-5">
       <!-- Units Tab -->
       <input type="radio" name="property_tabs" id="units_tab" role="tab" class="tab" aria-label="Einheiten" checked>
@@ -435,7 +412,7 @@
       </div>
       
     </div>
-  </div>
+</div>
 </div>
 
 <!-- Edit Unit Modal -->
@@ -501,7 +478,6 @@
     </div>
   </dialog>
   
-
 <!-- Edit Lease Modal -->
 <dialog id="edit_lease_modal" class="modal">
   <div class="modal-box bg-base-100 text-base-content">
@@ -816,8 +792,8 @@
     </div>
 </dialog>
 
-
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         console.log("ApexCharts loaded:", typeof ApexCharts !== "undefined");
@@ -883,6 +859,7 @@
         chart.render();
     });
 </script>
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const ustTab = document.getElementById("ust_tab");
@@ -1054,13 +1031,14 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
-    </script>
+</script>
     
-    <script>
+<script>
         window.addEventListener('beforeunload', function () {
             navigator.sendBeacon("{% url 'unlock_property' property.id %}", '');
         });
-    </script>
+</script>
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
       const splitCheckbox = document.getElementById("split_income_checkbox");
@@ -1248,23 +1226,18 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       });
     });
-    </script>
-    
-    <script>
-            document.addEventListener("DOMContentLoaded", function () {
-              new TomSelect("#leases_multi", {
-                plugins: ['remove_button'],
-                maxItems: null,
-                create: false,
-                searchField: 'text',
-                placeholder: "Leases suchen...",
-              });
-            });
-      </script>
+</script>
+  
+<script>
+        document.addEventListener("DOMContentLoaded", function () {
+          new TomSelect("#leases_multi", {
+            plugins: ['remove_button'],
+            maxItems: null,
+            create: false,
+            searchField: 'text',
+            placeholder: "Leases suchen...",
+          });
+        });
+</script>
           
-    
-
-    
-
-
 {% endblock %}
