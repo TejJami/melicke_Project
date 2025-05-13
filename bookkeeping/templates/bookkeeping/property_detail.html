@@ -20,21 +20,21 @@
   <!-- Page Title -->
   <div class="relative bg-cover bg-center bg-no-repeat p-5 rounded-md shadow-md mb-5 mt-2 h-36" style="background-image: url('{{ property.image.url }}');">
     <!-- Overlay -->
-    <div class="absolute inset-0 bg-white bg-opacity-70 rounded-md"></div>
+    <div class="absolute inset-0 backdrop-blur-md bg-white bg-opacity-60 rounded-md"></div>
     <!-- Content Wrapper -->
     <div class="relative z-20 flex items-center justify-between">
       <!-- Left Section: Back Button and Property Name -->
       <div class="flex items-center space-x-3">
         <!-- Back Button -->
-        <a href="{% url 'properties' %}" class="btn btn-circle btn-outline btn-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <a href="{% url 'properties' %}" class="btn btn-circle btn-outline btn-sm text-black border-black hover:bg-black hover:text-white">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
+        </svg>
         </a>
         <!-- Property Name -->
         <div>
-        <h1 class="font-bold text-2xl">{{ property.name }}</h1>
-            <p>{{ property.street}} , {{ property.city }} </p>      
+        <h1 class="font-bold text-2xl text-black">{{ property.name }}</h1>
+            <p class="text-black">{{ property.street}} , {{ property.city }} </p>      
         </div>
       </div>
       <!-- Right Section: Property Details -->

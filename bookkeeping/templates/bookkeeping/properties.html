@@ -142,29 +142,30 @@
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
     {% for property in page_obj %}
     <a href="{% url 'property_detail' property.id %}" class="block" data-property-id="{{ property.id }}">
+        <div class="relative h-48 w-full rounded-md shadow-xl overflow-hidden cursor-pointer transform transition-transform duration-150 hover:scale-105 hover:shadow-2xl">
 
-        <div class="card bg-base-100 image-full shadow-xl w-full h-48 cursor-pointer transform transition-transform duration-150 hover:scale-105 hover:shadow-2xl relative">
-            <figure class="h-48 w-full overflow-hidden">
-                {% if property.image %}
-                <img src="{{ property.image.url }}" alt="Property Image" class="object-cover h-full w-full" />
-                {% else %}
-                <img src="{% static 'property_images/default_image.png' %}" alt="Default Property Image" class="object-cover h-full w-full" />
-                {% endif %}
-            </figure>
+            <!-- Background Image -->
+            <div class="absolute inset-0 bg-cover bg-center bg-no-repeat" style="background-image: url('{% if property.image %}{{ property.image.url }}{% else %}{% static 'property_images/default_image.png' %}{% endif %}');"></div>
 
-            <div class="card-body">
-                <h1 class="font-bold text-xl ">{{ property.name }}</h1>
-                <p>{{ property.street }}, {{ property.city }}</p>
-                
+            <!-- White Overlay -->
+            <div class="absolute inset-0 bg-white bg-opacity-50"></div>
+
+            <!-- Content on Top -->
+            <div class="relative z-20 p-4 h-full flex flex-col justify-between">
+                <div>
+                    <h1 class="font-bold text-xl text-black">{{ property.name }}</h1>
+                    <p class="text-black">{{ property.street }}, {{ property.city }}</p>
+                </div>
+
+                <!-- Lock Status -->
+                {% if property.locked_by %}
                 <p class="text-sm text-warning mt-1 lock-status">
-                    {% if property.locked_by %}
-                        🔒 Wird derzeit bearbeitet von: <strong>{{ property.locked_by.username }}</strong>
-                    {% endif %}
+                    🔒 Wird derzeit bearbeitet von: <strong>{{ property.locked_by.username }}</strong>
                 </p>
-                
-                
-                <!-- Badge Positioned to Top-Right -->
-                <div class="absolute top-2 right-2">
+                {% endif %}
+
+                <!-- Top-Right Badge -->
+                <div class="absolute top-2 right-2 z-30">
                     <div class="badge badge-accent">
                         {% if property.property_type == "residential" %}
                             Wohngebäude
@@ -176,10 +177,12 @@
                             {{ property.property_type }}
                         {% endif %}
                     </div>
-                </div>                
+                </div>
             </div>
+
         </div>
     </a>
+
     {% empty %}
     <p>No properties available.</p>
     {% endfor %}
