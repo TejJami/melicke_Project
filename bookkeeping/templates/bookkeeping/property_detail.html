@@ -636,8 +636,8 @@
             </div>
         
           <div class="mb-4">
-              <label class="label"><span class="label-text">Transaktionstyp </span></label>
-              <select name="transaction_type" class="select select-bordered w-full" >
+              <label class="label" id=""><span class="label-text">Transaktionstyp </span></label>
+              <select id= 'transaction_type 'name="transaction_type" class="select select-bordered w-full" >
                 <option value="" disabled selected>Transaktionstyp auswählen</option>
                 <option value="rent">Miete</option>
                 <option value="bk_advance_payments">BK Vorauszahlungen</option>
@@ -1061,25 +1061,36 @@ document.addEventListener("DOMContentLoaded", function () {
       const splitRemainingDisplay = document.getElementById("split_remaining");
     
       let currentSplitData = [];
-    
-      splitCheckbox.addEventListener("change", () => {
-        const selectedLeaseIds = Array.from(leaseSelect.selectedOptions).map(opt => opt.value);
-        const leaseSelected = selectedLeaseIds.length > 0;
-    
-        if (!leaseSelected) {
-          splitSection.classList.add("hidden");
-          splitContainer.innerHTML = "<p class='text-warning'>⚠️ Bitte zuerst einen Mietvertrag auswählen.</p>";
-          splitCheckbox.checked = false;
-          return;
-        }
-    
-        if (splitCheckbox.checked) {
-          splitSection.classList.remove("hidden");
-          loadLeaseIncomes(selectedLeaseIds);
-        } else {
-          splitSection.classList.add("hidden");
-        }
-      });
+            
+        splitCheckbox.addEventListener("change", () => {
+            const selectedLeaseIds = Array.from(leaseSelect.selectedOptions).map(opt => opt.value);
+            const leaseSelected = selectedLeaseIds.length > 0;
+
+            // Disable/Enable transaction type select
+            const transactionTypeSelect = document.querySelector("select[name='transaction_type']");
+            console.log("Transaction Type Select:", transactionTypeSelect);
+            if (splitCheckbox.checked) {
+                transactionTypeSelect.disabled = true;
+            } else {
+                transactionTypeSelect.disabled = false;
+            }
+
+            if (!leaseSelected) {
+                splitSection.classList.add("hidden");
+                splitContainer.innerHTML = "<p class='text-warning'>⚠️ Bitte zuerst einen Mietvertrag auswählen.</p>";
+                splitCheckbox.checked = false;
+                transactionTypeSelect.disabled = false;  // Ensure re-enabled
+                return;
+            }
+
+            if (splitCheckbox.checked) {
+                splitSection.classList.remove("hidden");
+                loadLeaseIncomes(selectedLeaseIds);
+            } else {
+                splitSection.classList.add("hidden");
+            }
+        });
+
     
       document.querySelector("button[onclick='add_income_modal_2.close()']").addEventListener("click", () => {
         splitCheckbox.checked = false;
@@ -1111,6 +1122,12 @@ document.addEventListener("DOMContentLoaded", function () {
           splitContainer.innerHTML = "<p class='text-gray-500'>Bitte wählen Sie einen Mietvertrag aus...</p>";
           splitTotalDisplay.textContent = "€0.00";
           splitRemainingDisplay.textContent = "€0.00";
+          const transactionTypeSelect = document.querySelector("select[name='transaction_type']");
+
+            // Disable if multiple leases selected
+            transactionTypeSelect.disabled = selectedLeaseIds.length > 1;
+
+
         }
       });
     

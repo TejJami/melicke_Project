@@ -288,6 +288,7 @@ def properties(request):
     })
 
 # Add Property
+@login_required
 def add_property(request):
     if request.method == 'POST':
         # Get property fields
@@ -333,6 +334,7 @@ def add_property(request):
     })
 
 # Edit Property
+@login_required
 def edit_property(request, pk):
     property_obj = get_object_or_404(Property, id=pk)
 
@@ -397,6 +399,7 @@ def edit_property(request, pk):
     })
 
 # Delete Property
+@login_required
 def delete_property(request, pk):
     property_obj = get_object_or_404(Property, pk=pk)
 
@@ -470,6 +473,7 @@ def add_tenant(request):
     return render(request, 'bookkeeping/add_tenant.html')
 
 # Edit Tenant
+@login_required
 def edit_tenant(request, pk):
     tenant = get_object_or_404(Tenant, id=pk) # Fetch the tenant using the primary key
 
@@ -489,6 +493,7 @@ def edit_tenant(request, pk):
     return render(request, 'bookkeeping/edit_tenant.html', {'tenant': tenant})
 
 # Delete Tenant
+@login_required
 def delete_tenant(request, pk):
     tenant = get_object_or_404(Tenant, id=pk)
 
@@ -521,6 +526,7 @@ def mapping_rules(request, property_id):
 #################################################################
 
 # Expense Profiles
+@login_required
 def expense_profiles(request):
     properties = Property.objects.prefetch_related('leases', 'expense_profiles').all()
     return render(request, 'bookkeeping/expense_profiles.html', {
@@ -528,6 +534,7 @@ def expense_profiles(request):
     })
 
 # Add Expense Profile
+@login_required
 def add_expense_profile(request):
     if request.method == 'POST':
         data = request.POST # Get the POST data 
@@ -610,6 +617,7 @@ def add_expense_profile(request):
 
 
 # Edit Expense Profile
+@login_required
 def edit_expense_profile(request, pk):
     expense = get_object_or_404(ExpenseProfile, id=pk) # Fetch the expense profile using the primary key
     property_obj = expense.property # Get the property object
@@ -1342,10 +1350,42 @@ from django.http import JsonResponse
 from django.http import JsonResponse
 from decimal import Decimal
 
+# def lease_profiles(request, lease_id):
+#     lease = get_object_or_404(Lease, id=lease_id) # Fetch the lease object
+#     # Check if the user is authenticated
+#     income_data = [] # Initialize income data list
+#     # Rent
+#     if lease.rent:
+#         income_data.append({
+#             "type": "rent",
+#             "label": "Miete",
+#             "amount": float(lease.rent)
+#         })
+#     # BK / Additional Costs
+#     additional = lease.additional_costs or (lease.unit.additional_costs if lease.unit else Decimal("0.00"))
+#     if additional:
+#         income_data.append({
+#             "type": "bk_advance_payments",
+#             "label": "Nebenkosten",
+#             "amount": float(additional)
+#         })
+#     # Deposit
+#     if lease.deposit_amount:
+#         income_data.append({
+#             "type": "security_deposit",
+#             "label": "Kaution",
+#             "amount": float(lease.deposit_amount)
+#         })
+#     return JsonResponse({
+#         "lease_id": lease.id,
+#          "unit_name": lease.unit.unit_name if lease.unit else None,
+#         "incomes": income_data
+#     })
+
 def lease_profiles(request, lease_id):
-    lease = get_object_or_404(Lease, id=lease_id) # Fetch the lease object
-    # Check if the user is authenticated
-    income_data = [] # Initialize income data list
+    lease = get_object_or_404(Lease, id=lease_id)  # Fetch the lease object
+    income_data = []  # Initialize income data list
+
     # Rent
     if lease.rent:
         income_data.append({
@@ -1353,6 +1393,7 @@ def lease_profiles(request, lease_id):
             "label": "Miete",
             "amount": float(lease.rent)
         })
+
     # BK / Additional Costs
     additional = lease.additional_costs or (lease.unit.additional_costs if lease.unit else Decimal("0.00"))
     if additional:
@@ -1361,6 +1402,7 @@ def lease_profiles(request, lease_id):
             "label": "Nebenkosten",
             "amount": float(additional)
         })
+
     # Deposit
     if lease.deposit_amount:
         income_data.append({
@@ -1368,9 +1410,26 @@ def lease_profiles(request, lease_id):
             "label": "Kaution",
             "amount": float(lease.deposit_amount)
         })
+
+    # Stellplatzmiete (Parking space rent)
+    if lease.unit and lease.unit.stellplatz_miete:
+        income_data.append({
+            "type": "stellplatz_miete",
+            "label": "Stellplatzmiete",
+            "amount": float(lease.unit.stellplatz_miete)
+        })
+
+    # Investitionsmiete (Investment rent)
+    if lease.unit and lease.unit.investition_miete:
+        income_data.append({
+            "type": "investition_miete",
+            "label": "Investitionsmiete",
+            "amount": float(lease.unit.investition_miete)
+        })
+
     return JsonResponse({
         "lease_id": lease.id,
-         "unit_name": lease.unit.unit_name if lease.unit else None,
+        "unit_name": lease.unit.unit_name if lease.unit else None,
         "incomes": income_data
     })
 
@@ -1402,6 +1461,7 @@ def unlock_property(request, property_id):
             pass
     return JsonResponse({"status": "error"}, status=400)
 
+@login_required
 def property_detail(request, property_id):
     property_obj = get_object_or_404(Property, id=property_id)
 
